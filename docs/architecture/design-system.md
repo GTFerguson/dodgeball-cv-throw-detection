@@ -129,6 +129,10 @@ Rules:
 - **`--sig-model` never marks a human label, and no outcome colour ever marks a prediction.**
   Whose claim it is must be readable from colour alone.
 - `unresolved` has **no token**. It is `--ink-faint` on a dashed outline, by design.
+- `pass` has **no token** either, for a different reason: only outcomes are coloured, and a
+  pass has none — the ball never crossed for anything to happen to it. It is `--ink-faint` on a
+  solid outline, which separates it from `fake`'s live-coloured ring and `unresolved`'s dashed
+  one without spending a hue on a class that is excluded from the metric.
 - Soft fills are matched for lightness so no chip jumps out of a list of chips.
 
 ### The frame
@@ -138,8 +142,42 @@ The drawn hall uses its own tokens — `--hall`, `--hall-2`, `--wall`, `--wall-2
 chrome, and are the one place the palette is allowed a cool note (`--seat` is a soft slate,
 which stops the picture becoming a wash of warm mud).
 
-Overlay ink: `--wire` for on-court skeletons, `--wire-halo` behind them, `--wire-off` for
-detections the court polygon filters out.
+Overlay ink: `--wire-near` and `--wire-far` for on-court skeletons, `--wire-casing-dark` /
+`--wire-casing-light` behind them, `--wire-off` for detections the court test puts out of play.
+
+### Team is the one thing the frame is allowed to colour
+
+The key badge stays achromatic — the key row already tells the teams apart — but the skeleton
+itself is coloured by team. This is not a relaxation of the semantic rule: which half a
+player's feet are in *is* the team claim, so a coloured wire encodes data exactly as an outcome
+chip does. It earns its place because the wire is drawn on footage, where there is no key row
+to read against it, and because it makes the claim checkable — a red player in a violet wire is
+the fit or the foot point being wrong, visible at a glance across the whole frame.
+
+Three constraints fixed the pair, and the order matters:
+
+- **The casing is the tonal opposite of the wire, not of the kit.** A skeleton crosses a
+  jersey, black shorts and pale floor within one limb, so no wire colour is legible over all of
+  it unaided. Once the casing carries legibility, the hue is free to mean team and nothing
+  else — and taking the casing from the wire keeps that true when the teams swap ends, or when
+  a clip has two dark kits and there is no light one to oppose.
+- **The pair separates on lightness, not only hue.** They sit 107° apart, but hue is not what
+  distinguishes them: under deuteranopia both collapse towards blue. What survives is the
+  3.8:1 luminance ratio, which also means they read apart in greyscale.
+- **Neither crowds the signal palette.** Both are drawn on the frame alongside outcome marks.
+  The bar is derived rather than picked: no wire may sit closer to a `--sig-` colour than the
+  closest two `--sig-` colours already sit to each other. A round number instead put the bar
+  above what the colour space can supply — nothing with a usable lightness gap clears dE 60
+  from all six.
+
+The far wire is worth a note, because the obvious answer is wrong. The near team's kit is a
+strongly chromatic red, so its complement is meaningful. The far team's "white" kit measures
+S 0.13 at that distance — the complement of an almost-grey is another almost-grey, and it
+disappears against everything. The far wire is therefore chosen as the near wire's harmonic
+partner rather than as an opposition to the jersey it sits on.
+
+`src/overlay.py` is the pipeline's copy of these values, and
+`scripts/test_overlay_contract.py` holds the two in step along with the court thresholds.
 
 ## Typography
 
@@ -212,7 +250,8 @@ The signature. The same clip drawn twice: `YOU` (labels) above, `MODEL` (predict
 sharing one time axis so comparison is vertical.
 
 - One dot per throw at its **release frame**, coloured by outcome.
-- `fake` is a ring, `unresolved` a dashed ring, in-flight a filled dot with a pulsing halo.
+- `fake` is a ring, `pass` a grey ring, `unresolved` a dashed ring, in-flight a filled dot
+  with a pulsing halo. A fill means the ball crossed.
 - A model dot with nothing above it fired where there is no throw; a **✕ on the model track**
   is a throw the model missed. The two failure modes get two distinct marks — never one.
 - The shaded band is live play. Past the playhead, the label track is **hatched and captioned
@@ -295,4 +334,9 @@ Each of these was either tried and corrected, or is the generic default for this
 - **No third typeface, no italics, no serif.**
 - **No proportional figures for comparable numbers.**
 - **No hero numbers or vanity stats.** Statistics appear with their scope stated beside them.
+- **No Tailwind opacity modifiers on these tokens.** `bg-surface/90` compiles to
+  `rgb(var(--surface) / .9)`, and the tokens are hex strings rather than channel triplets, so
+  the colour is invalid and the background silently disappears. Chrome that sits on the frame
+  uses a solid fill and a shadow to separate itself — which reads better over video anyway.
+  Canvas and SVG read these tokens directly, which is why they stay hex.
 - **No new component pattern without adding it here.**

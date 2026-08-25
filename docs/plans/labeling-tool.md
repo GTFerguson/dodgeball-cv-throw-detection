@@ -155,22 +155,6 @@ on purpose.
 Autosave to `data/labels/<video>[.<annotator>].json`; `?annotator=<name>` gives a blind second
 pass its own file. Label files are committed, footage and pose runs are not.
 
-## Schema change required: `kind`
-
-A pass — a throw to your own team — is identical to a throw up to the moment of release, so the
-tool must be able to record one. It currently cannot: `fake: boolean` plus an `Outcome` leaves
-an annotator meeting a pass with nowhere to put it, and a silently skipped event is one that
-can never be measured.
-
-Replace `fake: boolean` with `kind: 'fake' | 'pass' | 'throw'`. Mutual exclusivity becomes
-structural rather than a convention, and the born-closed rule generalises: `fake` and `pass` are
-terminal and open closed, `throw` opens waiting for an outcome. `target` already means "the
-player the ball reached" and is team-agnostic, so a pass's receiver reuses it — optional, since
-the receiver is not needed for the metric.
-
-See [[throw-attempt-detection]] § Event definition for the destination-not-intent rule that
-decides pass from throw.
-
 ## Build order
 
 1. ~~Pose precompute script and per-frame-range serving~~ — `scripts/precompute_pose.py`,
@@ -181,8 +165,8 @@ decides pass from throw.
    schema~~ — `src/lib/events.ts`, `src/lib/keys.ts`, `src/types.ts`
 4. ~~Box editing: snap, corner and body drag, draw, nudge~~ — `src/lib/boxes.ts`
 5. ~~Observability fields, ref signal, team inference and override, live-play intervals~~
-6. Restyle to the design system ([[design-system]]) — tokens into `src/index.css` and
-   `tailwind.config.js`, then the components; the full key map lands in the instrument bar
+6. ~~Restyle to the design system ([[design-system]]) — tokens into `src/index.css` and
+   `tailwind.config.js`, then the components; the full key map lands in the instrument bar~~
 7. Labelling guide (`docs/labeling-guide.md`) — the rule handed to a second annotator
 8. Second-pass agreement report script
 
@@ -220,13 +204,29 @@ and it does not change within a half, so no jersey model or roster is needed to 
 Inferred from the thrower's feet against the centre line, with `team_source` recording an
 override.
 
+**A pass is a `kind`, and destination is what resolves it.** `fake: boolean` became
+`kind: 'fake' | 'pass' | 'throw' | null`, so the three classes are mutually exclusive by
+construction rather than by convention, and the born-closed rule generalises to both terminal
+kinds. Null is not a fourth class: it is a release whose destination has not been decided —
+one still in the air, or one closed after the ball was lost from view. That state is what stops
+an unobserved release from being silently counted as a throw, which is the failure the
+tri-state exists to prevent. See [[throw-attempt-detection]] § Event definition for the
+destination-not-intent rule that decides pass from throw.
+
+Destination is only observable *after* the release, so it is entered as a resolution rather
+than chosen when the event opens. `T` opens a release that claims nothing; `H` `C` `B` `M`
+say the ball reached the far side and settle `kind` to `throw`; `P` says it stayed on the
+thrower's own side. `U` is the one outcome that settles nothing — it asserts that nothing was
+observed, so it leaves an undecided event undecided and retracts a pass, which it contradicts.
+A pass can be re-resolved as a throw and the reverse, because the ball is often seen to cross a
+beat after the annotator has called it; only a fake is inert, having released no ball to send
+anywhere. `P` cost the placement-target cycle its key, which moved to `G`.
+
+`target` already meant "the player the ball reached" and is team-agnostic, so a pass's receiver
+reuses it — optional, since the receiver is not part of the metric.
+
 ## Still open
 
-- The full key map has no home. The help overlay was removed — a keyboard-driven tool whose
-  keys are hidden behind a shortcut teaches nobody — but the instrument bar currently shows
-  only the event keys. Transport, zoom and magnifier, box editing, the observability toggles
-  (`D` `V` `O` `X` `A` `N`), live play (`L` `K`) and court (`G`) are documented nowhere in the
-  interface. They need to land in the bar during the restyle.
 - Whether `start_frame` is worth labelling for every throw or only a subset, given the candidate
   stage will be evaluated on it.
 - Pose chunks are 1000 frames per the contract, which is ~15 MB of JSON at this footage's crowd
