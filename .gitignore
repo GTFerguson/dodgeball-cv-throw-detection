@@ -40,3 +40,6 @@ data/pose/
 data/court/*_plate.png
 data/court/*_overlay.jpg
 data/court/*_f[0-9]*.jpg
+
+# Tool dependencies — restored by `npm ci` in tools/labeler
+node_modules/

@@ -1,0 +1,58 @@
+@import '@fontsource-variable/archivo';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The design system lives here; docs/architecture/design-system.md says why.
+   Warmth is confined to the lightest values — a warm grey at mid lightness reads
+   as dirt, not as warmth — so ink and rules are near-neutral on warm paper.
+   Colour is semantic only: every --sig- token encodes an outcome, a live state
+   or whose claim a mark represents, and nothing else in the interface is tinted. */
+:root {
+  --ground: #F6F4F0;
+  --surface: #FCFBF9;
+  --surface-2: #F0EEE9;
+  --surface-3: #E5E2DC;
+  --ink: #2B2A2C;
+  --ink-mute: #56555A;
+  --ink-faint: #6D6C72;
+  --rule: #E2DFD9;
+  --rule-strong: #C6C3BC;
+
+  --sig-hit: #9B4034;        --sig-hit-soft: #F2CEC7;
+  --sig-catch: #276A53;      --sig-catch-soft: #C6E2D5;
+  --sig-block: #474B98;      --sig-block-soft: #D2D3EF;
+  --sig-miss: #63605A;       --sig-miss-soft: #E0DDD7;
+  --sig-open: #8C6117;       --sig-open-soft: #F6DCBB;
+  --sig-model: #2F6389;      --sig-model-soft: #CCDFEE;
+
+  /* Overlay ink on the frame. Team is data, so the wire carries it; src/overlay.py
+     is the pipeline's copy and scripts/test_overlay_contract.py holds them level.
+     The casing under a wire is the wire's tonal opposite, not the kit's, so the
+     hue is free to mean team and nothing else. The two wires are 107 degrees
+     apart, but it is the lightness gap between them that survives deuteranopia,
+     where both hues collapse towards blue. */
+  --wire-near: #3AD9C8;
+  --wire-far: #7A3CB8;
+  --wire-casing-dark: #1C1A1E;
+  --wire-casing-light: #FAF9F6;
+  --wire-off: #6D6C72;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Transport is driven by the keyboard and the instrument bar; the native
+   controls would seek to a time rather than to a frame. */
+video::-webkit-media-controls { display: none !important; }
+
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
