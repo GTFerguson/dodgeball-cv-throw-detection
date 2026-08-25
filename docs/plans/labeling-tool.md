@@ -155,6 +155,22 @@ on purpose.
 Autosave to `data/labels/<video>[.<annotator>].json`; `?annotator=<name>` gives a blind second
 pass its own file. Label files are committed, footage and pose runs are not.
 
+## Schema change required: `kind`
+
+A pass — a throw to your own team — is identical to a throw up to the moment of release, so the
+tool must be able to record one. It currently cannot: `fake: boolean` plus an `Outcome` leaves
+an annotator meeting a pass with nowhere to put it, and a silently skipped event is one that
+can never be measured.
+
+Replace `fake: boolean` with `kind: 'fake' | 'pass' | 'throw'`. Mutual exclusivity becomes
+structural rather than a convention, and the born-closed rule generalises: `fake` and `pass` are
+terminal and open closed, `throw` opens waiting for an outcome. `target` already means "the
+player the ball reached" and is team-agnostic, so a pass's receiver reuses it — optional, since
+the receiver is not needed for the metric.
+
+See [[throw-attempt-detection]] § Event definition for the destination-not-intent rule that
+decides pass from throw.
+
 ## Build order
 
 1. ~~Pose precompute script and per-frame-range serving~~ — `scripts/precompute_pose.py`,

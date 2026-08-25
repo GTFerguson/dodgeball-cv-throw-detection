@@ -44,7 +44,8 @@ Every labelled thing starts as a *candidate* — a throwing motion — and resol
 ```
 candidate (throwing motion)
 ├── fake      — wind-up, no release. Terminal: no ball outcome.
-└── throw     — release
+├── pass      — release, ball stays on the thrower's own side. Terminal: no state change.
+└── throw     — release, ball crosses to the opposing side
     ├── hit
     ├── catch
     ├── block
@@ -57,7 +58,8 @@ labelled at every level and evaluation reports each level rather than one blende
 | Level | Decision | Where it fails |
 |---|---|---|
 | Candidate | is there a throwing motion at all? | recall ceiling — whatever is missed here is gone |
-| Throw vs fake | did the ball leave the hand? | occlusion at the release moment: genuinely unobservable, not merely hard |
+| Release | did the ball leave the hand? | occlusion at the release moment: genuinely unobservable, not merely hard |
+| Destination | own side (pass) or opposing side (throw)? | shallow releases near the centre line; lobbed passes |
 | Outcome | what happened to the ball? | graze vs dodge, catch vs drop — where label disagreement concentrates |
 
 A throw is not complete at release: it stays open until something happens to the ball, and that
@@ -86,6 +88,11 @@ the flags say when the footage cannot confirm it.
 - **Fakes.** Pump fakes are a core tactic — a full wind-up with no release. A single-frame pose
   classifier fires on every one. Only a release check (ball leaves the hand region) separates
   a throw from a fake.
+- **Passes.** A pass to a teammate is not a near-miss for the detector, it is *identical* up to
+  the last stage: same wind-up, same arm kinematics, same ball leaving the hand. Everything
+  that separates it from a throw happens afterwards, in where the ball goes. It is therefore
+  the most structured false positive the system faces, and unlike a fake it cannot be rejected
+  at the release gate.
 - **Simultaneous throws.** Coordinated "countdown" attacks have several players releasing
   within ~200 ms. Overlapping events with separate attribution.
 - **Outcome ambiguity.** Graze vs dodge, catch vs drop, block-then-catch — the ground truth is
@@ -101,14 +108,18 @@ the flags say when the footage cannot confirm it.
 
 **Throw attempt.** A player propels a ball toward the opposing side with a throwing motion.
 
+Every candidate resolves to exactly one `kind` — `fake`, `pass` or `throw` — so the three are
+mutually exclusive by construction rather than by convention. `fake` and `pass` are terminal.
+
 | Field | Rule |
 |---|---|
+| `kind` | `fake` (no release), `pass` (released, ball stays on the thrower's own side), `throw` (released, ball crosses to the opposing side) |
 | `start` | First frame of the wind-up: throwing arm moves behind the shoulder line with a ball in hand |
 | `release` | First frame the ball is no longer in contact with the hand |
 | `end` | Outcome resolution: ball contacts an opponent, is caught, is blocked, or crosses the far boundary / hits the floor unimpeded |
 | `actor` | Thrower (track ID + team). Team is required; player ID reported when the track is stable |
 | `outcome` | one of `hit`, `catch`, `block`, `miss` (dodged or unobstructed), `unresolved` (occluded / off-frame) |
-| `target` | player the ball reached, for `hit` / `catch` / `block` — required, since a catch eliminates the *thrower* and returns a player to the catcher's side while a hit eliminates the *target* |
+| `target` | player the ball reached, for `hit` / `catch` / `block` — required, since a catch eliminates the *thrower* and returns a player to the catcher's side while a hit eliminates the *target*. A pass reuses the same field for the receiver, which is optional |
 | `confidence` | model confidence in (a) that a throw occurred, (b) attribution, (c) outcome — reported separately |
 
 Labels additionally record what could be seen, so label uncertainty is separable from model
@@ -118,8 +129,14 @@ the closest thing to external truth on ambiguous hits), plus `uncertain` and a n
 **Live-play intervals** are labelled once per set (opening rush → set end). Throws outside them
 do not count, and the metric is computed per set.
 
-**Not a throw attempt:** fakes (wind-up, no release); underarm rolls to retrieve balls;
-throws after the play is dead (whistle); ball tosses to a teammate.
+**Classified by destination, not intent.** A live ball that reaches an opponent eliminates them
+whatever the thrower meant by it, so an errant pass that crosses and connects *is* a throw with
+a hit. This is fortunate rather than merely convenient: destination is observable and intent
+never is, so the rule the annotator applies and the rule the model applies can be the same one.
+(To confirm against the WDBF ruleset before the definition is frozen.)
+
+**Not a candidate at all:** underarm rolls to retrieve balls; hand-offs where the ball is
+passed without a throwing motion; anything after the play is dead (whistle).
 
 **Ambiguous cases (labelled with an `uncertain` flag):**
 
@@ -128,11 +145,19 @@ throws after the play is dead (whistle); ball tosses to a teammate.
 - Graze where the ball deflects with no visible reaction — outcome `hit?` flagged uncertain;
   the referee's call, if audible/visible, breaks the tie.
 - Simultaneous throws where balls cross — attribute each by the thrower, never by the ball.
+- A release whose destination is never observed — `kind` unresolved, flagged. This is the pass
+  equivalent of an unresolved outcome and must not be silently counted as either.
 
 ## Derived metric
 
 **Team throw efficiency** = eliminations ÷ throw attempts, per team per game, with a secondary
 split by solo vs coordinated throws (coordinated = ≥2 same-team releases within 300 ms).
+
+Passes are excluded from the denominator, so pass-vs-throw precision propagates directly into
+the headline number: every pass misread as a throw understates efficiency. That makes it an
+error-budget line item rather than a detail — and one with no free check, because a pass causes
+no elimination and so leaves no trace in the game-state fold that cross-checks hits and catches.
+Direction is the only evidence there is.
 
 Why it is useful: it is the dodgeball equivalent of shooting percentage, and the solo vs
 coordinated split answers a live tactical question — does attacking together actually convert
@@ -166,7 +191,8 @@ flowchart LR
 | Signal | Gives | Fails when | Role |
 |---|---|---|---|
 | Pose sequence (wrist/elbow/shoulder over ~0.5 s) | wind-up onset, throwing arm | small far-court players, occlusion, side-on arm ambiguity | primary for `start` |
-| Ball near hand → departing | release, fake rejection | ball hidden by body, motion blur post-release | primary for `release`; gates fakes |
+| Ball near hand → departing | release only — *not* throw-vs-pass | ball hidden by body, motion blur post-release | primary for `release`; gates fakes |
+| Departure direction in court metres, relative to the centre line | pass vs throw | shallow release near the centre line, lobbed pass | the only separator of the two; available because the court fit gives metres |
 | Short post-release trajectory | direction → target side, outcome | crosses other balls, leaves frame | outcome |
 | Court homography | which side, far boundary, out-zone, metre-scale normalisation | pan/zoom, few visible lines | **shipped** — see [[court-geometry]] |
 | Audio (ball impact, whistle) | outcome corroboration, dead-ball | crowd noise, commentary | optional fusion — good ablation |
@@ -215,14 +241,15 @@ label-uncertainty case, not a model failure.
 ### Labels
 
 - **Built here, not sourced.** No public dodgeball event dataset exists, and the brief requires a
-  truth set we built and understand. Estimated cost: 50–70 attempts plus 10–20 fakes at ~45 s
-  each ≈ 1 h with a purpose-built tool.
+  truth set we built and understand. Estimated cost: 50–70 throws plus 10–20 fakes at ~45 s
+  each ≈ 1 h with a purpose-built tool, plus passes at a rate the footage has not yet been
+  measured for — the first thing labelling will reveal, and a budget risk until it is known.
 - **Anchor on the release frame.** It is the crispest moment and the one the temporal
   tolerance is measured against.
 - **Per event:** release / start / end frames; thrower as a click *at the release frame*;
   target as a click *at the end frame* for hit/catch/block; team inferred from the court half
   the thrower click lands in (fixed camera, sides do not change within the half) with override;
-  outcome; `fake`; `release_visible`, `outcome_visible`, `ref_signal`; `uncertain`; note. Each
+  outcome; `kind`; `release_visible`, `outcome_visible`, `ref_signal`; `uncertain`; note. Each
   click records the frame it was made on — thrower and target are on different frames.
 - **Clicks, not track IDs.** Player positions are stored in source pixels so evaluation matches
   them to any detector's boxes without depending on the tool's tracks.
@@ -242,10 +269,11 @@ label-uncertainty case, not a model failure.
 | Event detection | precision / recall / F1 on throw attempts | release within ±0.25 s (≈±6–7 frames at 25–30 fps) |
 | Boundaries | mean abs error on `start` and `end` for matched events | — |
 | Attribution | team accuracy; player accuracy where track is stable | on matched events |
-| Outcome | accuracy + confusion matrix over 5 classes | on matched events |
+| Kind | pass vs throw accuracy on released candidates; fakes reported separately | on matched events |
+| Outcome | accuracy + confusion matrix over 5 classes | on matched throws |
 | Metric | abs error in throw efficiency vs ground truth, per team | — |
 | Stress | F1 under 3 conditions: 480p downscale, heavy CRF compression, 50% frame drop (and/or blur) | same tolerance |
-| Ablation | pose-only wind-up detector vs pose + release gate (fake rejection) | same tolerance |
+| Ablation | pose-only wind-up detector vs pose + release gate (fake rejection) vs + destination test (pass rejection) | same tolerance |
 
 ## Time budget (target 10 h)
 
@@ -266,6 +294,10 @@ label-uncertainty case, not a model failure.
 - Are referee calls audible/visible enough to anchor ambiguous outcomes?
 - Does the chosen footage include enough fakes and countdown attacks to make the FP analysis
   meaningful, or do we need a second match?
+- How often do teams actually pass? Unmeasured, and it sets both the labelling cost and how
+  much the metric's denominator depends on getting pass rejection right.
+- Does the WDBF ruleset treat a ball as live regardless of the thrower's intent, as assumed by
+  classifying on destination?
 
 ## Work log
 
@@ -276,6 +308,10 @@ label-uncertainty case, not a model failure.
 - 2026-08-25 — labelling tool plan written ([[labeling-tool]]): boxes by value, two-moment flow.
 - 2026-08-25 — WDBF 2014 final chosen over Sky Zone; 6:00–9:30 clip cut; feasibility check run
   (pose scale, crowd count, ball visibility) — gate passed with far-court caveat.
+- 2026-08-25 — pass promoted from an exclusion to a class: candidate → fake | pass | throw.
+  Classified by destination rather than intent, since a live ball counts whatever was meant by
+  it and destination is the only observable of the two. Passes leave no trace in the game-state
+  fold, so direction is their only check.
 - 2026-08-25 — court calibrated from detected lines; shipped and graduated to
   [[court-geometry]]. Floor identified as a regulation volleyball court (18 × 9 m) by
   held-out markings landing within 91 mm. Court filter cuts detections 38 → 9.7 per frame.
