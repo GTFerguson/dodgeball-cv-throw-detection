@@ -83,6 +83,17 @@ The gap: eliminations that are not throw outcomes (line violations, ball-hold ru
 why `outcome_visible` and the live-play intervals exist — state says what should have happened,
 the flags say when the footage cannot confirm it.
 
+### Set start — shipped
+
+Detected rather than labelled: balls laid out on the centre line arm a window, a
+whistle inside that window is the start, and the teams breaking for the balls
+confirms it. Shipped and graduated to [[set-start]]; on the evaluation clip the
+set starts at frame 433 (17.32 s, 6:17.3 of the half) and the clip's second ball
+layout is correctly reported as having no whistle before the clip ends.
+
+Set **end** (the last elimination) is deferred until the outcome resolver exists;
+until then a live-play interval runs from one detected start to the next.
+
 ### Why this is hard
 
 - **Fakes.** Pump fakes are a core tactic — a full wind-up with no release. A single-frame pose
@@ -110,6 +121,8 @@ the flags say when the footage cannot confirm it.
 
 Every candidate resolves to exactly one `kind` — `fake`, `pass` or `throw` — so the three are
 mutually exclusive by construction rather than by convention. `fake` and `pass` are terminal.
+A release whose destination was never observed carries no `kind` at all: an absent claim rather
+than a fourth class, so it can be reported separately instead of defaulting into either.
 
 | Field | Rule |
 |---|---|
@@ -126,8 +139,9 @@ Labels additionally record what could be seen, so label uncertainty is separable
 error: `release_visible`, `outcome_visible`, `ref_signal` (seen / not seen / not visible —
 the closest thing to external truth on ambiguous hits), plus `uncertain` and a note.
 
-**Live-play intervals** are labelled once per set (opening rush → set end). Throws outside them
-do not count, and the metric is computed per set.
+**Live-play intervals** are one per set (opening rush → set end). Throws outside them do not
+count, and the metric is computed per set. The start is detected rather than labelled
+([[set-start]]); the end still is not, so an interval currently runs to the next start.
 
 **Classified by destination, not intent.** A live ball that reaches an opponent eliminates them
 whatever the thrower meant by it, so an errant pass that crosses and connects *is* a throw with
@@ -170,6 +184,8 @@ Error propagation: metric error depends on throw recall (denominator) and outcom
 
 ```mermaid
 flowchart LR
+    V[Raw video] --> SS[Set start - balls on line + whistle + sprint]
+    SS --> LP[Live-play intervals]
     V[Raw video] --> D[Person detection + tracking]
     D --> T[Team assignment - jersey colour]
     D --> P[Pose - per track]
@@ -183,6 +199,7 @@ flowchart LR
     T --> A[Attribution]
     O --> A
     A --> E[Event timeline JSON]
+    LP --> M
     E --> M[Throw efficiency]
 ```
 
@@ -196,6 +213,7 @@ flowchart LR
 | Short post-release trajectory | direction → target side, outcome | crosses other balls, leaves frame | outcome |
 | Court homography | which side, far boundary, out-zone, metre-scale normalisation | pan/zoom, few visible lines | **shipped** — see [[court-geometry]] |
 | Audio (ball impact, whistle) | outcome corroboration, dead-ball | crowd noise, commentary | optional fusion — good ablation |
+| Balls on centre line ∧ whistle ∧ sprint | set start `t0` | ball occluded on the line, muddy audio (fallback: first ball leaves the line) | **shipped** — see [[set-start]] |
 | Global multi-ball tracking | ball possession counts | six identical balls, constant handoffs | **rejected** — not needed for the event and would consume the budget |
 
 ## Data
@@ -317,3 +335,10 @@ label-uncertainty case, not a model failure.
   held-out markings landing within 91 mm. Court filter cuts detections 38 → 9.7 per frame.
   Homography replaces the planned hand-drawn polygon, supplies the metre-defined margin
   band, the horizon-based scale model, and camera-drift detection.
+- 2026-08-25 — set start defined as armed state (balls on the centre line, court empty) ∧
+  whistle ∧ sprint, `t0` at the whistle. Audio alone rejected: refs whistle for hits too, and
+  the loudest whistle in the clip's first 35 s is a hit call, not the rush. Set end deferred.
+- 2026-08-25 — set start shipped and graduated to [[set-start]]. Layout-not-count test on the
+  centre-line band gives two windows in the clip; the whistle gated by them is the one start
+  among sixteen whistle events; the break for the balls confirms it 0.92 s later. Clip start
+  detected at frame 433 (17.32 s). Audio enters the pipeline here for the first time.

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "created": "2026-08-25T17:14:41+00:00",
+  "video": "wdbf2014_final_h2_set2.mp4",
+  "clip_sha256": "f8bcd160e9c799acfc866f46bb0f9b24d46e3caf191c380a9721024d834f28f6",
+  "pose_run": "yolo11x-pose-1920-013c4354",
+  "fps": 25.0,
+  "frame_count": 5250,
+  "clip_offset_s": 360.0,
+  "thresholds": {
+    "armed_min_balls": 4,
+    "armed_min_spread_m": 5.0,
+    "whistle_min_prominence_db": 20.0,
+    "sprint_min_players": 3
+  },
+  "sets": [
+    {
+      "status": "confirmed",
+      "start_frame": 433,
+      "start_s": 17.32,
+      "whistle_prominence_db": 37.4,
+      "sprint_frame": 456,
+      "first_ball_moves_frame": 492,
+      "armed": {
+        "start_frame": 135,
+        "end_frame": 490,
+        "max_balls": 6,
+        "max_spread_m": 7.97
+      },
+      "notes": []
+    },
+    {
+      "status": "no_whistle",
+      "start_frame": null,
+      "start_s": null,
+      "whistle_prominence_db": null,
+      "sprint_frame": null,
+      "first_ball_moves_frame": null,
+      "armed": {
+        "start_frame": 4920,
+        "end_frame": 5245,
+        "max_balls": 6,
+        "max_spread_m": 8.14
+      },
+      "notes": [
+        "balls laid out but no whistle before the layout broke or the clip ended"
+      ]
+    }
+  ]
+}
