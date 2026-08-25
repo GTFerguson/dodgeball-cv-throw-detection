@@ -17,6 +17,8 @@ with a 150 px far one. This layer answers all of that from a single fit.
 | `scripts/fit_court.py` | Fits the calibration from the clip, writes `data/court/<stem>.json` |
 | `src/court.py` | Reads it: transforms, zone tests, team half, scale normalisation, foot points |
 | `scripts/render_court_overlay.py` | Draws the fit over a frame, through the same reader |
+| `src/overlay.py` | The overlay palette, shared with the labelling tool; see [[design-system]] |
+| `scripts/test_overlay_contract.py` | Pins the tool's copy of the shared thresholds and colours to this one |
 | `scripts/test_fit_court.py`, `scripts/test_court.py` | Checks over the writer and the reader; the whole suite is `scripts/test_*.py` |
 
 ## Challenges, and how the system gets around them
@@ -164,12 +166,40 @@ margin generates no event. This matters concretely: the far-end queue stands wit
 about 1.5 m of the sideline and therefore sits inside the margin band, so band
 membership alone could never have been used as a "recently exited" proxy.
 
+### The same test, written twice, drifted
+
+The labelling tool is TypeScript and the pipeline is Python, so every shared
+threshold exists twice. "On court" diverged, and quietly: the pipeline tested the
+paint plus 0.10 m of slack, while the tool tested the paint plus the whole 1.5 m
+margin band. Both were internally consistent and both drew a plausible overlay,
+but the tool put **22.1 people per frame** on the roster where the pipeline put
+**9.1** — the eliminated queue, the officials and the front row of the crowd, each
+consuming a player key. The margin band is the ring a crossing is *observed
+through*, not a region of play, and as the flicker section above notes, it is
+exactly where the people who are not playing stand.
+
+| Rule | Foot point | Slack | People per frame | Frames over 12 |
+|---|---|---|---|---|
+| Tool, before | box bottom centre | 1.5 m (margin band) | 22.1 | 100% |
+| Both, now | ankle keypoints | 0.10 m | 9.1 | 5.6% |
+
+*Circumvented by pinning the copies to each other.* `scripts/test_overlay_contract.py`
+reads the tool's constants out of its own source and asserts them against this
+layer's, including that `margin_m` cannot appear in the in-play test at all. A
+value that can only be declared twice is at least not allowed to differ twice.
+The residual 5.6% of frames carrying more than twelve is not this defect: those
+are the pre-set and post-set windows, below.
+
 ### Team attribution normally needs an appearance model
 
 *Circumvented by the rules.* Teams may not cross the centre line, so the half a
 player stands in gives their team directly. `Court.half()` is the whole
 implementation. Jersey colour remains available as an independent cross-check
-rather than as the mechanism.
+rather than as the mechanism, and has since been measured as one: over 1,608
+on-court detections, torso colour puts the red kit in the near half **98%** of the
+time and the white kit in the far half **99%**. The two signals share no
+machinery, so a disagreement is informative — it means the foot point or the fit
+is wrong, not that a player changed sides.
 
 ### Camera drift would invalidate everything silently
 
@@ -227,6 +257,12 @@ if court.on_court(cx, cy):
 Transforms accept scalars or arrays. `on_court`, `in_margin`, `half`, `scale_at`
 and `normalise` all vectorise, so a whole frame's detections classify in one call.
 
+`on_court` and `in_margin` are disjoint and answer different questions. `on_court`
+is the paint plus 0.10 m of slack and means *in play*. `in_margin` is the ring
+outside it and means *court-adjacent* — somewhere a crossing can be observed, and
+where the eliminated queue and the officials stand. Anything that needs a roster
+wants the first; only crossing detection wants the second.
+
 ## Inspection
 
 ```
@@ -260,7 +296,18 @@ drift but not correct it, and segment refitting gives both.
 - One calibration per clip; segment-wise refitting is designed for but not built.
 - Geometry places the floor, not people. Deciding *who* is a player — as against a
   referee standing inside the lines — is left to roster matching, which fails them
-  by construction.
+  by construction. Measured, the gap this leaves is small during live play:
+  officials survive the boundary test about **0.1 times per frame** (17 of 1,608
+  on-court detections across 180 sampled live frames), because they work from the
+  sidelines. It is not small during dead balls, where they walk the court to lay
+  the balls out and the count reaches 17–18. That makes the filter a *when* rather
+  than a *who*, which is what `SetTimeline.live_play_intervals()` in
+  `src/setstart.py` supplies — gating on it removes the pre-set windows entirely
+  and leaves 3.5% of live frames over twelve, all of them in the post-set huddle
+  that the interval's bounded end cannot yet exclude. Nothing joins the two tests
+  yet: a roster is still "on court", not "on court and in play". Officials do also
+  separate on appearance if that is ever wanted — black tops measure V≈67 at low
+  saturation against 138 for the red kit and 167 for the white.
 - The dodgeball out-of-bounds is asserted to be the 18 m court boundary rather than
   the 1.50 m inset marking, on the evidence that players routinely stand between
   the two. Worth reconfirming from the foot-position distribution over the full
