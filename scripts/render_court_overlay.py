@@ -31,16 +31,23 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from court import (  # noqa: E402
     COURT_LENGTH_M, COURT_WIDTH_M, CENTRE_LINE_M, MARGIN_M, Court, foot_point,
 )
+from overlay import WIRE_OFF, bgr, casing_for, wire_for  # noqa: E402
 from pose import PoseRun  # noqa: E402
 
 OUT_ROOT = REPO_ROOT / "data" / "court"
 
 BOUNDARY_BGR = (0, 0, 255)
 CENTRE_BGR = (255, 60, 0)
-MARGIN_BGR = (255, 0, 255)
 GRID_BGR = (0, 220, 220)
-ON_COURT_BGR = (0, 255, 0)
-REJECTED_BGR = (110, 110, 110)
+
+# The margin band is court furniture, so it is kept clear of the wire hues: a
+# magenta band beside a violet far-team wire reads as the same statement twice.
+MARGIN_BGR = (150, 130, 110)
+
+# Out of play is drawn as the absence of a team rather than as a third team, and
+# the margin is separated from the rejected only by weight.
+OFF_BGR = bgr(WIRE_OFF)
+REJECTED_BGR = (90, 90, 92)
 
 # The grid is context, not the subject; drawn full strength it competes with the
 # boxes that are actually being judged.
@@ -69,23 +76,34 @@ def draw_court(img: np.ndarray, court: Court) -> np.ndarray:
 
 
 def draw_detections(img: np.ndarray, court: Court, detections: list[dict]) -> dict:
+    """Box every detection, coloured by the team whose half its feet are in.
+
+    Which half a foot point lands in is the whole of the team claim, so drawing
+    the box in that team's wire colour makes the claim checkable against the
+    kit underneath it: a red player in a violet box is the fit or the foot point
+    being wrong, and it is visible at a glance across the frame.
+    """
     tally = {"court": 0, "margin": 0, "rejected": 0, "near": 0, "far": 0, "box_fallback": 0}
     for det in detections:
         fx, fy, source = foot_point(det)
         cx, cy = court.to_court(fx, fy)
         on, band = bool(court.on_court(cx, cy)), bool(court.in_margin(cx, cy))
-        colour = ON_COURT_BGR if on else (MARGIN_BGR if band else REJECTED_BGR)
+        half = str(court.half(cy))
+        colour = bgr(wire_for(half)) if on else (OFF_BGR if band else REJECTED_BGR)
         tally["court" if on else ("margin" if band else "rejected")] += 1
         if on:
-            tally[str(court.half(cy))] += 1
+            tally[half] += 1
             if source == "box":
                 tally["box_fallback"] += 1
         x1, y1, x2, y2 = (int(v) for v in det["box"])
         cv2.rectangle(img, (x1, y1), (x2, y2), colour, 2 if on else 1)
         cv2.circle(img, (int(fx), int(fy)), 4, colour, -1)
         if on:
-            cv2.putText(img, f"{cx:.1f},{cy:.1f}", (x1, y1 - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, ON_COURT_BGR, 1, cv2.LINE_AA)
+            # Same casing rule as the tool's wires: the label is legible on the
+            # kit under it without the hue having to fight for it.
+            for weight, ink in ((3, bgr(casing_for(wire_for(half)))), (1, colour)):
+                cv2.putText(img, f"{cx:.1f},{cy:.1f}", (x1, y1 - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, ink, weight, cv2.LINE_AA)
     return tally
 
 
