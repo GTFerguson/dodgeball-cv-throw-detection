@@ -10,6 +10,13 @@
 #   .venv/bin/pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
 
 ultralytics==8.4.128
+# Ultralytics' tracker needs a linear-assignment solver and installs one on first
+# use if it is missing. Pinned here so a fresh clone gets the same solver rather
+# than whatever is current the day it runs.
+lap==0.5.13
+# Jersey-number reading. CRAFT's detection thresholds are dropped hard for print
+# on moving cloth; src/jersey.py carries the configuration and why.
+easyocr==1.7.2
 torch==2.13.0
 torchvision==0.28.0
 opencv-python==5.0.0.93
