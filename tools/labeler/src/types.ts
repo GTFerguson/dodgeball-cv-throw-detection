@@ -85,12 +85,46 @@ export interface ThrowEvent {
   note: string
 }
 
+// Where a live-play start came from. Ground truth accepted from a detector is
+// anchored to that detector, so which starts were placed blind and which were
+// accepted has to survive into the file: a bias that is recorded can be reported,
+// and one that is not is indistinguishable from no bias at all.
+export type LiveStartSource = 'manual' | 'model'
+
 // One set of live play: from the opening rush to the set ending. Throws outside
 // every interval do not count, and the derived metric is computed per set.
 export interface LivePlayInterval {
   id: string
   start_frame: number
   end_frame: number | null
+  start_source: LiveStartSource
+  /** What the detector claimed for this start, kept unchanged when the annotator
+   *  moves the frame, so the correction it made is measurable afterwards. */
+  detected_start_frame: number | null
+}
+
+// The annotator's judgement on one detected set start.
+//
+// Rejection is recorded rather than left as an absence, because an absence
+// cannot be told apart from a detection nobody has looked at yet, and that
+// difference is the precision denominator. A verdict names the armed window it
+// judged rather than a position in the detector's output: re-running detection
+// with other thresholds moves the windows, and a verdict that no longer matches
+// one has to surface as stale rather than silently attach to another set.
+export type SetVerdict = 'accepted' | 'rejected'
+
+export interface SetReview {
+  id: string
+  armed_start_frame: number
+  armed_end_frame: number
+  /** The start frame the detector claimed, or null where it claimed a window only. */
+  detected_frame: number | null
+  verdict: SetVerdict
+  /** The live-play interval an accepted start belongs to. Null for a rejection.
+   *  The accepted frame itself lives on that interval and nowhere else, so the
+   *  two can never drift apart. */
+  interval_id: string | null
+  reviewed: string
 }
 
 // A set start as scripts/detect_set_start.py found it. The three statuses are
@@ -141,7 +175,7 @@ export interface VideoInfo {
 }
 
 export interface LabelFile {
-  schema_version: 2
+  schema_version: 3
   video: string
   fps: number
   width: number
@@ -151,6 +185,7 @@ export interface LabelFile {
   updated: string
   events: ThrowEvent[]
   live_play: LivePlayInterval[]
+  set_reviews: SetReview[]
 }
 
 // The court as a camera calibration: a homography between source pixels and the

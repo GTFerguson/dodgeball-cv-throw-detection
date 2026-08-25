@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { LivePlayInterval, SetTimelineFile, ThrowEvent } from '../types'
+import type { LivePlayInterval, SetReview, SetTimelineFile, ThrowEvent } from '../types'
 import { formatSeconds } from '../lib/frames'
 import { detectedLivePlay, detectionSummary, setMarks, type SetMark } from '../lib/sets'
 import { SIGNAL_VAR, signalOf, type Signal } from './ui'
@@ -8,6 +8,7 @@ interface Props {
   events: ThrowEvent[]
   livePlay: LivePlayInterval[]
   sets: SetTimelineFile | null
+  reviews: SetReview[]
   frame: number
   totalFrames: number
   fps: number
@@ -40,7 +41,7 @@ const RIGHT = 12
  * version encoded the same data more elegantly and nobody could read it.
  */
 export function Timeline({
-  events, livePlay, sets, frame, totalFrames, fps, selectedId, onSeek, onSelect,
+  events, livePlay, sets, reviews, frame, totalFrames, fps, selectedId, onSeek, onSelect,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(900)
@@ -57,7 +58,7 @@ export function Timeline({
 
   const x = (f: number) => GUTTER + (f / totalFrames) * (width - GUTTER - RIGHT)
   const mid = TRACK_Y + TRACK_H / 2
-  const marks = setMarks(sets)
+  const marks = setMarks(sets, reviews)
   const detectedLive = detectedLivePlay(sets)
 
   const seekFromEvent = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -107,6 +108,23 @@ export function Timeline({
             width={Math.max(x(iv.end_frame ?? totalFrames) - x(iv.start_frame), 1)}
             height={TRACK_H} fill="var(--surface-2)"
           />
+        ))}
+        {livePlay.map((iv) => (
+          <g
+            key={`start-${iv.id}`}
+            onClick={(ev) => { ev.stopPropagation(); onSeek(iv.start_frame) }}
+            className="cursor-pointer"
+          >
+            <title>{`set starts at frame ${iv.start_frame} · ${
+              iv.start_source === 'model' ? 'accepted from the detector' : 'marked by hand'
+            }`}</title>
+            <line
+              x1={x(iv.start_frame)} y1={TRACK_Y + 1}
+              x2={x(iv.start_frame)} y2={TRACK_Y + TRACK_H - 1}
+              stroke="var(--ink)" strokeWidth={1.8}
+            />
+            <Pennant x={x(iv.start_frame)} y={TRACK_Y + 2.5} colour="var(--ink)" filled />
+          </g>
         ))}
 
         <text
@@ -198,6 +216,19 @@ export function Timeline({
           <svg width="12" height="12" aria-hidden="true"><Pennant x={4} y={2.5} filled={false} /></svg>
           balls laid out, no start
         </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+          <svg width="12" height="12" aria-hidden="true">
+            <Pennant x={4} y={2.5} colour="var(--ink)" filled />
+          </svg>
+          your set start
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+          <svg width="12" height="12" aria-hidden="true">
+            <Pennant x={4} y={2.5} colour="var(--ink-faint)" filled />
+            <line x1={1.5} y1={9.5} x2={11} y2={2} stroke="var(--ink-faint)" strokeWidth={1.3} />
+          </svg>
+          rejected
+        </span>
       </div>
     </div>
   )
@@ -210,23 +241,43 @@ export function Timeline({
  * found without one, which is a weaker claim and is drawn as a weaker mark.
  */
 function SetFlag({ x, mark }: { x: number; mark: SetMark }) {
+  // A rejected claim keeps its mark and loses its colour: the detector still said
+  // it, and hiding it would make the same run look cleaner after review than it
+  // was. An accepted one is underscored, and the start it became is drawn on the
+  // YOU track directly above — the gap between the two is the correction.
+  const colour = mark.verdict === 'rejected' ? 'var(--ink-faint)' : 'var(--sig-model)'
   return (
     <g>
       <line
         x1={x} y1={MODEL_Y + 1} x2={x} y2={MODEL_Y + TRACK_H - 1}
-        stroke="var(--sig-model)" strokeWidth={mark.timed ? 1.8 : 1.2}
+        stroke={colour} strokeWidth={mark.timed ? 1.8 : 1.2}
         strokeDasharray={mark.timed ? undefined : '2.4 2.2'}
       />
-      <Pennant x={x} y={MODEL_Y + 2.5} filled={mark.timed} />
+      <Pennant x={x} y={MODEL_Y + 2.5} colour={colour} filled={mark.timed} />
+      {mark.verdict === 'accepted' && (
+        <line
+          x1={x - 4} y1={MODEL_Y + TRACK_H - 3} x2={x + 4} y2={MODEL_Y + TRACK_H - 3}
+          stroke={colour} strokeWidth={2}
+        />
+      )}
+      {mark.verdict === 'rejected' && (
+        <line
+          x1={x - 2.5} y1={MODEL_Y + 8} x2={x + 8} y2={MODEL_Y + 1}
+          stroke={colour} strokeWidth={1.3}
+        />
+      )}
     </g>
   )
 }
 
-function Pennant({ x, y, filled }: { x: number; y: number; filled: boolean }) {
+function Pennant(
+  { x, y, filled, colour = 'var(--sig-model)' }:
+  { x: number; y: number; filled: boolean; colour?: string },
+) {
   const d = `M${x},${y} L${x + 7},${y + 3.2} L${x},${y + 6.4} Z`
   return filled
-    ? <path d={d} fill="var(--sig-model)" />
-    : <path d={d} fill="var(--surface)" stroke="var(--sig-model)" strokeWidth={1.2} />
+    ? <path d={d} fill={colour} />
+    : <path d={d} fill="var(--surface)" stroke={colour} strokeWidth={1.2} />
 }
 
 /** No fill means no throw: a fake is an outline, a pass a grey one, unresolved a

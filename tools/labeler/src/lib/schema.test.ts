@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { LabelFile, PoseManifest, ThrowEvent, VideoInfo } from '../types'
+import type { LabelFile, PoseManifest, SetReview, ThrowEvent, VideoInfo } from '../types'
 import { missingFields, newEvent } from '../types'
 import { snapToDetection } from './boxes'
 import { chunkFor, detectionsAt } from './pose'
-import { labelKey, newLabelFile, videoStem } from './storage'
+import { LABEL_SCHEMA_VERSION, labelKey, newLabelFile, videoStem } from './storage'
 
 const info: VideoInfo = {
   name: 'clip.mp4', fps: 25, width: 1920, height: 1080, frames: 5250, duration: 210,
@@ -33,17 +33,44 @@ function fullEvent(): ThrowEvent {
 }
 
 describe('label file', () => {
-  it('is written at schema version 2', () => {
-    expect(newLabelFile(info, 'default').schema_version).toBe(2)
+  it('is written at the current schema version', () => {
+    expect(newLabelFile(info, 'default').schema_version).toBe(LABEL_SCHEMA_VERSION)
   })
 
   it('round-trips through the wire unchanged', () => {
     const file: LabelFile = {
       ...newLabelFile(info, 'second'),
       events: [fullEvent(), newEvent('f1', 900, 'fake'), newEvent('p1', 950, 'pass')],
-      live_play: [{ id: 'l1', start_frame: 450, end_frame: 5100 }],
+      live_play: [{
+        id: 'l1', start_frame: 450, end_frame: 5100,
+        start_source: 'model', detected_start_frame: 433,
+      }],
+      set_reviews: [{
+        id: 'r1', armed_start_frame: 135, armed_end_frame: 490, detected_frame: 433,
+        verdict: 'accepted', interval_id: 'l1', reviewed: '2026-08-25T10:00:00.000Z',
+      }],
     }
     expect(JSON.parse(JSON.stringify(file))).toEqual(file)
+  })
+
+  it('records where a set start came from, not just when it was', () => {
+    const [interval] = newLabelFile(info, 'default').live_play.concat({
+      id: 'l1', start_frame: 450, end_frame: null,
+      start_source: 'model', detected_start_frame: 433,
+    })
+    expect(Object.keys(interval).sort())
+      .toEqual(['detected_start_frame', 'end_frame', 'id', 'start_frame', 'start_source'])
+  })
+
+  it('keeps a rejection, so unreviewed and rejected are never the same absence', () => {
+    const review: SetReview = {
+      id: 'r1', armed_start_frame: 4920, armed_end_frame: 5245, detected_frame: null,
+      verdict: 'rejected', interval_id: null, reviewed: '2026-08-25T10:00:00.000Z',
+    }
+    expect(Object.keys(review).sort()).toEqual([
+      'armed_start_frame', 'armed_end_frame', 'detected_frame', 'id', 'interval_id',
+      'reviewed', 'verdict',
+    ].sort())
   })
 
   it('carries every field the label is defined by', () => {

@@ -88,7 +88,9 @@ begins with ~18 s of pre-set.
 Set starts are also detected ([[set-start]]) and drawn on the `MODEL` track, so the annotator
 checks a frame the detector proposes rather than hunting for the rush. The tool reads them and
 never writes them: a track the annotator had edited would not be a track worth comparing
-against. Accepting a detected start into the label file with a key is still to do.
+against. It does take a verdict on each — `Shift+A` accepts one into the label file as a
+live-play start, `Shift+R` records it as wrong — and a start the detector missed is still marked
+by hand with `L`. Shipped; the design is in [[set-start#In the labelling tool]].
 
 ## Design
 
@@ -182,8 +184,9 @@ pass its own file. Label files are committed, footage and pose runs are not.
 **Court geometry comes from a fitted calibration, not a hand-picked polygon.**
 `data/court/<video-stem>.json` holds a homography between source pixels and the court's
 own metres, fitted from the painted lines, with a held-out error of 6–9 cm. The tool reads
-it and reasons in metres: "on court" is the paint plus `BOUNDARY_SLACK_M`, the tolerance for
-a player standing on the line. Team is the point's court y against `centre_line_m` — no
+it and reasons in metres: "on court" is the paint plus the tolerance a player standing on the
+line needs, which is a budget of ankle error in pixels converted at the point where it is
+spent — see [[court-geometry#The slack is spent in pixels, not metres]]. Team is the point's court y against `centre_line_m` — no
 centre-line-at-x interpolation, and correct however the line slants in the picture.
 
 The calibration's `margin_m` band is *not* the in-play test, and reading it as one was a

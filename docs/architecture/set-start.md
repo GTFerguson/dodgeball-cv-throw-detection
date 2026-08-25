@@ -17,7 +17,7 @@ with audio.
 | `src/setstart.py` | The three signals, and the reader for what they produce |
 | `scripts/detect_set_start.py` | Runs them over a clip, writes `data/sets/<stem>.json` |
 | `scripts/test_setstart.py` | Checks over both, including end to end on the clip |
-| `tools/labeler` | Draws the result on the timeline's `MODEL` track, read-only |
+| `tools/labeler` | Draws the result on the timeline's `MODEL` track and takes a verdict on it |
 
 ## The signature of a set start
 
@@ -158,8 +158,76 @@ of hunting for the rush. A layout with no start still gets a mark - a hollow pen
 stem - because dropping it would imply the detector found nothing there when what it found was
 balls laid out and no whistle to go with them.
 
-The tool serves `data/sets/` read-only. A track the annotator could edit is not a track worth
-comparing labels against.
+`data/sets/` itself is served read-only - a track the annotator could edit is not a track worth
+comparing labels against. What the annotator does instead is **judge** it, from the panel above
+the label panel or with `Shift+A` / `Shift+R` at any frame inside a detected window. Pressing a
+verdict that is already given takes it back.
+
+#### A verdict is a record, not a filter
+
+Accepting and rejecting both write a `SetReview` into the label file. Leaving a rejection as an
+absence would make it identical to a detection nobody has looked at yet, and those are different
+claims about the clip: the first is a false positive, the second is unreviewed work. Only one of
+them belongs in a precision denominator, and nothing downstream could tell them apart afterwards.
+
+A review names the **armed window** it judged rather than an index into the detector's output.
+Re-running detection with different thresholds moves the windows, and a verdict recorded
+positionally would silently reattach itself to a different set. A verdict matching no current
+window is reported as stale, which is the annotator's work to redo.
+
+#### Ground truth is not the accepted subset
+
+If accepting a detection were the only way to create a set start, recall would be 1.0 by
+construction - the truth set could not contain a start the detector never proposed. Starts are
+still marked by hand with `L`, and a hand-marked start with no pennant beneath it on the `MODEL`
+track is exactly a miss.
+
+The reverse case is a window the detector armed but never timed. Its reported frame is where the
+ball layout broke, which is later than the start by the reaction plus the run to the line, so it
+**cannot be accepted at all**: accepting it would write that lag into ground truth. It is
+rejected, or the start is placed by hand.
+
+#### Where the accepted frame lives
+
+An acceptance opens a live-play interval at the whistle frame, and the frame lives on that
+interval and nowhere else - the review points at the interval by id rather than copying it, so
+the two cannot drift apart. The interval's end is left open. The detector bounds a set by the
+next ball layout, and as the previous section says that is a bound rather than a measurement:
+accepting a start is not accepting it.
+
+When an interval already covers the detected frame, accepting **agrees with it** rather than
+adding a second start for one set. That is what makes a blind first pass followed by a
+reconciliation pass work: the annotator's own frame stays theirs, and the detector's claim is
+recorded alongside it.
+
+#### Accepted truth is anchored truth, and says so
+
+One keypress turning frame 433 into ground truth makes that truth depend on the model it will be
+used to score. The workflow is worth the risk and the anchoring is real, so it is recorded rather
+than assumed away: every interval carries `start_source` (`manual` or `model`) and, once a
+detection is attached, `detected_start_frame` - kept unchanged when the annotator moves the
+start. The distance between the two is the correction that was made, per accepted start, and it
+is what turns a claim about annotator bias into something checkable. It is the same reasoning
+that keeps a pose run's provenance on a snapped player box.
+
+| Field | On | Meaning |
+|---|---|---|
+| `start_source` | `live_play[]` | Whether the start was placed blind or accepted from a detection |
+| `detected_start_frame` | `live_play[]` | The frame the detector proposed, kept after any correction |
+| `armed_start_frame`, `armed_end_frame` | `set_reviews[]` | The window the verdict judged |
+| `detected_frame` | `set_reviews[]` | What was claimed, kept so a stale verdict is readable |
+| `verdict` | `set_reviews[]` | `accepted` or `rejected`; absent means unreviewed |
+| `interval_id` | `set_reviews[]` | The live-play interval an accepted start belongs to |
+
+#### The live-play badge over the frame
+
+Detection also gives the live-play badge over the frame something to say. It previously read
+`outside live play` whenever the frame fell outside a hand-marked interval, which with nothing
+marked meant always - and it read as a claim about the footage while actually being one about
+the label file. Those are now separate statements: inside a detected set the badge names it and
+says it is unmarked, outside every detected set it says no set is in progress, and with no
+detection at all it says only that live play has not been marked. The tool never asserts the
+match is dead without evidence that it is.
 
 ## Boundaries
 

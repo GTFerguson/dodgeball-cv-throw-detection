@@ -47,7 +47,7 @@ describe('player keys take the keyboard while a box is pending', () => {
 
   it('gives those keys back once the box is placed', () => {
     expect(press('t')).toEqual({ type: 'openRelease' })
-    expect(press('e')).toEqual({ type: 'setEnd' })
+    expect(press('e')).toEqual({ type: 'resolutionEnd' })
     expect(press('3')).toBeNull()
   })
 

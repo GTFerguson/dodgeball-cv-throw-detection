@@ -127,6 +127,9 @@ the deep tone is for text on that fill, and for marks and strokes on paper.
 Rules:
 
 - **`--sig-model` never marks a human label, and no outcome colour ever marks a prediction.**
+  An accepted detection therefore leaves `--sig-model` behind: once a person has made a claim
+  theirs, it is drawn in ink like everything else they are answerable for. Unreviewed keeps the
+  model's blue, and rejected falls to `--ink-faint` — still the model's, no longer worth ink.
   Whose claim it is must be readable from colour alone.
 - `unresolved` has **no token**. It is `--ink-faint` on a dashed outline, by design.
 - `pass` has **no token** either, for a different reason: only outcomes are coloured, and a
@@ -258,6 +261,13 @@ track reads as "nothing to compare", an empty one as "not built yet", and only t
   the outcome scale would make it read as one. Filled pennant on a solid stem: a start the
   detector timed from a whistle. Hollow pennant on a dashed stem: balls laid out with no whistle
   found — a weaker claim drawn as a weaker mark, per *absence of ink*.
+- A set start the annotator holds is **the same pennant in `--ink`, on the `YOU` track**. It is
+  drawn twice on purpose: the model's claim stays where it was made, and the vertical gap between
+  the two pennants is the correction the annotator applied to it. A pennant on `YOU` with nothing
+  under it is a start the detector missed.
+- A **judged detection keeps its mark.** Accepted: underscored on the model track — the start it
+  became is the pennant above. Rejected: struck through and dropped to `--ink-faint`, because
+  hiding it would make a run look cleaner after review than it was.
 - `fake` is a ring, `pass` a grey ring, `unresolved` a dashed ring, in-flight a filled dot
   with a pulsing halo. A fill means the ball crossed.
 - A model dot with nothing above it fired where there is no throw; a **✕ on the model track**

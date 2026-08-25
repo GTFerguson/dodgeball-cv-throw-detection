@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { DetectedSet, SetTimelineFile } from '../types'
-import { detectedLivePlay, detectionSummary, hasDetection, setMarks } from './sets'
+import type { DetectedSet, LivePlayInterval, SetTimelineFile } from '../types'
+import {
+  detectedLivePlay, detectionSummary, hasDetection, livePlayBadge, setMarks,
+} from './sets'
 
 const confirmed = (start: number, armed: number): DetectedSet => ({
   status: 'confirmed',
@@ -40,6 +42,17 @@ describe('marks', () => {
   it('puts a confirmed start on its whistle frame', () => {
     const [mark] = setMarks(timeline(confirmed(433, 135)))
     expect(mark).toMatchObject({ frame: 433, timed: true, status: 'confirmed' })
+  })
+
+  it('carries the annotator\'s verdict, so a judged claim is not redrawn as a fresh one', () => {
+    const set = confirmed(433, 135)
+    const review = {
+      id: 'r1', armed_start_frame: 135, armed_end_frame: 493, detected_frame: 433,
+      verdict: 'accepted' as const, interval_id: 'i1', reviewed: '2026-08-25T10:00:00.000Z',
+    }
+    expect(setMarks(timeline(set), [review])[0]).toMatchObject({ verdict: 'accepted' })
+    expect(setMarks(timeline(set))[0].verdict).toBeNull()
+    expect(setMarks(timeline(set))[0].label).toContain('not yet reviewed')
   })
 
   it('still marks a layout that never produced a start', () => {
@@ -83,5 +96,45 @@ describe('summary', () => {
 
   it('says how to produce one when there is none', () => {
     expect(detectionSummary(null)).toContain('detect_set_start.py')
+  })
+})
+
+describe('live play badge', () => {
+  const detected = timeline(confirmed(433, 135), layoutOnly(4920))
+  const hand = (start: number, end: number | null): LivePlayInterval => ({
+    id: 'a', start_frame: start, end_frame: end,
+    start_source: 'manual', detected_start_frame: null,
+  })
+  const marked = [hand(400, 4000)]
+
+  it('says nothing inside an interval the annotator marked', () => {
+    expect(livePlayBadge(marked, detected, 1000)).toBeNull()
+  })
+
+  it('names the detected set when the annotator has not marked it', () => {
+    expect(livePlayBadge([], detected, 1000))
+      .toEqual({ text: 'set 1 · not marked', source: 'model' })
+  })
+
+  it('reports no set in progress only where a set is known to be absent', () => {
+    expect(livePlayBadge([], detected, 10))
+      .toEqual({ text: 'no set in progress', source: 'model' })
+  })
+
+  it('claims nothing about the match without detection to support it', () => {
+    expect(livePlayBadge([], null, 10))
+      .toEqual({ text: 'live play not marked', source: 'label' })
+  })
+
+  it('speaks for the labels once intervals exist but detection does not', () => {
+    expect(livePlayBadge(marked, null, 4500))
+      .toEqual({ text: 'outside live play', source: 'label' })
+  })
+
+  it('prefers what the annotator marked over what was detected', () => {
+    // Frame 4500 is outside the detected set but inside a marked interval that
+    // runs past it; the annotator's claim wins.
+    expect(livePlayBadge([hand(400, 5000)], detected, 4950))
+      .toBeNull()
   })
 })

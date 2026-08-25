@@ -33,7 +33,25 @@ export async function listFootage(): Promise<VideoInfo[]> {
 }
 
 export async function loadLabels(key: string): Promise<LabelFile | null> {
-  return getJson<LabelFile>(`/api/labels/${encodeURIComponent(key)}`)
+  const raw = await getJson<LabelFile>(`/api/labels/${encodeURIComponent(key)}`)
+  return raw && upgrade(raw)
+}
+
+// A file written before set starts could be reviewed is read as what it was:
+// every start placed by hand with no detector behind it, and no detection
+// judged either way. Filling the new fields on load rather than at every read
+// site keeps the rest of the tool from having to know two shapes.
+function upgrade(file: LabelFile): LabelFile {
+  return {
+    ...file,
+    schema_version: LABEL_SCHEMA_VERSION,
+    live_play: (file.live_play ?? []).map((iv) => ({
+      ...iv,
+      start_source: iv.start_source ?? 'manual',
+      detected_start_frame: iv.detected_start_frame ?? null,
+    })),
+    set_reviews: file.set_reviews ?? [],
+  }
 }
 
 export async function saveLabels(key: string, file: LabelFile): Promise<void> {
@@ -70,10 +88,12 @@ export async function loadSets(stem: string): Promise<SetTimelineFile | null> {
 }
 
 
+export const LABEL_SCHEMA_VERSION = 3
+
 export function newLabelFile(info: VideoInfo, annotator: string): LabelFile {
   const now = new Date().toISOString()
   return {
-    schema_version: 2,
+    schema_version: LABEL_SCHEMA_VERSION,
     video: info.name,
     fps: info.fps,
     width: info.width,
@@ -83,5 +103,6 @@ export function newLabelFile(info: VideoInfo, annotator: string): LabelFile {
     updated: now,
     events: [],
     live_play: [],
+    set_reviews: [],
   }
 }

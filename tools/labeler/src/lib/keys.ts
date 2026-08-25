@@ -1,4 +1,4 @@
-import type { Outcome, RefSignal } from '../types'
+import type { Outcome, RefSignal, SetVerdict } from '../types'
 import { FAR_KEYS, NEAR_KEYS } from './players'
 
 // Which box a player key will fill. While one is armed the player keys own the
@@ -23,8 +23,12 @@ export type Command =
   | { type: 'outcome'; outcome: Outcome }
   | { type: 'snapPlayer'; playerKey: string }
   | { type: 'cycleOpen'; dir: 1 | -1 }
-  | { type: 'setStart' }
-  | { type: 'setEnd' }
+  // The bounds of one throw. Named for the moments they mark, because "set
+  // start" in this sport is the whistle that opens a set and has nothing to do
+  // with either of them.
+  | { type: 'windupStart' }
+  | { type: 'resolutionEnd' }
+  | { type: 'judgeSet'; verdict: SetVerdict }
   | { type: 'cyclePlacement' }
   | { type: 'toggle'; field: ToggleField }
   | { type: 'cycleTeam' }
@@ -107,6 +111,10 @@ export function resolveKey(e: KeyEventLike, ctx: KeyContext): Command | null {
     case '0': return { type: 'resetView' }
     case 'Delete': case 'Backspace': return { type: 'deleteEvent' }
     case 'M': return { type: 'mute' }
+    // Shifted, because a verdict on a detection is a rarer act than any of the
+    // labelling keys and must not be one keypress away from a mistyped outcome.
+    case 'A': return { type: 'judgeSet', verdict: 'accepted' }
+    case 'R': return { type: 'judgeSet', verdict: 'rejected' }
   }
 
   if (lower in OUTCOME_KEYS && !e.shiftKey) {
@@ -119,8 +127,8 @@ export function resolveKey(e: KeyEventLike, ctx: KeyContext): Command | null {
     case 't': return { type: 'openRelease' }
     case 'f': return { type: 'openFake' }
     case 'p': return { type: 'markPass' }
-    case 's': return { type: 'setStart' }
-    case 'e': return { type: 'setEnd' }
+    case 's': return { type: 'windupStart' }
+    case 'e': return { type: 'resolutionEnd' }
     case 'g': return { type: 'cyclePlacement' }
     case 'v': return { type: 'toggle', field: 'release_visible' }
     case 'o': return { type: 'toggle', field: 'outcome_visible' }

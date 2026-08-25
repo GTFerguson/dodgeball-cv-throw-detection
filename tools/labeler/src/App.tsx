@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
-  Box, CourtConfig, LabelFile, PoseManifest, RefSignal, SetTimelineFile, Team, ThrowEvent,
-  VideoInfo,
+  Box, CourtConfig, DetectedSet, LabelFile, PoseManifest, RefSignal, SetTimelineFile, SetVerdict,
+  Team, ThrowEvent, VideoInfo,
 } from './types'
 import { REF_SIGNALS, TARGETED_OUTCOMES } from './types'
 import { clampFrame, frameToSeekTime } from './lib/frames'
 import {
-  closeThrow, cycleOpen, deleteEvent, displayOrder, isLive, markLiveEnd, markLiveStart,
-  markPass, openFake, openRelease, restoreEvent, selectedEvent, updateEvent, type EventState,
+  closeThrow, cycleOpen, deleteEvent, displayOrder, markLiveEnd, markLiveStart, markPass,
+  openFake, openRelease, restoreEvent, selectedEvent, updateEvent, type EventState,
 } from './lib/events'
+import {
+  detectionAt, toggleVerdict, verdictFor, type ReviewState,
+} from './lib/review'
 import { drawnBox, nudgeBox, snapToDetection, withBox } from './lib/boxes'
-import { inferTeam } from './lib/court'
-import { playerSlots, slotForKey } from './lib/players'
+import { inferTeam, IN_PLAY_HOLD_FRAMES } from './lib/court'
+import { heldPositions, playerSlots, slotForKey } from './lib/players'
+import { livePlayBadge } from './lib/sets'
 import { PoseCache } from './lib/pose'
 import { resolveKey, type Command, type PlacementTarget } from './lib/keys'
 import {
@@ -24,6 +28,7 @@ import { InstrumentBar, SPEEDS } from './components/InstrumentBar'
 import { Timeline } from './components/Timeline'
 import { EventList } from './components/EventList'
 import { EventPanel } from './components/EventPanel'
+import { SetPanel } from './components/SetPanel'
 
 const AUTOSAVE_MS = 800
 
@@ -128,7 +133,13 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   const totalFrames = info.frames ?? Math.round(duration * fps)
   const events = useMemo(() => file?.events ?? [], [file])
   const livePlay = useMemo(() => file?.live_play ?? [], [file])
+  const reviews = useMemo(() => file?.set_reviews ?? [], [file])
   const state: EventState = useMemo(() => ({ events, selectedId }), [events, selectedId])
+  // A dot in the model's colour is what separates "the detector places you in a
+  // set" from "your labels do", which the old single-state badge could not say.
+  const liveBadge = useMemo(
+    () => livePlayBadge(livePlay, sets, frame), [livePlay, sets, frame],
+  )
   const selected = selectedEvent(state)
 
   const flash = useCallback((msg: string) => {
@@ -183,6 +194,22 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     setSaveState('dirty')
   }, [])
 
+  // A verdict writes to both halves of the file at once: the review log, and the
+  // live-play interval an accepted start opens. They are saved together because
+  // a review pointing at an interval that was never written is a broken file.
+  const judge = useCallback((set: DetectedSet, verdict: SetVerdict) => {
+    const before: ReviewState = { reviews, livePlay }
+    const next = toggleVerdict(
+      before, set, verdict,
+      { review: newId(), interval: newId() }, new Date().toISOString(),
+    )
+    if (!next) return flash('the detector timed no start here — mark one with L')
+    setFile((f) => (f ? { ...f, set_reviews: next.reviews, live_play: next.livePlay } : f))
+    setSaveState('dirty')
+    const given = verdictFor(next.reviews, set)
+    flash(given ? `set start ${given}` : 'verdict cleared')
+  }, [reviews, livePlay, flash])
+
   // ── pose ─────────────────────────────────────────────────────────────────
 
   const manifest = useMemo(() => runs.find((r) => r.run_id === runId) ?? null, [runs, runId])
@@ -203,7 +230,25 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     () => { void poseVersion; return cacheRef.current?.detections(frame) ?? [] },
     [frame, poseVersion],
   )
-  const players = useMemo(() => playerSlots(detections, court), [detections, court])
+  // The frames the in-play hold looks at. Sampled rather than every frame in the
+  // window: a player who is standing still is standing still at frame f-20 as
+  // well as f-19, and fifty lookups per render buys nothing over ten.
+  const nearby = useMemo(() => {
+    void poseVersion
+    const cache = cacheRef.current
+    if (!cache || !court) return []
+    const frames = []
+    for (let d = -IN_PLAY_HOLD_FRAMES; d <= IN_PLAY_HOLD_FRAMES; d += 5) {
+      if (d === 0 || frame + d < 0) continue
+      const at = cache.detections(frame + d)
+      if (at) frames.push(at)
+    }
+    return heldPositions(frames, court)
+  }, [frame, court, poseVersion])
+
+  const players = useMemo(
+    () => playerSlots(detections, court, nearby), [detections, court, nearby],
+  )
   const offCourt = useMemo(() => {
     if (!court) return detections
     const kept = new Set(players.map((p) => p.index))
@@ -344,8 +389,13 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
         setArmed(true)
         return flash(`placing ${next}`)
       }
-      case 'setStart': return patchSelected({ start_frame: frame })
-      case 'setEnd': return patchSelected({ end_frame: frame })
+      case 'windupStart': return patchSelected({ start_frame: frame })
+      case 'resolutionEnd': return patchSelected({ end_frame: frame })
+      case 'judgeSet': {
+        const set = detectionAt(sets, frame)
+        if (!set) return flash('no detected set start at this frame')
+        return judge(set, cmd.verdict)
+      }
       case 'toggle': return selected && patchSelected({ [cmd.field]: !selected[cmd.field] })
       case 'cycleTeam': {
         if (!selected) return
@@ -396,8 +446,8 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     }
   }, [
     playPause, step, seekSeconds, seekFrame, changeSpeed, apply, patchSelected, placeBox,
-    editActiveBox, setLive, flash, state, selected, players, focus, frame, manifest, court,
-    livePlay, lastDeleted, speed, totalFrames, armed, info.width, info.height,
+    editActiveBox, setLive, judge, flash, state, selected, players, focus, frame, manifest,
+    court, livePlay, sets, lastDeleted, speed, totalFrames, armed, info.width, info.height,
   ])
 
   useEffect(() => {
@@ -526,10 +576,13 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
                 {openCount} {openCount === 1 ? 'throw' : 'throws'} in flight
               </div>
             )}
-            {!isLive(livePlay, frame) && (
-              <div className="absolute left-2.5 bottom-2.5 px-2 py-1 rounded shadow-panel bg-surface border border-rule
-                text-[10.5px] uppercase tracking-[.07em] text-ink-mute">
-                outside live play
+            {liveBadge && (
+              <div className="absolute left-2.5 bottom-2.5 flex items-center gap-1.5 px-2 py-1 rounded shadow-panel
+                bg-surface border border-rule text-[10.5px] uppercase tracking-[.07em] text-ink-mute">
+                {liveBadge.source === 'model' && (
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--sig-model)' }} />
+                )}
+                {liveBadge.text}
               </div>
             )}
             {toast && (
@@ -544,6 +597,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
             events={displayOrder(events)}
             livePlay={livePlay}
             sets={sets}
+            reviews={reviews}
             frame={frame}
             totalFrames={totalFrames}
             fps={fps}
@@ -568,6 +622,14 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
         </main>
 
         <aside className="flex flex-col min-h-0 bg-surface border border-rule rounded-md shadow-panel overflow-hidden">
+          <SetPanel
+            timeline={sets}
+            reviews={reviews}
+            livePlay={livePlay}
+            fps={fps}
+            onJudge={judge}
+            onSeek={seekFrame}
+          />
           <EventPanel
             event={selected}
             frame={frame}

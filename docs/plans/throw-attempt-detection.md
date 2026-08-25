@@ -338,6 +338,28 @@ label-uncertainty case, not a model failure.
 - 2026-08-25 — set start defined as armed state (balls on the centre line, court empty) ∧
   whistle ∧ sprint, `t0` at the whistle. Audio alone rejected: refs whistle for hits too, and
   the loudest whistle in the clip's first 35 s is a hit call, not the rush. Set end deferred.
+- 2026-08-25 — detected set starts became reviewable in the tool and graduated to
+  [[set-start#A verdict is a record, not a filter]]. Accepting one opens live play at the
+  whistle frame; rejecting is recorded rather than left as an absence, because "not accepted"
+  and "not looked at" are the same silence in a file and a different claim about the clip.
+  Ground truth is not the accepted subset — a start the detector missed is still marked by
+  hand, or recall would be 1.0 by construction — and every accepted start carries the frame
+  the model proposed alongside the annotator's, so the anchoring that one-keypress acceptance
+  introduces is measurable rather than assumed away.
+- 2026-08-25 — boundary slack re-expressed as pixels and graduated to
+  [[court-geometry#The slack is spent in pixels, not metres]]. A flat 0.10 m bought ten pixels
+  of ankle tolerance at the near baseline and under two at the far one, so the far-side waiting
+  line strobed in and out of play: 142 of 156 short excursions were at that one boundary. Same
+  budget spent per row is tighter than the old rule near the camera and four times looser where
+  the pixels are scarce. A symmetric in-play hold absorbs the rest, taking excursions that
+  return from 107 to 13 over the clip.
+- 2026-08-25 — player identity shipped and graduated to [[player-identity]]. Outside this
+  plan's scope and budget: it was taken up because tracking is what the boundary hold needed,
+  and it turned into a subsystem. ByteTrack over the precomputed pose run holds twelve tracks
+  across more than half the evaluation window with no appearance model at all; jersey numbers
+  are read only on each track's largest crops and confirmed by agreement, giving five correct
+  numbers over 85 tracks. Nothing downstream consumes it yet — attribution is still to build,
+  and the number's veto has no merge stage to veto.
 - 2026-08-25 — set start shipped and graduated to [[set-start]]. Layout-not-count test on the
   centre-line band gives two windows in the clip; the whistle gated by them is the one start
   among sixteen whistle events; the break for the balls confirms it 0.92 s later. Clip start

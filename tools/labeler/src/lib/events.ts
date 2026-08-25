@@ -1,4 +1,6 @@
-import type { EventKind, LivePlayInterval, Outcome, ThrowEvent } from '../types'
+import type {
+  EventKind, LivePlayInterval, LiveStartSource, Outcome, ThrowEvent,
+} from '../types'
 import { newEvent } from '../types'
 
 /**
@@ -141,11 +143,29 @@ export function restoreEvent(state: EventState, event: ThrowEvent): EventState {
 
 // ── live play ──────────────────────────────────────────────────────────────
 
+/**
+ * Open a set at this frame.
+ *
+ * `origin` says whose claim the start is. A start placed by hand and one
+ * accepted from the detector are the same instant to everything downstream, and
+ * they are not the same evidence: only the first was arrived at without seeing
+ * what the model said.
+ */
 export function markLiveStart(
   intervals: LivePlayInterval[], id: string, frame: number,
+  origin: LiveStartOrigin = MANUAL_START,
 ): LivePlayInterval[] {
-  return [...intervals, { id, start_frame: frame, end_frame: null }]
-    .sort((a, b) => a.start_frame - b.start_frame)
+  const interval: LivePlayInterval = { id, start_frame: frame, end_frame: null, ...origin }
+  return [...intervals, interval].sort((a, b) => a.start_frame - b.start_frame)
+}
+
+export interface LiveStartOrigin {
+  start_source: LiveStartSource
+  detected_start_frame: number | null
+}
+
+export const MANUAL_START: LiveStartOrigin = {
+  start_source: 'manual', detected_start_frame: null,
 }
 
 /** Close the latest interval that is still open, or the one containing the frame. */
@@ -158,10 +178,17 @@ export function markLiveEnd(
   return intervals.map((i) => (i.id === target.id ? { ...i, end_frame: frame } : i))
 }
 
-export function isLive(intervals: LivePlayInterval[], frame: number): boolean {
-  return intervals.some(
+/** The set a frame falls inside, or null outside live play. */
+export function intervalAt(
+  intervals: LivePlayInterval[], frame: number,
+): LivePlayInterval | null {
+  return intervals.find(
     (i) => frame >= i.start_frame && (i.end_frame == null || frame <= i.end_frame),
-  )
+  ) ?? null
+}
+
+export function isLive(intervals: LivePlayInterval[], frame: number): boolean {
+  return intervalAt(intervals, frame) != null
 }
 
 /** Which set a frame falls in, counting intervals in time order from 1, or null
