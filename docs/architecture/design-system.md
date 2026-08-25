@@ -249,7 +249,15 @@ band of vertical space in a layout that has none to spare.
 The signature. The same clip drawn twice: `YOU` (labels) above, `MODEL` (predictions) below,
 sharing one time axis so comparison is vertical.
 
+`MODEL` currently carries set starts and nothing else — throw prediction has not been built. The
+track is drawn **empty with a caption naming the script that fills it**, never hidden: an absent
+track reads as "nothing to compare", an empty one as "not built yet", and only the second is true.
+
 - One dot per throw at its **release frame**, coloured by outcome.
+- A **set start is a pennant, not a dot**. It is a moment rather than a throw, and putting it on
+  the outcome scale would make it read as one. Filled pennant on a solid stem: a start the
+  detector timed from a whistle. Hollow pennant on a dashed stem: balls laid out with no whistle
+  found — a weaker claim drawn as a weaker mark, per *absence of ink*.
 - `fake` is a ring, `pass` a grey ring, `unresolved` a dashed ring, in-flight a filled dot
   with a pulsing halo. A fill means the ball crossed.
 - A model dot with nothing above it fired where there is no throw; a **✕ on the model track**

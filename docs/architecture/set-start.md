@@ -17,6 +17,7 @@ with audio.
 | `src/setstart.py` | The three signals, and the reader for what they produce |
 | `scripts/detect_set_start.py` | Runs them over a clip, writes `data/sets/<stem>.json` |
 | `scripts/test_setstart.py` | Checks over both, including end to end on the clip |
+| `tools/labeler` | Draws the result on the timeline's `MODEL` track, read-only |
 
 ## The signature of a set start
 
@@ -148,6 +149,17 @@ which needs the outcome resolver this layer sits upstream of. Every interval
 carries `end_is_bound=True` to say so, rather than presenting a bound as a
 measurement. On the evaluation clip the interval runs 17.32 s -> 196.80 s, which
 overshoots the real end by the huddle between sets.
+
+### In the labelling tool
+
+The timeline's `MODEL` track draws each detected start as a pennant at its whistle frame, with
+the detected live-play band shaded behind it, so the annotator checks a proposed frame instead
+of hunting for the rush. A layout with no start still gets a mark - a hollow pennant on a dashed
+stem - because dropping it would imply the detector found nothing there when what it found was
+balls laid out and no whistle to go with them.
+
+The tool serves `data/sets/` read-only. A track the annotator could edit is not a track worth
+comparing labels against.
 
 ## Boundaries
 

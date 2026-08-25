@@ -1,6 +1,6 @@
 import { isUsableCourt } from './court'
 import type {
-  CourtConfig, LabelFile, PoseChunk, PoseManifest, VideoInfo,
+  CourtConfig, LabelFile, PoseChunk, PoseManifest, SetTimelineFile, VideoInfo,
 } from '../types'
 
 export function videoStem(videoName: string): string {
@@ -59,6 +59,14 @@ export async function loadPoseChunk(
 export async function loadCourt(stem: string): Promise<CourtConfig | null> {
   const raw = await getJson<Partial<CourtConfig>>(`/api/court/${encodeURIComponent(stem)}`)
   return isUsableCourt(raw) ? raw : null
+}
+
+// Set starts come from the detection step, not from this tool. Absent means the
+// model track has nothing to show yet, which is a state the timeline draws
+// rather than an error: labelling works fine without it.
+export async function loadSets(stem: string): Promise<SetTimelineFile | null> {
+  const raw = await getJson<SetTimelineFile>(`/api/sets/${encodeURIComponent(stem)}`)
+  return raw && Array.isArray(raw.sets) ? raw : null
 }
 
 

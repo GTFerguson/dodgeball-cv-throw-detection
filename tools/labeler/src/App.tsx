@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
-  Box, CourtConfig, LabelFile, PoseManifest, RefSignal, Team, ThrowEvent, VideoInfo,
+  Box, CourtConfig, LabelFile, PoseManifest, RefSignal, SetTimelineFile, Team, ThrowEvent,
+  VideoInfo,
 } from './types'
 import { REF_SIGNALS, TARGETED_OUTCOMES } from './types'
 import { clampFrame, frameToSeekTime } from './lib/frames'
@@ -14,7 +15,7 @@ import { playerSlots, slotForKey } from './lib/players'
 import { PoseCache } from './lib/pose'
 import { resolveKey, type Command, type PlacementTarget } from './lib/keys'
 import {
-  labelKey, listFootage, listPoseRuns, loadCourt, loadLabels, loadPoseChunk,
+  labelKey, listFootage, listPoseRuns, loadCourt, loadLabels, loadPoseChunk, loadSets,
   newLabelFile, saveLabels, videoStem,
 } from './lib/storage'
 import { ALL_LAYERS, Stage, type Layers, type OverlayBox, type StageHandle } from './components/Stage'
@@ -117,6 +118,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   const [armed, setArmed] = useState(false)
 
   const [court, setCourt] = useState<CourtConfig | null>(null)
+  const [sets, setSets] = useState<SetTimelineFile | null>(null)
   const [layers, setLayers] = useState<Layers>(ALL_LAYERS)
 
   const [runs, setRuns] = useState<PoseManifest[]>([])
@@ -141,6 +143,8 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   }, [key, info, annotator])
 
   useEffect(() => { loadCourt(stem).then(setCourt).catch(() => setCourt(null)) }, [stem])
+
+  useEffect(() => { loadSets(stem).then(setSets).catch(() => setSets(null)) }, [stem])
 
   useEffect(() => {
     listPoseRuns(stem).then((r) => {
@@ -539,6 +543,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
           <Timeline
             events={displayOrder(events)}
             livePlay={livePlay}
+            sets={sets}
             frame={frame}
             totalFrames={totalFrames}
             fps={fps}

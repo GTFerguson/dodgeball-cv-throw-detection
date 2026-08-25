@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import type { LivePlayInterval, ThrowEvent } from '../types'
+import type { LivePlayInterval, SetTimelineFile, ThrowEvent } from '../types'
 import { formatSeconds } from '../lib/frames'
+import { detectedLivePlay, detectionSummary, setMarks, type SetMark } from '../lib/sets'
 import { SIGNAL_VAR, signalOf, type Signal } from './ui'
 
 interface Props {
   events: ThrowEvent[]
   livePlay: LivePlayInterval[]
+  sets: SetTimelineFile | null
   frame: number
   totalFrames: number
   fps: number
@@ -16,7 +18,9 @@ interface Props {
 
 const TRACK_H = 26
 const TRACK_Y = 22
-const RULER_Y = TRACK_Y + TRACK_H + 16
+const TRACK_GAP = 7
+const MODEL_Y = TRACK_Y + TRACK_H + TRACK_GAP
+const RULER_Y = MODEL_Y + TRACK_H + 15
 const HEIGHT = RULER_Y + 14
 const GUTTER = 52
 const RIGHT = 12
@@ -25,11 +29,18 @@ const RIGHT = 12
  * One dot per throw, at the release frame — the frame every tolerance is measured
  * against. The shaded band is live play, because a throw outside it does not count.
  *
- * The track is named and legended rather than left as an abstract axis: the first
+ * Two tracks sharing one time axis, so a claim and its counterpart are compared by
+ * looking straight down rather than by reading two numbers. `YOU` carries the
+ * labels; `MODEL` carries what the pipeline produced, which for now is set starts
+ * and nothing else — the track is drawn empty rather than hidden, because an
+ * absent track reads as "nothing to compare" and an empty one reads as "not built
+ * yet", and only the second is true.
+ *
+ * The tracks are named and legended rather than left as abstract axes: the first
  * version encoded the same data more elegantly and nobody could read it.
  */
 export function Timeline({
-  events, livePlay, frame, totalFrames, fps, selectedId, onSeek, onSelect,
+  events, livePlay, sets, frame, totalFrames, fps, selectedId, onSeek, onSelect,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(900)
@@ -46,6 +57,8 @@ export function Timeline({
 
   const x = (f: number) => GUTTER + (f / totalFrames) * (width - GUTTER - RIGHT)
   const mid = TRACK_Y + TRACK_H / 2
+  const marks = setMarks(sets)
+  const detectedLive = detectedLivePlay(sets)
 
   const seekFromEvent = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -96,6 +109,44 @@ export function Timeline({
           />
         ))}
 
+        <text
+          x={0} y={MODEL_Y + TRACK_H / 2 + 1} fill="var(--ink-faint)" fontSize="10"
+          fontWeight="600" letterSpacing=".08em" dominantBaseline="middle"
+        >MODEL</text>
+        <text
+          x={0} y={MODEL_Y + TRACK_H / 2 + 12} fill="var(--ink-faint)" fontSize="8.5"
+          dominantBaseline="middle"
+        >detected</text>
+
+        <rect
+          x={x(0)} y={MODEL_Y} width={x(totalFrames) - x(0)} height={TRACK_H}
+          fill="var(--surface)" stroke="var(--rule)" strokeWidth={1} rx={2}
+        />
+        {detectedLive.map((iv) => (
+          <rect
+            key={iv.id}
+            x={x(iv.start_frame)} y={MODEL_Y}
+            width={Math.max(x(iv.end_frame ?? totalFrames) - x(iv.start_frame), 1)}
+            height={TRACK_H} fill="var(--sig-model-soft)"
+          />
+        ))}
+        {marks.map((m) => (
+          <g
+            key={m.id}
+            onClick={(ev) => { ev.stopPropagation(); onSeek(m.frame) }}
+            className="cursor-pointer"
+          >
+            <title>{m.label}</title>
+            <SetFlag x={x(m.frame)} mark={m} />
+          </g>
+        ))}
+        {!marks.length && (
+          <text
+            x={(x(0) + x(totalFrames)) / 2} y={MODEL_Y + TRACK_H / 2 + 1}
+            fill="var(--ink-faint)" fontSize="10" textAnchor="middle" dominantBaseline="middle"
+          >{detectionSummary(sets)}</text>
+        )}
+
         {events.map((e) => {
           const sig = signalOf(e)
           const cx = x(e.release_frame)
@@ -114,7 +165,7 @@ export function Timeline({
           )
         })}
 
-        <line x1={x(frame)} y1={TRACK_Y - 9} x2={x(frame)} y2={TRACK_Y + TRACK_H + 5}
+        <line x1={x(frame)} y1={TRACK_Y - 9} x2={x(frame)} y2={MODEL_Y + TRACK_H + 5}
           stroke="var(--ink)" strokeWidth={1.5} pointerEvents="none" />
         <path d={`M${x(frame) - 5},${TRACK_Y - 11} L${x(frame) + 5},${TRACK_Y - 11} L${x(frame)},${TRACK_Y - 4} Z`}
           fill="var(--ink)" pointerEvents="none" />
@@ -138,9 +189,44 @@ export function Timeline({
             {s === 'open' ? 'in flight' : s}
           </span>
         ))}
+        <span className="w-px h-3 bg-rule" aria-hidden="true" />
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+          <svg width="12" height="12" aria-hidden="true"><Pennant x={4} y={2.5} filled /></svg>
+          set start (whistle)
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+          <svg width="12" height="12" aria-hidden="true"><Pennant x={4} y={2.5} filled={false} /></svg>
+          balls laid out, no start
+        </span>
       </div>
     </div>
   )
+}
+
+/**
+ * A set start, drawn as a moment rather than as a dot on the outcome scale: it is
+ * not a throw and must not read as one. A filled pennant is a start the detector
+ * timed from a whistle; a hollow pennant on a dashed stem is a ball layout it
+ * found without one, which is a weaker claim and is drawn as a weaker mark.
+ */
+function SetFlag({ x, mark }: { x: number; mark: SetMark }) {
+  return (
+    <g>
+      <line
+        x1={x} y1={MODEL_Y + 1} x2={x} y2={MODEL_Y + TRACK_H - 1}
+        stroke="var(--sig-model)" strokeWidth={mark.timed ? 1.8 : 1.2}
+        strokeDasharray={mark.timed ? undefined : '2.4 2.2'}
+      />
+      <Pennant x={x} y={MODEL_Y + 2.5} filled={mark.timed} />
+    </g>
+  )
+}
+
+function Pennant({ x, y, filled }: { x: number; y: number; filled: boolean }) {
+  const d = `M${x},${y} L${x + 7},${y + 3.2} L${x},${y + 6.4} Z`
+  return filled
+    ? <path d={d} fill="var(--sig-model)" />
+    : <path d={d} fill="var(--surface)" stroke="var(--sig-model)" strokeWidth={1.2} />
 }
 
 /** No fill means no throw: a fake is an outline, a pass a grey one, unresolved a

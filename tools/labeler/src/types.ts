@@ -93,6 +93,44 @@ export interface LivePlayInterval {
   end_frame: number | null
 }
 
+// A set start as scripts/detect_set_start.py found it. The three statuses are
+// kept apart rather than collapsed to a boolean because they mean different
+// things to an annotator: a confirmed start is a frame to check, a layout with
+// no whistle is a place the clip ran out, and an unconfirmed one is a whistle
+// nothing followed.
+export type SetStatus = 'confirmed' | 'no_whistle' | 'unconfirmed'
+
+export interface DetectedSet {
+  status: SetStatus
+  /** The whistle frame. Null unless the set was confirmed. */
+  start_frame: number | null
+  start_s: number | null
+  whistle_prominence_db: number | null
+  /** Where the teams broke for the balls — confirmation, not the start time. */
+  sprint_frame: number | null
+  /** Where the ball layout first broke: the fallback start when audio fails. */
+  first_ball_moves_frame: number | null
+  armed: {
+    start_frame: number
+    end_frame: number
+    max_balls: number
+    max_spread_m: number
+  }
+  notes: string[]
+}
+
+export interface SetTimelineFile {
+  schema_version: number
+  video: string
+  clip_sha256: string
+  pose_run: string
+  fps: number
+  frame_count: number
+  clip_offset_s: number
+  thresholds: Record<string, number>
+  sets: DetectedSet[]
+}
+
 export interface VideoInfo {
   name: string
   fps: number

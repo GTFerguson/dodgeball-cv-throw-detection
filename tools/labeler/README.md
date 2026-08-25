@@ -19,7 +19,11 @@ cannot read it, and every frame index in the labels depends on it.
 1. **Pose run** — `.venv/bin/python scripts/precompute_pose.py data/footage/<clip>.mp4`
    writes `data/pose/<stem>/<run-id>/`, which the tool lists in the header. Without one
    there are no skeletons to snap to; boxes can still be drawn by hand.
-2. **Court geometry** — `G` cycles court editing: polygon → centre line → off. Click the
+2. **Set starts** (optional) — `.venv/bin/python scripts/detect_set_start.py data/footage/<clip>.mp4`
+   writes `data/sets/<stem>.json`, drawn on the timeline's `MODEL` track as a pennant at each
+   detected start. Read-only: the tool never writes it. Without one the track draws empty and
+   says so.
+3. **Court geometry** — `G` cycles court editing: polygon → centre line → off. Click the
    four corners of the court, then `G` again and click the two ends of the centre line.
    It saves to `data/court/<stem>.json` on every click. The polygon decides which
    skeletons get player keys; the centre line decides which team a thrower is on.

@@ -14,6 +14,7 @@ const FOOTAGE_DIR = path.join(DATA_DIR, 'footage')
 const LABELS_DIR = path.join(DATA_DIR, 'labels')
 const POSE_DIR = path.join(DATA_DIR, 'pose')
 const COURT_DIR = path.join(DATA_DIR, 'court')
+const SETS_DIR = path.join(DATA_DIR, 'sets')
 const VIDEO_EXT = /\.(mp4|webm|mkv|mov)$/i
 
 export { DATA_DIR }
@@ -125,6 +126,13 @@ export function labelApi(): Plugin {
         if (seg[1] === 'court' && seg.length === 3) {
           void documentEndpoint(COURT_DIR, seg[2], req, res)
           return
+        }
+
+        // Read-only: set starts are produced by scripts/detect_set_start.py and
+        // shown as the model's claim. The tool must never write them, or the
+        // track it is compared against would be one the annotator had edited.
+        if (seg[1] === 'sets' && seg.length === 3 && req.method === 'GET') {
+          return sendFile(res, resolveWithin(SETS_DIR, `${seg[2]}.json`))
         }
 
         if (seg[1] === 'pose' && seg.length === 3 && req.method === 'GET') {

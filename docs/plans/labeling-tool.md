@@ -85,6 +85,11 @@ Marked once per set with two keys (set start at the opening rush, set end), shad
 timeline. Throws outside live play do not count and the metric is computed per set. The clip
 begins with ~18 s of pre-set.
 
+Set starts are also detected ([[set-start]]) and drawn on the `MODEL` track, so the annotator
+checks a frame the detector proposes rather than hunting for the rush. The tool reads them and
+never writes them: a track the annotator had edited would not be a track worth comparing
+against. Accepting a detected start into the label file with a key is still to do.
+
 ## Design
 
 ### Transport and frame truth
@@ -105,10 +110,11 @@ the video's own report of what it is showing, so it cannot be on a different fra
 image↔screen transform is shared by drawing and hit-testing, and carries wheel zoom, pan and a
 shift-held magnifier, because far-court boxes at ~90 px cannot be adjusted honestly at 1×.
 
-Drawn on it: on-court skeletons (court polygon filter) with their player keys — near team
-`1`–`6`, far team `Q`–`Y`, ordered left to right per team on the current frame, so no identity
-or tracking is needed; thrower and target boxes for the selected event; live-play bands on
-the timeline.
+Drawn on it: on-court skeletons, coloured by team and cased so the hue never has to fight the
+jersey underneath it ([[design-system]] § Team is the one thing the frame is allowed to
+colour), with their player keys — near team `1`–`6`, far team `Q`–`Y`, ordered left to right
+per team on the current frame, so no identity or tracking is needed; thrower and target boxes
+for the selected event; live-play bands on the timeline.
 
 ### Box editing
 
@@ -166,7 +172,8 @@ pass its own file. Label files are committed, footage and pose runs are not.
 4. ~~Box editing: snap, corner and body drag, draw, nudge~~ — `src/lib/boxes.ts`
 5. ~~Observability fields, ref signal, team inference and override, live-play intervals~~
 6. ~~Restyle to the design system ([[design-system]]) — tokens into `src/index.css` and
-   `tailwind.config.js`, then the components; the full key map lands in the instrument bar~~
+   `tailwind.config.js`, then the components; the full key map lands in the instrument bar.
+   Overlay wires are coloured by team, `src/overlay.py` holds the pipeline's copy~~
 7. Labelling guide (`docs/labeling-guide.md`) — the rule handed to a second annotator
 8. Second-pass agreement report script
 
@@ -175,10 +182,14 @@ pass its own file. Label files are committed, footage and pose runs are not.
 **Court geometry comes from a fitted calibration, not a hand-picked polygon.**
 `data/court/<video-stem>.json` holds a homography between source pixels and the court's
 own metres, fitted from the painted lines, with a held-out error of 6–9 cm. The tool reads
-it and reasons in metres: "on court" is `0 - margin ≤ x ≤ width + margin` and the same in
-length, with `margin_m` the tolerance for a player standing on the paint. Team is the
-point's court y against `centre_line_m` — no centre-line-at-x interpolation, and correct
-however the line slants in the picture.
+it and reasons in metres: "on court" is the paint plus `BOUNDARY_SLACK_M`, the tolerance for
+a player standing on the line. Team is the point's court y against `centre_line_m` — no
+centre-line-at-x interpolation, and correct however the line slants in the picture.
+
+The calibration's `margin_m` band is *not* the in-play test, and reading it as one was a
+real defect: it put 22.1 people per frame on the roster against the pipeline's 9.1, because
+the band is precisely where the eliminated queue and the officials stand. See
+[[court-geometry]] § The same test, written twice, drifted.
 
 This replaces the hand-picked quad the plan originally called for, and it is strictly
 better: the test is metric, so it means the same thing at both ends of a court where near
@@ -188,15 +199,16 @@ court authoring was removed with it — the court is produced by the calibration
 A court file that is missing or of an older shape means "no court": no overlay, no player
 keys, no team inference. It must not be able to take the page down, which it previously did.
 
-It still cannot exclude officials standing in play — referees and line judges inside the
-margin consume player keys. That is the cost of having no team classifier, and it is now at
-least measurable: every detection has a court position in metres, so how often it happens
-can be counted rather than guessed.
+It still cannot exclude officials who are genuinely inside the lines, but the count is now
+measured rather than feared: about 0.1 per frame during live play, rising to several during
+dead balls when they walk the court to lay the balls out. That points at a live-play gate
+rather than a team classifier as the next filter.
 
-**Player-key ordering.** Sorted by the anchor's x, then its y ascending, then the detection's
-own index so the order is total. The anchor is the box's bottom centre — the feet — rather
-than its centre, which drifts upward on a jump and would flip a jumping player to the wrong
-half of the court. Keys are recomputed per frame and carry no identity, so two players
+**Player-key ordering.** Sorted by the foot point's x, then its y ascending, then the
+detection's own index so the order is total. The foot point is the visible ankle keypoints,
+falling back to the box's bottom centre — never the box centre, which drifts upward on a jump,
+and not the box bottom alone, which for a player lying prone at the centre line is metres from
+where they are and lands them in the wrong half. Keys are recomputed per frame and carry no identity, so two players
 crossing swap keys; the label stores the box, not the key, so nothing downstream notices.
 
 **Team is `near` / `far`.** The fixed end-on camera makes the court half directly observable
