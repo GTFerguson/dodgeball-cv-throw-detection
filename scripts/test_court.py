@@ -24,8 +24,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from court import (  # noqa: E402
-    BOUNDARY_SLACK_M, CENTRE_LINE_M, COURT_LENGTH_M, COURT_WIDTH_M,
-    LEFT_ANKLE, RIGHT_ANKLE, MARGIN_M, SCHEMA_VERSION, Court, foot_point,
+    CENTRE_LINE_M, COURT_LENGTH_M, COURT_WIDTH_M,
+    LEFT_ANKLE, RIGHT_ANKLE, MARGIN_M, MAX_BOUNDARY_SLACK_M, SCHEMA_VERSION, Court, foot_point,
 )
 
 FITTED = REPO_ROOT / "data" / "court" / "wdbf2014_final_h2_set2.json"
@@ -99,8 +99,23 @@ class Zones(unittest.TestCase):
     def test_a_player_on_the_line_stays_on_court(self):
         # Detection noise around an exact boundary would otherwise read as a
         # player leaving and returning, and a crossing is an elimination.
-        self.assertTrue(self.court.on_court(-BOUNDARY_SLACK_M / 2, 9.0))
-        self.assertTrue(self.court.on_court(COURT_WIDTH_M + BOUNDARY_SLACK_M / 2, 9.0))
+        slack = float(self.court.slack_at(0.0, 9.0))
+        self.assertTrue(self.court.on_court(-slack / 2, 9.0))
+        self.assertTrue(self.court.on_court(COURT_WIDTH_M + slack / 2, 9.0))
+
+    def test_the_slack_is_wider_where_a_pixel_is_worth_more_court(self):
+        # The camera is end-on, so the same ankle wobble spans several times more
+        # court at the far baseline than at the near one. A slack fixed in metres
+        # is therefore either loose near the camera or useless far from it.
+        near = float(self.court.slack_at(COURT_WIDTH_M / 2, 0.0))
+        far = float(self.court.slack_at(COURT_WIDTH_M / 2, COURT_LENGTH_M))
+        self.assertGreater(far, near * 2)
+        self.assertLess(far, MAX_BOUNDARY_SLACK_M)
+
+    def test_the_slack_never_reaches_the_crossing_band(self):
+        # on_court and in_margin have to stay disjoint, or the eliminated queue
+        # standing in the band joins the roster.
+        self.assertLess(MAX_BOUNDARY_SLACK_M, MARGIN_M)
 
     def test_half_splits_on_the_centre_line(self):
         self.assertEqual(str(self.court.half(CENTRE_LINE_M - 0.1)), "near")

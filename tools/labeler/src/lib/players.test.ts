@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { CourtConfig, PoseDetection } from '../types'
 import { footPoint, makeBox } from './boxes'
 import {
-  BOUNDARY_SLACK_M, courtToImage, imageToCourt, inMargin, inferTeam, isOnCourt, isUsableCourt, teamAtPoint,
+  courtToImage, heldOnCourt, imageToCourt, inMargin, inferTeam, isOnCourt, isUsableCourt,
+  slackAt, teamAtPoint,
 } from './court'
 import { playerSlots, slotForKey } from './players'
 
@@ -73,8 +74,29 @@ describe('court calibration', () => {
   it('keeps a player standing on the line on court', () => {
     // The paint has width and a foot point is quantised, so an exact test would
     // flicker — and flicker reads downstream as a player leaving and returning.
-    expect(isOnCourt(courtToImage([-BOUNDARY_SLACK_M / 2, 9], court)!, court)).toBe(true)
-    expect(isOnCourt(courtToImage([9 + BOUNDARY_SLACK_M / 2, 9], court)!, court)).toBe(true)
+    const slack = slackAt(courtToImage([0, 9], court)!, court)
+    expect(isOnCourt(courtToImage([-slack / 2, 9], court)!, court)).toBe(true)
+    expect(isOnCourt(courtToImage([9 + slack / 2, 9], court)!, court)).toBe(true)
+  })
+
+  it('holds a player who steps off the line and comes back', () => {
+    // The flicker this exists to stop: a player at the baseline is detected a
+    // few centimetres behind it for a moment. Nothing about them left the game.
+    const justOut = courtToImage([4.5, -0.5], court)!
+    expect(isOnCourt(justOut, court)).toBe(false)
+    expect(heldOnCourt(justOut, court, [[4.5, 0.2]])).toBe(true)
+  })
+
+  it('does not hold someone standing well clear of any player', () => {
+    // An official on the sideline is near the court but never near a player who
+    // was on it, so the hold must not sweep them onto the roster.
+    const outside = courtToImage([4.5, -1.2], court)!
+    expect(heldOnCourt(outside, court, [[4.5, 0.9]])).toBe(false)
+  })
+
+  it('holds nobody when no player was on court nearby', () => {
+    const justOut = courtToImage([4.5, -0.5], court)!
+    expect(heldOnCourt(justOut, court, [])).toBe(false)
   })
 
   it('separates the crossing band from both the court and the crowd', () => {

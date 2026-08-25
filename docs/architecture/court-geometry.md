@@ -160,11 +160,75 @@ The observable that drives outcome resolution is a player crossing the boundary.
 Detection noise on a player standing on the line would otherwise produce a stream
 of departures and returns.
 
-*Circumvented two ways.* The boundary test carries 0.10 m of slack, and crossings
-are read as **transitions rather than membership** — standing still inside the
-margin generates no event. This matters concretely: the far-end queue stands within
+*Circumvented two ways.* The boundary test carries slack, and crossings are read
+as **transitions rather than membership** — standing still inside the margin
+generates no event. This matters concretely: the far-end queue stands within
 about 1.5 m of the sideline and therefore sits inside the margin band, so band
 membership alone could never have been used as a "recently exited" proxy.
+
+#### The slack is spent in pixels, not metres
+
+It was a flat 0.10 m and that failed, because a metre is not worth the same
+everywhere. The camera is end-on, so on this clip's fit half a metre along the
+court spans 49 px at the near baseline and 9.6 px at the far one. The same tenth
+of a metre therefore bought ten pixels of ankle tolerance near the camera and
+under two at the far baseline — less than the keypoint's own wobble — and the
+far-side waiting line strobed in and out of play.
+
+Measured over the clip with detections associated frame to frame, **142 of 156**
+short excursions were at the far baseline, 9 at the near baseline and 7 at a
+sideline, and 382 of 389 flickering frames carried real ankle keypoints rather
+than the box fallback. The fault was the unit, not the detector.
+
+`ANKLE_SLACK_PX` is a budget of ankle error in pixels, converted to metres at the
+point where it is spent (`Court.slack_at`, one image row up from the foot point).
+It is set from the 90th percentile of the overshoot on those flickering tracks,
+which is 7.6 px. What that buys, and what a flat metre slack costs to match it:
+
+| Rule | Short excursions that return | People per frame | Frames over 12 |
+|---|---|---|---|
+| 0.10 m flat | 160 | 9.18 | 3% |
+| 0.40 m flat | — | 10.99 | 19% |
+| 8 px | 68 | 9.66 | 4% |
+
+The flat 0.40 m suppresses comparable flicker only by admitting the people
+standing just behind the near baseline, where 0.40 m is forty pixels. The pixel
+budget is 0.08 m at the near baseline and 0.43 m at the far one, so it is
+simultaneously *tighter* than the old rule near the camera and four times looser
+where the pixels are scarce. `MAX_BOUNDARY_SLACK_M` caps it for points projecting
+near the horizon, and is held below `MARGIN_M` so the in-play test can never reach
+into the crossing band.
+
+A residual remains that is not a slack problem: occlusions and genuine brief steps
+out. Those are absorbed by a hold instead.
+
+#### Stepping out for a moment is not leaving the game
+
+`IN_PLAY_HOLD_FRAMES` counts a player as in play if they were on court anywhere
+within that window *either side* of the frame. Over the whole clip it takes
+excursions that return from **107 to 13**, and the short ones — under a quarter of
+a second, the ones that read as flicker — from **73 to 3**.
+
+The window is symmetric rather than a timeout, and that is the load-bearing
+detail. A causal "still counts for a second after they were last seen" rule makes
+in-play depend on the direction the clip was played, so the same frame shows a
+different roster depending on whether the annotator scrubbed forwards or backwards
+onto it. What is drawn on a frame has to be a function of that frame alone.
+
+Length is set from the same measurement: with the slack already spent in pixels, a
+one-second hold absorbs 93 of the 113 excursions that returned and two seconds
+buys four more, against twice the delay on a real exit — and a real exit is an
+elimination, so the delay is not free.
+
+The two sides identify the player differently, which is the one place they cannot
+share an implementation. The pipeline has ByteTrack, so it holds *a track*. The
+tool recomputes everything per frame by design and has no tracks, so it holds any
+point within `HOLD_RADIUS_M` of where an on-court player stood on a nearby frame.
+That approximation is sound for the case the hold exists to fix — a player
+flickering at the baseline is standing still — and unsound only for someone
+covering metres in a second, who is sprinting through mid-court where the boundary
+is not in question. `scripts/test_overlay_contract.py` pins the window across
+both.
 
 ### The same test, written twice, drifted
 
@@ -181,7 +245,8 @@ exactly where the people who are not playing stand.
 | Rule | Foot point | Slack | People per frame | Frames over 12 |
 |---|---|---|---|---|
 | Tool, before | box bottom centre | 1.5 m (margin band) | 22.1 | 100% |
-| Both, now | ankle keypoints | 0.10 m | 9.1 | 5.6% |
+| Both, then | ankle keypoints | 0.10 m flat | 9.1 | 5.6% |
+| Both, now | ankle keypoints | `ANKLE_SLACK_PX`, per row | 9.7 | 4% |
 
 *Circumvented by pinning the copies to each other.* `scripts/test_overlay_contract.py`
 reads the tool's constants out of its own source and asserts them against this
@@ -258,7 +323,8 @@ Transforms accept scalars or arrays. `on_court`, `in_margin`, `half`, `scale_at`
 and `normalise` all vectorise, so a whole frame's detections classify in one call.
 
 `on_court` and `in_margin` are disjoint and answer different questions. `on_court`
-is the paint plus 0.10 m of slack and means *in play*. `in_margin` is the ring
+is the paint plus the slack that `slack_at` allows at that position, and means
+*in play*. `in_margin` is the ring
 outside it and means *court-adjacent* — somewhere a crossing can be observed, and
 where the eliminated queue and the officials stand. Anything that needs a roster
 wants the first; only crossing detection wants the second.

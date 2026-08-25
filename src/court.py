@@ -43,10 +43,41 @@ MARKING_TOLERANCE_M = 0.25
 # teleport out, narrow enough to leave the benches and crowd outside.
 MARGIN_M = 1.5
 
-# Slack on the boundary test. A foot point is quantised by detection noise and the
-# lines have real width, so an exact test would flicker for a player standing on
-# the line - and flicker reads downstream as a player leaving and returning.
-BOUNDARY_SLACK_M = 0.10
+# Slack on the boundary test, as a budget of ankle-keypoint error in *pixels*.
+#
+# A foot point is quantised by detection noise and the lines have real width, so
+# an exact test would flicker for a player standing on the line - and flicker
+# reads downstream as a player leaving and returning. The slack was a flat 0.10 m,
+# which failed because a metre is not worth the same everywhere: the camera is
+# end-on, so on this footage's fit a metre along the court is five times fewer
+# pixels at the far baseline than at the near one. A tenth of a metre bought ten
+# pixels of tolerance near the camera and under two at the far baseline, which is
+# less than the keypoint's own wobble, and the far-side waiting line strobed in
+# and out of play.
+#
+# Spending the budget in pixels puts it where the pixels are scarce. Set from the
+# 90th percentile of the ankle overshoot measured on the flickering tracks of the
+# evaluation clip; docs/architecture/court-geometry.md carries the derivation.
+ANKLE_SLACK_PX = 8.0
+
+# A ceiling on what that budget can buy. A point projecting near the horizon has
+# an unbounded metres-per-pixel, and the in-play test has to stay clear of the
+# court-adjacent ring regardless: if the two overlap they stop being disjoint and
+# the eliminated queue joins the roster. Kept well inside MARGIN_M, and above what
+# the budget is worth at the far baseline, so it binds only on degenerate geometry.
+MAX_BOUNDARY_SLACK_M = 0.75
+
+# How far either side of a frame a player is still counted as in play, having
+# been seen on court there. Set from the excursions measured on the evaluation
+# clip: with the boundary slack already spent in pixels, a one-second hold absorbs
+# 93 of the 113 excursions that returned, and two seconds buys only four more.
+#
+# The window is deliberately *symmetric* rather than a timeout. A causal "still
+# counts for a second after they were last seen" rule makes in-play depend on the
+# direction the clip was played, so the same frame shows a different roster
+# depending on whether the annotator scrubbed forwards or backwards onto it. In
+# play has to be a function of the frame and nothing else.
+IN_PLAY_HOLD_FRAMES = 25
 
 # COCO-17 indices. Ultralytics pose models emit this layout; the manifest records
 # it so a consumer never has to assume.
@@ -112,9 +143,23 @@ class Court:
         """Court metres -> image pixels. Scalars or arrays."""
         return self._apply(self.court_to_image, cx, cy)
 
+    def slack_at(self, cx, cy):
+        """The boundary slack in metres at a court position.
+
+        One pixel of image is worth more court at the far end than the near, so
+        the budget is converted where it is spent: measured against the court,
+        one image row up from the point itself.
+        """
+        ix, iy = self.to_image(cx, cy)
+        _, up = self.to_court(ix, np.asarray(iy, float) - 1.0)
+        metres_per_pixel = np.abs(np.asarray(up, float) - np.asarray(cy, float))
+        return np.minimum(ANKLE_SLACK_PX * metres_per_pixel, MAX_BOUNDARY_SLACK_M)
+
     def on_court(self, cx, cy):
         cx, cy = np.asarray(cx), np.asarray(cy)
-        s = BOUNDARY_SLACK_M
+        # NaN slack - a point projecting through the horizon - fails every
+        # comparison, which puts it off court rather than everywhere at once.
+        s = self.slack_at(cx, cy)
         return ((cx >= -s) & (cx <= COURT_WIDTH_M + s)
                 & (cy >= -s) & (cy <= COURT_LENGTH_M + s))
 

@@ -1,6 +1,7 @@
 import type { Box, CourtConfig, PoseDetection, Team } from '../types'
 import { footPoint, makeBox } from './boxes'
-import { isOnCourt, teamAtPoint } from './court'
+import { heldOnCourt, imageToCourt, isOnCourt, teamAtPoint } from './court'
+import type { Point } from './court'
 
 // Six a side. The near team sits on the number row and the far team on the row
 // above it, so both hands stay where they are for a two-keypress event.
@@ -37,15 +38,33 @@ export interface PlayerSlot {
  * far-to-near down the picture; the third term only exists so the order is
  * total and the same detections always produce the same keys.
  */
+/** Where the on-court players stood on a set of nearby frames, in court metres.
+ *  Precomputed once per frame rather than per detection, because every detection
+ *  is tested against the same neighbourhood. */
+export function heldPositions(
+  frames: PoseDetection[][], court: CourtConfig | null,
+): Point[] {
+  const out: Point[] = []
+  for (const detections of frames) {
+    for (const det of detections) {
+      const foot = footPoint(det)
+      if (!isOnCourt(foot, court)) continue
+      const c = imageToCourt(foot, court)
+      if (c) out.push(c)
+    }
+  }
+  return out
+}
+
 export function playerSlots(
-  detections: PoseDetection[], court: CourtConfig | null,
+  detections: PoseDetection[], court: CourtConfig | null, nearby: Point[] = [],
 ): PlayerSlot[] {
   const onCourt: PlayerSlot[] = []
   detections.forEach((det, index) => {
     const [x1, y1, x2, y2] = det.box
     const box = makeBox(x1, y1, x2, y2)
     const foot = footPoint(det)
-    if (!isOnCourt(foot, court)) return
+    if (!heldOnCourt(foot, court, nearby)) return
     const team = teamAtPoint(foot, court)
     if (team == null) return
     onCourt.push({ key: null, team, box, foot, detection: det, index })

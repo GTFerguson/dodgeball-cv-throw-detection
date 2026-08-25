@@ -27,12 +27,34 @@ export function courtToImage(pt: Point, court: CourtConfig | null): Point | null
   return Number.isFinite(i[0]) && Number.isFinite(i[1]) ? i : null
 }
 
-// Slack on the boundary test, in metres. A foot point is quantised by detection
-// noise and the painted lines have real width, so an exact test would flicker
-// for a player standing on the line, and flicker reads downstream as a player
-// leaving and returning. Pinned to the pipeline's BOUNDARY_SLACK_M by
+// Slack on the boundary test, as a budget of ankle-keypoint error in pixels.
+//
+// A foot point is quantised by detection noise and the painted lines have real
+// width, so an exact test would flicker for a player standing on the line, and
+// flicker reads downstream as a player leaving and returning. A flat slack in
+// metres could not do it: the camera is end-on, so a metre along the court costs
+// several times fewer pixels at the far baseline than at the near one, and a
+// tolerance that was comfortable near the camera was under the keypoint's own
+// wobble at the far end. Spending it in pixels puts it where the pixels are
+// scarce. Pinned to the pipeline's ANKLE_SLACK_PX by
 // scripts/test_overlay_contract.py.
-export const BOUNDARY_SLACK_M = 0.1
+export const ANKLE_SLACK_PX = 8
+
+// A ceiling on what that budget can buy, for a point projecting near the horizon
+// where metres-per-pixel runs away. Kept well inside the calibration's margin
+// band so the in-play test cannot reach the ring that means court-adjacent.
+export const MAX_BOUNDARY_SLACK_M = 0.75
+
+/**
+ * The boundary slack in metres at an image point, measured where it is spent:
+ * one image row up from the point, in court metres.
+ */
+export function slackAt(pt: Point, court: CourtConfig | null): number {
+  const here = imageToCourt(pt, court)
+  const up = imageToCourt([pt[0], pt[1] - 1], court)
+  if (!here || !up) return NaN
+  return Math.min(ANKLE_SLACK_PX * Math.abs(up[1] - here[1]), MAX_BOUNDARY_SLACK_M)
+}
 
 /**
  * In play if the foot point is inside the paint, give or take the boundary
@@ -47,9 +69,47 @@ export const BOUNDARY_SLACK_M = 0.1
 export function isOnCourt(pt: Point, court: CourtConfig | null): boolean {
   const c = imageToCourt(pt, court)
   if (!c || !court) return false
-  const s = BOUNDARY_SLACK_M
+  // A NaN slack fails every comparison, which puts a point projecting through
+  // the horizon off court rather than everywhere at once.
+  const s = slackAt(pt, court)
   const { width, length } = court.court_metres
   return c[0] >= -s && c[0] <= width + s && c[1] >= -s && c[1] <= length + s
+}
+
+// How far either side of a frame a player is still counted as in play, having
+// been seen on court there. Pinned to the pipeline's IN_PLAY_HOLD_FRAMES by
+// scripts/test_overlay_contract.py.
+//
+// Symmetric rather than a timeout, deliberately. A causal "still counts for a
+// second after they were last seen" rule makes in-play depend on the direction
+// the clip was played, so the same frame would show a different roster depending
+// on whether the annotator scrubbed forwards or backwards onto it. What is drawn
+// on a frame has to be a function of that frame and nothing else.
+export const IN_PLAY_HOLD_FRAMES = 25
+
+// How close a nearby frame's on-court player must be to count as the same person.
+//
+// The tool has no tracks - it recomputes everything per frame on purpose - so it
+// approximates identity by proximity, where the pipeline uses ByteTrack. That is
+// sound for the case the hold exists to fix: a player flickering at the baseline
+// is standing still. A player who covers more than this in a second is sprinting
+// through mid-court, where the boundary is not in question.
+export const HOLD_RADIUS_M = 1.5
+
+/** Whether a point counts as in play, given where players were on nearby frames.
+ *
+ * A player standing on the baseline crosses it constantly - reaching, turning, or
+ * simply being detected a few centimetres further back - and each crossing reads
+ * as a departure and a return. Stepping out for a moment is not leaving the game.
+ */
+export function heldOnCourt(
+  pt: Point, court: CourtConfig | null, nearby: Point[],
+): boolean {
+  if (isOnCourt(pt, court)) return true
+  const here = imageToCourt(pt, court)
+  if (!here) return false
+  return nearby.some((other) => Math.hypot(other[0] - here[0], other[1] - here[1])
+    <= HOLD_RADIUS_M)
 }
 
 /** Court-adjacent but out of play — the ring a crossing is observed in. */

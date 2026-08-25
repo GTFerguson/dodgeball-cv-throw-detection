@@ -28,7 +28,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import overlay  # noqa: E402
-from court import ANKLE_MIN_CONF, BOUNDARY_SLACK_M  # noqa: E402
+from court import (ANKLE_MIN_CONF, ANKLE_SLACK_PX,  # noqa: E402
+                   IN_PLAY_HOLD_FRAMES, MAX_BOUNDARY_SLACK_M)
 
 LABELER = REPO_ROOT / "tools" / "labeler" / "src"
 CSS = LABELER / "index.css"
@@ -57,7 +58,21 @@ class TestCourtThresholds(unittest.TestCase):
     """The numbers that decide who is in play."""
 
     def test_boundary_slack_matches(self):
-        self.assertAlmostEqual(ts_number(COURT_TS, "BOUNDARY_SLACK_M"), BOUNDARY_SLACK_M)
+        self.assertAlmostEqual(ts_number(COURT_TS, "ANKLE_SLACK_PX"), ANKLE_SLACK_PX)
+        self.assertAlmostEqual(ts_number(COURT_TS, "MAX_BOUNDARY_SLACK_M"),
+                               MAX_BOUNDARY_SLACK_M)
+
+    def test_the_in_play_hold_matches(self):
+        """Both sides hold a player in play for the same window.
+
+        The tool approximates identity by proximity where the pipeline has
+        ByteTrack, so the two cannot share an implementation - which makes it all
+        the more important that they share the window. A tool that forgave a
+        two-second excursion the pipeline counted as an exit would be showing the
+        annotator a different match from the one being measured.
+        """
+        self.assertAlmostEqual(ts_number(COURT_TS, "IN_PLAY_HOLD_FRAMES"),
+                               IN_PLAY_HOLD_FRAMES)
 
     def test_ankle_confidence_floor_matches(self):
         self.assertAlmostEqual(ts_number(BOXES_TS, "ANKLE_MIN_CONF"), ANKLE_MIN_CONF)
