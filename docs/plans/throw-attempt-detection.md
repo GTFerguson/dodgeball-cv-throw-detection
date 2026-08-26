@@ -526,3 +526,12 @@ label-uncertainty case, not a model failure.
   the bare wrist. Blocks, raised catches, hunkering and pickups hold a ball and never get it
   there. Candidate P 74% → 84% at R 93%, F1 88%; release 86%. The one event it costs is the
   wrong-track label. A "held a torso below the shoulder" rule was tried and cut nothing more.
+- 2026-08-26 — same-track doublets looked at and left. Two of the eleven remaining false
+  positives are a wind-up peak twelve to fifteen frames before the release peak of one throw
+  (1479/1492, 4641/4656, the ball in hand throughout), and the tolerance splits them; but a
+  pump fake followed by a throw (516/535, 3191/3209) looks the same in every measure tried -
+  gap, ball in hand between, and whether the wrist re-winds past the shoulder between the
+  peaks, which is jittery by a whole torso frame to frame at this resolution. A rule fitted to
+  two pairs is not a rule. The chain's seed frame as the release frame was measured too and
+  is no better than the peak against this truth set (MAE 2.2 v 1.3) - not decidable here,
+  since 41 of 60 labelled releases sit on the proposed peak.
