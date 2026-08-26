@@ -542,3 +542,13 @@ label-uncertainty case, not a model failure.
   at 81° or beyond, most throws under 70°, and perspective flattens a cross-court throw into
   the high seventies, so the bar sits at 80 and a throw is the default. Kind 82% on matched:
   fakes 22/23, passes 4/6, throws 20/27, six of those the release misses carried down.
+- 2026-08-26 — destination gains its second witness ([[destination]]): the chain is followed to
+  where it stops (traces to +36, chains to 30 links - every labelled outcome settles within 21
+  frames), and a last point inside a player's box is a contact - a teammate is a pass, an
+  opponent a throw, no projection needed. Fifteen of twenty-six chained releases end in a box,
+  none on the wrong side, and direction agreed on all fifteen. Contact decides where it exists,
+  direction otherwise, and the timeline says which and whether they agreed. Kind 82% → 84%,
+  passes 5/6; the one left has no chain (a hand-over). The roster's exits were measured as
+  the outcome signal the plan proposed and found to lag a hit by 20–100 frames with tracker
+  flicker on top - fine for the count, not for saying which throw; the ball resolves within
+  21 frames. Outcome, when it comes, will read the chain's end and use exits to corroborate.

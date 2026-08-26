@@ -52,9 +52,11 @@ BLOBS_PER_WRIST = 12
 # joint and the ball in the palm is a hand's length beyond it.
 DISC_RADIUS_NORM = 0.05
 
-# Frames traced either side of the proposal.
+# Frames traced either side of the proposal. Every labelled outcome on the
+# clip settles within 21 frames of the release, and a release can precede
+# the peak by 8.
 TRACE_BEFORE = 12
-TRACE_AFTER = 16
+TRACE_AFTER = 36
 
 WRISTS = {"L": LEFT_WRIST, "R": RIGHT_WRIST}
 

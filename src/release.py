@@ -25,16 +25,17 @@ what stops a chain hopping between socks, a ball on the floor and the
 other hand's ball.
 
 **Where did it go?** A pass is a throw that stays on the thrower's side
-(WDBF 16.2), and the only evidence at release is the ball's direction. The
-floor homography cannot place a ball in the air - at shoulder height it
-projects metres beyond the hand - so the direction is taken in the image,
-where this camera looks along the court and the opponent is straight up or
-down the frame: the angle between the chain's first few links and that
-axis. Every labelled pass on the clip goes sideways or back; a throw goes
-along the court, though perspective flattens a cross-court throw towards
-the lateral, so the bar for calling a pass is set high and a throw is the
-default. Where the ball ends up will settle it better, and that is the
-outcome stage's.
+(WDBF 16.2). Two witnesses, read from the same chain. The ball's *contact*:
+the chain is followed to where it stops, and if that is inside a player's
+box, the ball reached that player - a teammate is a pass, an opponent a
+throw, with no projection needed. Its *direction*: the floor homography
+cannot place a ball in the air - at shoulder height it projects metres
+beyond the hand - but the direction is sound in the image, where this
+camera looks along the court and the opponent is straight up or down the
+frame; the angle between the chain's first few links and that axis calls a
+pass only when the ball clearly goes across or back. Contact decides where
+it exists, direction otherwise, and the timeline records which spoke and
+whether they agree. A throw is the default.
 """
 
 from __future__ import annotations
@@ -43,6 +44,8 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
+
+from typing import Callable
 
 from src.ball import Trace, WristFrame
 
@@ -101,9 +104,18 @@ STATIC_TOLERANCE_DIAMETERS = 1.0
 LINK_SLACK_NORM = 0.06
 LINK_VELOCITY_FRACTION = 0.6
 MAX_TURN_DEG = 50.0
-CHAIN_MAX_LINKS = 8
-# Each link tries at most this many blobs, nearest first.
+# Long enough to reach the contact: every labelled outcome settles within
+# 21 frames of release. The release claim itself is made in the first few.
+CHAIN_MAX_LINKS = 30
+# Each link tries at most this many blobs, nearest first, and one proposal's
+# search stops after this many nodes: a hall of orange must not make the
+# depth-first walk exponential.
 BRANCH = 6
+CHAIN_MAX_NODES = 4000
+
+# A chain that ends inside a player's box, grown by this fraction of its
+# size each way, reached that player. Boxes are the pose run's.
+CONTACT_BOX_MARGIN = 0.10
 
 # A chain is a release when it carries the ball this far from the hand with
 # at least this many links. A hand cannot move a ball a quarter of the scale
@@ -132,6 +144,8 @@ class Departure:
     seed_offset: int | None
     # The chain's points in image pixels, the blob at the hand first.
     path: tuple[tuple[float, float], ...] = ()
+    # The offset of the chain's last point.
+    end_offset: int | None = None
 
     @property
     def released(self) -> bool:
@@ -214,18 +228,22 @@ def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, flo
             found.append(((blob.x, blob.y), (mv[0] / covered, mv[1] / covered), offset))
         return found
 
+    nodes = 0
+
     def step(path, pos, vel, offset, gaps):
+        nonlocal nodes
+        nodes += 1
         found = options(pos, vel, offset, 1)
         if not found and gaps < LINK_GAP_FRAMES:
             found = options(pos, vel, offset + 1, 2)
             gaps += 1
-        if not found or len(path) > CHAIN_MAX_LINKS:
+        if not found or len(path) > CHAIN_MAX_LINKS or nodes > CHAIN_MAX_NODES:
             out.append(path)
             return
         for p, v, at in found[:BRANCH]:
-            step(path + [p], p, v, at + 1, gaps)
+            step(path + [(p, at)], p, v, at + 1, gaps)
 
-    step([origin], origin, None, seed_offset + 1, 0)
+    step([(origin, seed_offset)], origin, None, seed_offset + 1, 0)
     return out
 
 
@@ -253,14 +271,44 @@ def departure(trace: Trace) -> Departure:
                 links = len(chain) - 1
                 if links < CHAIN_MIN_LINKS:
                     continue
-                dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p in chain]
+                dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p, _ in chain]
                 if any(b <= a for a, b in zip(dists, dists[1:])):
                     continue
                 far = dists[-1] / trace.scale
                 if (far, links) > (best.distance, best.links):
                     best = Departure(wrist, round(far, 4), links, seed_offset,
-                                     tuple((round(x, 1), round(y, 1)) for x, y in chain))
+                                     tuple((round(x, 1), round(y, 1)) for (x, y), _ in chain),
+                                     chain[-1][1])
     return best
+
+
+@dataclass(frozen=True)
+class Contact:
+    """The player a chain ended in, if any."""
+
+    team: str | None
+    track_id: int
+    participant_id: str
+
+
+# What a stage needs to know about who is where: for a frame, every player
+# other than the thrower as (team, track id, participant id, box).
+PlayersAt = Callable[[int], list[tuple[str | None, int, str, tuple[float, float, float, float]]]]
+
+
+def contact(dep: Departure, frame: int, thrower_track: int,
+            players_at: PlayersAt | None) -> Contact | None:
+    """The player whose box the chain's last point falls in on its frame."""
+    if players_at is None or dep.end_offset is None or not dep.path:
+        return None
+    x, y = dep.path[-1]
+    for team, track_id, participant_id, (x1, y1, x2, y2) in players_at(frame + dep.end_offset):
+        if track_id == thrower_track:
+            continue
+        mx, my = CONTACT_BOX_MARGIN * (x2 - x1), CONTACT_BOX_MARGIN * (y2 - y1)
+        if x1 - mx <= x <= x2 + mx and y1 - my <= y <= y2 + my:
+            return Contact(team, track_id, participant_id)
+    return None
 
 
 @dataclass(frozen=True)
@@ -276,6 +324,7 @@ class Decision:
     dropped: str | None
     ball_before: float
     departure: Departure
+    contact: Contact | None = None
 
     @property
     def released(self) -> bool | None:
@@ -285,21 +334,53 @@ class Decision:
     def angle(self) -> float | None:
         return self.departure.angle_from(self.team) if self.released else None
 
+    def _by_direction(self) -> str | None:
+        """Pass or throw from the first direction; None where it cannot say.
+
+        A direction is only trusted over the full DIRECTION_LINKS: a two-link
+        chain's heading is one hop's jitter.
+        """
+        angle = self.angle
+        if angle is None or self.departure.links < DIRECTION_LINKS:
+            return None
+        return "pass" if angle >= PASS_MIN_ANGLE_DEG else "throw"
+
+    def _by_contact(self) -> str | None:
+        """Pass or throw from the player the ball reached; None where it reached nobody."""
+        if self.contact is None or self.contact.team is None or self.team is None:
+            return None
+        if self.departure.links < DIRECTION_LINKS:
+            return None
+        return "pass" if self.contact.team == self.team else "throw"
+
+    @property
+    def destination_source(self) -> str | None:
+        """Which witness decided pass against throw: contact, direction, or the default."""
+        if not self.released:
+            return None
+        if self._by_contact() is not None:
+            return "contact"
+        if self._by_direction() is not None:
+            return "direction"
+        return "default"
+
+    @property
+    def destination_agreed(self) -> bool | None:
+        """Whether contact and direction agree, where both spoke."""
+        c, d = self._by_contact(), self._by_direction()
+        return (c == d) if c is not None and d is not None else None
+
     @property
     def kind(self) -> str | None:
         if not self.is_event:
             return None
         if not self.released:
             return "fake"
-        # A pass is claimed only on a direction measured over the full
-        # DIRECTION_LINKS: a two-link chain's heading is one hop's jitter.
-        angle = self.angle
-        if angle is None or self.departure.links < DIRECTION_LINKS:
-            return "throw"
-        return "pass" if angle >= PASS_MIN_ANGLE_DEG else "throw"
+        return self._by_contact() or self._by_direction() or "throw"
 
 
-def decide(trace: Trace, set_start_frame: int | None, fps: float) -> Decision:
+def decide(trace: Trace, set_start_frame: int | None, fps: float,
+           players_at: PlayersAt | None = None) -> Decision:
     cand = trace.candidate
     dropped = None
     if set_start_frame is not None and cand.frame < set_start_frame + RUSH_S * fps:
@@ -312,10 +393,11 @@ def decide(trace: Trace, set_start_frame: int | None, fps: float) -> Decision:
     # Computed for dropped proposals too, so the file carries the evidence a
     # threshold sweep needs without another read of the footage.
     dep = departure(trace)
+    hit = contact(dep, cand.frame, cand.track_id, players_at) if dropped is None else None
     return Decision(
         frame=cand.frame, track_id=cand.track_id, participant_id=cand.participant_id,
         team=cand.team, box=cand.box, is_event=dropped is None, dropped=dropped,
-        ball_before=held, departure=dep)
+        ball_before=held, departure=dep, contact=hit)
 
 
 @dataclass
@@ -344,6 +426,12 @@ class Timeline:
                     "depart": d.departure.distance, "links": d.departure.links,
                     "seed_offset": d.departure.seed_offset, "wrist": d.departure.wrist,
                     "angle": round(d.angle, 1) if d.angle is not None else None,
+                    "end_offset": d.departure.end_offset,
+                    "contact": ({"team": d.contact.team, "track_id": d.contact.track_id,
+                                 "participant": d.contact.participant_id}
+                                if d.contact else None),
+                    "destination_source": d.destination_source,
+                    "destination_agreed": d.destination_agreed,
                     "path": [list(p) for p in d.departure.path],
                 },
             }

@@ -202,6 +202,40 @@ class Direction(unittest.TestCase):
         self.assertIsNone(d.angle)
 
 
+class ContactDecides(unittest.TestCase):
+    # The ball flies right and lands in a box at +8; whose box it is decides.
+
+    def players(self, team):
+        end = (WRIST[0] + 0.15 * SCALE * 8, WRIST[1])
+        box = (end[0] - 30.0, end[1] - 80.0, end[0] + 30.0, end[1] + 80.0)
+        return lambda frame: [(team, 99, f"{team}-9", box)]
+
+    def test_a_ball_that_reaches_an_opponent_is_a_throw_whatever_its_direction(self):
+        d = decide(trace(flight(0, 0.15 * SCALE)), None, 25.0, self.players("far"))
+        self.assertEqual(d.kind, "throw")
+        self.assertEqual(d.destination_source, "contact")
+        self.assertEqual(d.contact.participant_id, "far-9")
+        self.assertFalse(d.destination_agreed)  # direction said sideways
+
+    def test_a_ball_that_reaches_a_teammate_is_a_pass(self):
+        d = decide(trace(flight(0, 0.15 * SCALE)), None, 25.0, self.players("near"))
+        self.assertEqual(d.kind, "pass")
+        self.assertTrue(d.destination_agreed)
+
+    def test_the_thrower_is_not_a_contact(self):
+        end = (WRIST[0] + 0.15 * SCALE * 8, WRIST[1])
+        box = (end[0] - 30.0, end[1] - 80.0, end[0] + 30.0, end[1] + 80.0)
+        d = decide(trace(flight(0, 0.15 * SCALE)), None, 25.0, lambda f: [("near", 1, "near-7", box)])
+        self.assertIsNone(d.contact)
+        self.assertEqual(d.destination_source, "direction")
+
+    def test_nobody_there_falls_back_to_direction(self):
+        d = decide(trace(flight(0, 0.15 * SCALE)), None, 25.0, lambda f: [])
+        self.assertIsNone(d.contact)
+        self.assertEqual(d.destination_source, "direction")
+        self.assertEqual(d.kind, "pass")
+
+
 class Decide(unittest.TestCase):
 
     def test_a_held_ball_never_past_the_shoulder_is_not_an_event(self):
@@ -251,6 +285,8 @@ class OnTheClip(unittest.TestCase):
             self.assertIn(e["kind"], ("fake", "pass", "throw"))
             self.assertEqual(e["kind"] != "fake", e["released"])
             self.assertEqual(e["evidence"]["angle"] is not None, e["released"])
+            self.assertIn(e["evidence"]["destination_source"],
+                          ("contact", "direction", "default", None))
             self.assertGreaterEqual(e["evidence"]["ball_before"], BALL_BEFORE_MIN * 1e3)
 
 

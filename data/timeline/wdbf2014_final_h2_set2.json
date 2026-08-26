@@ -50,15 +50,47 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.5966,
-    "depart": 0.4055,
-    "links": 6,
-    "seed_offset": 3,
-    "wrist": "R",
-    "angle": 92.4,
+    "depart": 0.5069,
+    "links": 14,
+    "seed_offset": -3,
+    "wrist": "L",
+    "angle": 115.9,
+    "end_offset": 12,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
-      712.7,
+      671.5,
+      439.9
+     ],
+     [
+      741.9,
+      400.5
+     ],
+     [
+      772.7,
+      389.0
+     ],
+     [
+      800.9,
+      377.0
+     ],
+     [
+      826.8,
+      369.8
+     ],
+     [
+      854.5,
       362.4
+     ],
+     [
+      880.4,
+      357.7
+     ],
+     [
+      903.8,
+      355.8
      ],
      [
       928.3,
@@ -83,6 +115,10 @@
      [
       1032.0,
       362.5
+     ],
+     [
+      1060.4,
+      350.7
      ]
     ]
    }
@@ -108,6 +144,10 @@
     "seed_offset": 3,
     "wrist": "R",
     "angle": 81.3,
+    "end_offset": 10,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       1410.3,
@@ -161,6 +201,10 @@
     "seed_offset": 2,
     "wrist": "R",
     "angle": null,
+    "end_offset": 5,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1001.2,
@@ -193,15 +237,35 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1325,
-    "depart": 0.7041,
-    "links": 6,
-    "seed_offset": -6,
-    "wrist": "R",
-    "angle": 119.6,
+    "depart": 0.7694,
+    "links": 10,
+    "seed_offset": -8,
+    "wrist": "L",
+    "angle": 121.4,
+    "end_offset": 3,
+    "contact": {
+     "team": "near",
+     "track_id": 82,
+     "participant": "near-10"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
-      993.0,
-      390.8
+      906.8,
+      407.6
+     ],
+     [
+      864.7,
+      434.1
+     ],
+     [
+      820.1,
+      459.0
+     ],
+     [
+      771.4,
+      490.3
      ],
      [
       728.6,
@@ -226,6 +290,10 @@
      [
       490.3,
       727.4
+     ],
+     [
+      484.5,
+      916.2
      ]
     ]
    }
@@ -251,6 +319,10 @@
     "seed_offset": 1,
     "wrist": "L",
     "angle": null,
+    "end_offset": 5,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1267.8,
@@ -292,6 +364,14 @@
     "seed_offset": -1,
     "wrist": "L",
     "angle": 37.2,
+    "end_offset": 7,
+    "contact": {
+     "team": "near",
+     "track_id": 49,
+     "participant": "player-t49"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       737.5,
@@ -344,19 +424,23 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0933,
-    "depart": 0.4676,
-    "links": 8,
+    "depart": 0.7126,
+    "links": 13,
     "seed_offset": -1,
     "wrist": "L",
     "angle": 88.2,
+    "end_offset": 13,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       630.0,
       179.6
      ],
      [
-      688.3,
-      176.6
+      691.5,
+      166.4
      ],
      [
       726.7,
@@ -385,6 +469,26 @@
      [
       941.2,
       229.3
+     ],
+     [
+      973.9,
+      242.4
+     ],
+     [
+      1004.4,
+      254.1
+     ],
+     [
+      1034.9,
+      267.1
+     ],
+     [
+      1067.3,
+      281.7
+     ],
+     [
+      1095.6,
+      297.4
      ]
     ]
    }
@@ -405,15 +509,47 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0681,
-    "depart": 0.36,
-    "links": 4,
-    "seed_offset": 2,
-    "wrist": "R",
-    "angle": 139.6,
+    "depart": 0.3983,
+    "links": 11,
+    "seed_offset": -4,
+    "wrist": "L",
+    "angle": 111.3,
+    "end_offset": 7,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
-      947.1,
-      627.4
+      824.0,
+      702.3
+     ],
+     [
+      864.7,
+      715.2
+     ],
+     [
+      908.8,
+      732.3
+     ],
+     [
+      948.9,
+      751.0
+     ],
+     [
+      986.0,
+      769.5
+     ],
+     [
+      1025.7,
+      792.8
+     ],
+     [
+      1063.5,
+      817.0
+     ],
+     [
+      1100.8,
+      845.7
      ],
      [
       1137.5,
@@ -455,6 +591,10 @@
     "seed_offset": -7,
     "wrist": "R",
     "angle": null,
+    "end_offset": -3,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1044.2,
@@ -496,6 +636,10 @@
     "seed_offset": -4,
     "wrist": "R",
     "angle": null,
+    "end_offset": 2,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       943.7,
@@ -549,6 +693,10 @@
     "seed_offset": 2,
     "wrist": "L",
     "angle": null,
+    "end_offset": 4,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       729.5,
@@ -586,6 +734,10 @@
     "seed_offset": -8,
     "wrist": "R",
     "angle": null,
+    "end_offset": -3,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1018.1,
@@ -630,11 +782,19 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2722,
-    "depart": 0.3706,
-    "links": 8,
+    "depart": 0.4267,
+    "links": 10,
     "seed_offset": -1,
-    "wrist": "R",
+    "wrist": "L",
     "angle": 49.4,
+    "end_offset": 9,
+    "contact": {
+     "team": "far",
+     "track_id": 21,
+     "participant": "far-24"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       725.1,
@@ -671,6 +831,14 @@
      [
       979.4,
       200.0
+     ],
+     [
+      999.7,
+      182.7
+     ],
+     [
+      1018.5,
+      167.3
      ]
     ]
    }
@@ -691,11 +859,15 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3904,
-    "depart": 0.4087,
-    "links": 8,
+    "depart": 0.4692,
+    "links": 11,
     "seed_offset": -1,
     "wrist": "R",
     "angle": 46.6,
+    "end_offset": 10,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       1371.7,
@@ -732,6 +904,18 @@
      [
       1109.1,
       135.7
+     ],
+     [
+      1094.1,
+      123.3
+     ],
+     [
+      1080.9,
+      112.1
+     ],
+     [
+      1069.9,
+      101.9
      ]
     ]
    }
@@ -757,6 +941,10 @@
     "seed_offset": -4,
     "wrist": "R",
     "angle": null,
+    "end_offset": 0,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1466.6,
@@ -798,6 +986,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -822,6 +1014,10 @@
     "seed_offset": -8,
     "wrist": "R",
     "angle": null,
+    "end_offset": -3,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1215.2,
@@ -867,6 +1063,10 @@
     "seed_offset": -3,
     "wrist": "R",
     "angle": 10.5,
+    "end_offset": 3,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       1188.7,
@@ -920,6 +1120,10 @@
     "seed_offset": -3,
     "wrist": "R",
     "angle": null,
+    "end_offset": 2,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1371.1,
@@ -965,6 +1169,14 @@
     "seed_offset": -7,
     "wrist": "R",
     "angle": 1.6,
+    "end_offset": 0,
+    "contact": {
+     "team": "near",
+     "track_id": 56,
+     "participant": "near-7"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       1376.0,
@@ -1017,11 +1229,19 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2559,
-    "depart": 0.8083,
-    "links": 8,
+    "depart": 0.9144,
+    "links": 10,
     "seed_offset": -1,
     "wrist": "L",
     "angle": 77.3,
+    "end_offset": 10,
+    "contact": {
+     "team": "far",
+     "track_id": 17,
+     "participant": "far-27"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       304.2,
@@ -1058,6 +1278,14 @@
      [
       1284.3,
       419.3
+     ],
+     [
+      1353.7,
+      399.6
+     ],
+     [
+      1411.4,
+      381.8
      ]
     ]
    }
@@ -1078,12 +1306,24 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.14,
-    "depart": 0.7743,
-    "links": 8,
-    "seed_offset": -1,
+    "depart": 0.829,
+    "links": 9,
+    "seed_offset": -2,
     "wrist": "L",
-    "angle": 56.7,
+    "angle": 56.9,
+    "end_offset": 7,
+    "contact": {
+     "team": "near",
+     "track_id": 18,
+     "participant": "near-6"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
+     [
+      800.2,
+      331.8
+     ],
      [
       766.1,
       358.1
@@ -1139,11 +1379,19 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3809,
-    "depart": 0.3549,
-    "links": 8,
+    "depart": 0.388,
+    "links": 9,
     "seed_offset": -7,
     "wrist": "R",
     "angle": 95.0,
+    "end_offset": 3,
+    "contact": {
+     "team": "far",
+     "track_id": 139,
+     "participant": "player-t139"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       1315.4,
@@ -1180,6 +1428,10 @@
      [
       1099.1,
       157.5
+     ],
+     [
+      1079.6,
+      167.4
      ]
     ]
    }
@@ -1205,6 +1457,10 @@
     "seed_offset": -6,
     "wrist": "R",
     "angle": null,
+    "end_offset": -2,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       854.3,
@@ -1246,6 +1502,10 @@
     "seed_offset": -4,
     "wrist": "R",
     "angle": null,
+    "end_offset": 0,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       963.6,
@@ -1287,6 +1547,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -1311,6 +1575,14 @@
     "seed_offset": -6,
     "wrist": "R",
     "angle": 44.6,
+    "end_offset": 2,
+    "contact": {
+     "team": "near",
+     "track_id": 56,
+     "participant": "near-7"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       929.5,
@@ -1368,6 +1640,14 @@
     "seed_offset": 1,
     "wrist": "R",
     "angle": 69.6,
+    "end_offset": 8,
+    "contact": {
+     "team": "far",
+     "track_id": 169,
+     "participant": "far-2"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       1303.9,
@@ -1416,19 +1696,27 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0537,
-    "depart": 0.8349,
-    "links": 8,
-    "seed_offset": 0,
+    "depart": 0.921,
+    "links": 9,
+    "seed_offset": -2,
     "wrist": "L",
-    "angle": 76.1,
+    "angle": 78.8,
+    "end_offset": 8,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
+     [
+      729.5,
+      183.9
+     ],
      [
       784.4,
       192.3
      ],
      [
-      827.8,
-      204.0
+      843.0,
+      200.8
      ],
      [
       891.5,
@@ -1439,12 +1727,12 @@
       232.8
      ],
      [
-      994.1,
-      247.1
+      1017.6,
+      263.7
      ],
      [
-      1063.4,
-      266.5
+      1077.7,
+      279.5
      ],
      [
       1139.9,
@@ -1482,6 +1770,10 @@
     "seed_offset": 1,
     "wrist": "R",
     "angle": 95.8,
+    "end_offset": 4,
+    "contact": null,
+    "destination_source": "default",
+    "destination_agreed": null,
     "path": [
      [
       1482.5,
@@ -1514,11 +1806,19 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3533,
-    "depart": 0.3595,
-    "links": 8,
+    "depart": 0.4609,
+    "links": 12,
     "seed_offset": 2,
     "wrist": "R",
     "angle": 73.7,
+    "end_offset": 15,
+    "contact": {
+     "team": "far",
+     "track_id": 12,
+     "participant": "far-01"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       1510.1,
@@ -1555,6 +1855,22 @@
      [
       1201.1,
       293.7
+     ],
+     [
+      1179.4,
+      290.4
+     ],
+     [
+      1156.8,
+      279.3
+     ],
+     [
+      1137.8,
+      241.2
+     ],
+     [
+      1128.1,
+      226.7
      ]
     ]
    }
@@ -1580,6 +1896,10 @@
     "seed_offset": -6,
     "wrist": "L",
     "angle": null,
+    "end_offset": -1,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1137.0,
@@ -1625,6 +1945,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -1649,6 +1973,10 @@
     "seed_offset": 1,
     "wrist": "R",
     "angle": null,
+    "end_offset": 6,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       697.3,
@@ -1694,6 +2022,10 @@
     "seed_offset": 2,
     "wrist": "L",
     "angle": null,
+    "end_offset": 6,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1422.0,
@@ -1735,6 +2067,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -1754,12 +2090,24 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.138,
-    "depart": 0.6497,
-    "links": 8,
-    "seed_offset": -2,
+    "depart": 0.6789,
+    "links": 9,
+    "seed_offset": -4,
     "wrist": "R",
-    "angle": 5.1,
+    "angle": 28.3,
+    "end_offset": 6,
+    "contact": {
+     "team": "near",
+     "track_id": 2,
+     "participant": "near-44"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
+     [
+      1013.2,
+      286.1
+     ],
      [
       970.5,
       302.6
@@ -1815,23 +2163,71 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2483,
-    "depart": 0.5896,
-    "links": 2,
-    "seed_offset": -8,
+    "depart": 0.6946,
+    "links": 12,
+    "seed_offset": -3,
     "wrist": "L",
-    "angle": 83.7,
+    "angle": 65.0,
+    "end_offset": 10,
+    "contact": {
+     "team": "far",
+     "track_id": 169,
+     "participant": "far-2"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
-      179.6,
-      888.6
+      217.5,
+      713.3
      ],
      [
-      629.6,
-      908.1
+      247.0,
+      646.8
      ],
      [
-      912.0,
-      807.1
+      493.6,
+      570.7
+     ],
+     [
+      585.0,
+      542.1
+     ],
+     [
+      662.4,
+      517.1
+     ],
+     [
+      733.6,
+      489.7
+     ],
+     [
+      788.7,
+      469.7
+     ],
+     [
+      841.8,
+      446.0
+     ],
+     [
+      885.2,
+      426.8
+     ],
+     [
+      922.7,
+      408.6
+     ],
+     [
+      956.4,
+      391.7
+     ],
+     [
+      988.2,
+      375.3
+     ],
+     [
+      1009.9,
+      358.6
      ]
     ]
    }
@@ -1857,6 +2253,14 @@
     "seed_offset": -6,
     "wrist": "R",
     "angle": 91.8,
+    "end_offset": -3,
+    "contact": {
+     "team": "near",
+     "track_id": 2,
+     "participant": "near-44"
+    },
+    "destination_source": "default",
+    "destination_agreed": null,
     "path": [
      [
       1584.4,
@@ -1894,6 +2298,14 @@
     "seed_offset": -7,
     "wrist": "R",
     "angle": 15.9,
+    "end_offset": -4,
+    "contact": {
+     "team": "far",
+     "track_id": 169,
+     "participant": "far-2"
+    },
+    "destination_source": "default",
+    "destination_agreed": null,
     "path": [
      [
       867.9,
@@ -1926,12 +2338,24 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1787,
-    "depart": 0.5315,
-    "links": 8,
-    "seed_offset": -2,
+    "depart": 0.5491,
+    "links": 9,
+    "seed_offset": -3,
     "wrist": "L",
-    "angle": 9.6,
+    "angle": 36.4,
+    "end_offset": 6,
+    "contact": {
+     "team": "near",
+     "track_id": 54,
+     "participant": "near-18"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
+     [
+      1457.3,
+      307.4
+     ],
      [
       1493.1,
       317.9
@@ -1992,6 +2416,10 @@
     "seed_offset": -2,
     "wrist": "L",
     "angle": 97.7,
+    "end_offset": 1,
+    "contact": null,
+    "destination_source": "default",
+    "destination_agreed": null,
     "path": [
      [
       1414.9,
@@ -2029,6 +2457,10 @@
     "seed_offset": 3,
     "wrist": "L",
     "angle": null,
+    "end_offset": 5,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1817.7,
@@ -2066,6 +2498,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2090,6 +2526,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2114,6 +2554,10 @@
     "seed_offset": 0,
     "wrist": "R",
     "angle": null,
+    "end_offset": 3,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       839.6,
@@ -2155,6 +2599,10 @@
     "seed_offset": 3,
     "wrist": "R",
     "angle": 49.0,
+    "end_offset": 9,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       850.7,
@@ -2204,6 +2652,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2228,6 +2680,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2247,11 +2703,19 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.5515,
-    "depart": 0.846,
-    "links": 8,
+    "depart": 1.0005,
+    "links": 9,
     "seed_offset": 3,
     "wrist": "R",
     "angle": 42.2,
+    "end_offset": 12,
+    "contact": {
+     "team": "near",
+     "track_id": 434,
+     "participant": "near-7"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       1327.4,
@@ -2288,6 +2752,10 @@
      [
       1685.5,
       765.3
+     ],
+     [
+      1734.0,
+      868.1
      ]
     ]
    }
@@ -2313,6 +2781,10 @@
     "seed_offset": 3,
     "wrist": "R",
     "angle": 50.4,
+    "end_offset": 10,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       1117.1,
@@ -2365,12 +2837,20 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.4019,
-    "depart": 0.8747,
-    "links": 8,
-    "seed_offset": 0,
+    "depart": 1.0524,
+    "links": 10,
+    "seed_offset": -2,
     "wrist": "R",
-    "angle": 59.1,
+    "angle": 61.1,
+    "end_offset": 9,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
+     [
+      664.6,
+      137.9
+     ],
      [
       749.5,
       179.5
@@ -2404,8 +2884,12 @@
       389.0
      ],
      [
-      1173.5,
-      488.5
+      1151.8,
+      423.4
+     ],
+     [
+      1207.7,
+      459.5
      ]
     ]
    }
@@ -2431,6 +2915,14 @@
     "seed_offset": -2,
     "wrist": "R",
     "angle": 53.3,
+    "end_offset": 7,
+    "contact": {
+     "team": "far",
+     "track_id": 171,
+     "participant": "far-01"
+    },
+    "destination_source": "contact",
+    "destination_agreed": true,
     "path": [
      [
       477.5,
@@ -2492,6 +2984,10 @@
     "seed_offset": -5,
     "wrist": "R",
     "angle": null,
+    "end_offset": -1,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1331.9,
@@ -2533,6 +3029,10 @@
     "seed_offset": -2,
     "wrist": "R",
     "angle": null,
+    "end_offset": 1,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       548.7,
@@ -2570,6 +3070,14 @@
     "seed_offset": 3,
     "wrist": "L",
     "angle": null,
+    "end_offset": 9,
+    "contact": {
+     "team": "far",
+     "track_id": 73,
+     "participant": "far-55"
+    },
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       548.6,
@@ -2614,11 +3122,15 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2577,
-    "depart": 0.3075,
-    "links": 8,
+    "depart": 0.3521,
+    "links": 10,
     "seed_offset": 1,
     "wrist": "R",
     "angle": 21.1,
+    "end_offset": 12,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       765.5,
@@ -2655,6 +3167,14 @@
      [
       637.1,
       128.2
+     ],
+     [
+      630.4,
+      108.7
+     ],
+     [
+      625.1,
+      91.0
      ]
     ]
    }
@@ -2680,6 +3200,10 @@
     "seed_offset": -8,
     "wrist": "L",
     "angle": null,
+    "end_offset": -6,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       637.1,
@@ -2708,19 +3232,35 @@
     785.4
    ],
    "released": true,
-   "kind": "throw",
+   "kind": "pass",
    "dropped": null,
    "evidence": {
     "ball_before": 0.0273,
-    "depart": 0.5253,
-    "links": 8,
-    "seed_offset": 1,
+    "depart": 0.5916,
+    "links": 12,
+    "seed_offset": -2,
     "wrist": "L",
-    "angle": 76.1,
+    "angle": 92.7,
+    "end_offset": 11,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
-      1418.6,
-      634.1
+      1451.1,
+      591.8
+     ],
+     [
+      1341.0,
+      638.0
+     ],
+     [
+      1291.4,
+      620.3
+     ],
+     [
+      1250.2,
+      601.3
      ],
      [
       1212.0,
@@ -2753,6 +3293,10 @@
      [
       854.9,
       530.8
+     ],
+     [
+      808.2,
+      535.4
      ]
     ]
    }
@@ -2778,6 +3322,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2802,6 +3350,10 @@
     "seed_offset": -2,
     "wrist": "R",
     "angle": 40.5,
+    "end_offset": 4,
+    "contact": null,
+    "destination_source": "direction",
+    "destination_agreed": null,
     "path": [
      [
       1047.5,
@@ -2851,6 +3403,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2875,6 +3431,10 @@
     "seed_offset": -2,
     "wrist": "R",
     "angle": 132.6,
+    "end_offset": 1,
+    "contact": null,
+    "destination_source": "default",
+    "destination_agreed": null,
     "path": [
      [
       1532.9,
@@ -2912,6 +3472,10 @@
     "seed_offset": 3,
     "wrist": "R",
     "angle": 41.9,
+    "end_offset": 6,
+    "contact": null,
+    "destination_source": "default",
+    "destination_agreed": null,
     "path": [
      [
       1405.0,
@@ -2949,6 +3513,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2973,6 +3541,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -2997,6 +3569,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   }
@@ -3023,6 +3599,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3047,6 +3627,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3071,6 +3655,10 @@
     "seed_offset": -8,
     "wrist": "R",
     "angle": null,
+    "end_offset": -5,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1805.3,
@@ -3108,6 +3696,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3132,6 +3724,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3156,6 +3752,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3180,6 +3780,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3204,6 +3808,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3228,6 +3836,10 @@
     "seed_offset": 0,
     "wrist": "R",
     "angle": null,
+    "end_offset": 3,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1693.3,
@@ -3269,6 +3881,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3293,6 +3909,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3317,6 +3937,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3341,6 +3965,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3365,6 +3993,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3389,6 +4021,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3408,11 +4044,15 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0,
-    "depart": 0.4876,
-    "links": 8,
+    "depart": 0.5346,
+    "links": 9,
     "seed_offset": 0,
     "wrist": "L",
     "angle": null,
+    "end_offset": 9,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1411.4,
@@ -3449,6 +4089,10 @@
      [
       1765.5,
       263.2
+     ],
+     [
+      1799.5,
+      251.5
      ]
     ]
    }
@@ -3474,6 +4118,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3498,6 +4146,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3522,6 +4174,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3546,6 +4202,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3570,6 +4230,10 @@
     "seed_offset": -2,
     "wrist": "R",
     "angle": null,
+    "end_offset": 1,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1156.8,
@@ -3607,6 +4271,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3631,6 +4299,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3655,6 +4327,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3679,6 +4355,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3703,6 +4383,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3727,6 +4411,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3751,6 +4439,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3775,6 +4467,10 @@
     "seed_offset": -4,
     "wrist": "R",
     "angle": null,
+    "end_offset": -2,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       489.2,
@@ -3812,6 +4508,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3836,6 +4536,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3860,6 +4564,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3884,6 +4592,10 @@
     "seed_offset": -6,
     "wrist": "R",
     "angle": null,
+    "end_offset": -2,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1642.4,
@@ -3925,6 +4637,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3949,6 +4665,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3973,6 +4693,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   },
@@ -3997,6 +4721,10 @@
     "seed_offset": -2,
     "wrist": "L",
     "angle": null,
+    "end_offset": 1,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": [
      [
       1660.4,
@@ -4034,6 +4762,10 @@
     "seed_offset": null,
     "wrist": null,
     "angle": null,
+    "end_offset": null,
+    "contact": null,
+    "destination_source": null,
+    "destination_agreed": null,
     "path": []
    }
   }

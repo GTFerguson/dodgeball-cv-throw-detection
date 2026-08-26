@@ -48,10 +48,17 @@ def main() -> int:
     candidates.check_clip(clip)
 
     traces = trace_candidates(video, candidates.candidates, roster, pose, court)
+
+    def players_at(frame: int):
+        return [(p.track.team, p.track.id, p.participant.id,
+                 tuple(float(v) for v in pose.frame(frame)[p.detection_index]["box"]))
+                for p in roster.at(frame, role="player")]
+
     decisions = []
     for trace in traces:
         interval = sets.interval_for(trace.candidate.frame)
-        decisions.append(decide(trace, interval.start_frame if interval else None, pose.fps))
+        decisions.append(decide(trace, interval.start_frame if interval else None, pose.fps,
+                                players_at))
     timeline = Timeline(video=f"{stem}.mp4", clip_sha256=clip, pose_run=pose.dir.name,
                         fps=pose.fps, thresholds=thresholds(), decisions=decisions)
     out = timeline.write(TIMELINE_ROOT / f"{stem}.json")
