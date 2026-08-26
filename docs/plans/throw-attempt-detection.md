@@ -396,4 +396,7 @@ label-uncertainty case, not a model failure.
   Two vote fixes on the way: a doubled digit (`77` beside `7`) no longer counts as dissent, and
   a half cut off a switched track keeps the number the switch found - CHALMERS 7 now runs
   56 → 422 → 285 through the swap. 14 named tracks, 7 players; roles and sides identical to
-  the bridge's.
+  the bridge's. Still unnamed and open: DICARLO 10 before 3296 (track 82, a reader failure
+  on a folded 0), KUTNER (track 268, `4` ×3 declined beside one `45`), USA 27 and 55 (tracks
+  17, 73 — full-set, one or two readings each) and two more far-side full-set tracks
+  (12→167, 21).
