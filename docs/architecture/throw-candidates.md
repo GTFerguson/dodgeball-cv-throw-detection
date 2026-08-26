@@ -190,6 +190,7 @@ miss. The blind second pass runs with proposals hidden.
   in the post-set huddle. That is set end's problem, not this layer's.
 - The score is not a confidence. It ranks proposals for review order and
   nothing else; there is no calibration behind it.
-- This is a bootstrap for labelling. The pipeline's candidate stage will
-  start from the same signal, and that dependence is recorded on every
-  accepted event rather than hidden.
+- This is a bootstrap for labelling. The pipeline's candidate stage starts
+  from the same signal — the [[release-gate]] takes these proposals as its
+  input — and that dependence is recorded on every accepted event rather
+  than hidden.

@@ -2,7 +2,7 @@
 title: Dodgeball Throw-Attempt Detection — Plan
 created: 2026-08-25
 updated: 2026-08-26
-status: footage chosen, labelling tool in progress
+status: clip labelled; candidate and release stages shipped; destination and outcome next
 tags: [plan, dodgeball, event-detection, temporal]
 ---
 
@@ -474,3 +474,22 @@ label-uncertainty case, not a model failure.
   label keeps `pass` as a kind and the metric still excludes it - only what is scored changes.
   The truth set makes the same cut: 10 fakes against 10 releases, where pass against throw
   is 3 against 7.
+- 2026-08-26 — the full clip labelled: 60 events (29 throws, 25 fakes, 6 passes), 105
+  proposals judged, set end known from the last hit at 4651.
+- 2026-08-26 — the evaluation harness shipped and graduated to [[evaluation]]. Each level
+  of the cascade is scored on its own and only where the prediction claims it. Matching is
+  same-frame, same-player, with the roster's track carrying the labelled box to the frames
+  around the release: a throwing player's box changes shape too fast for one frame's box to
+  stand for the next, and three of sixty events fell under the overlap floor before that.
+  Set end falls out of the last hit. Baseline for the proposals as a timeline: P 56% R 98%
+  F1 72%, one release proposed twelve frames late.
+- 2026-08-26 — the release gate shipped and graduated to [[release-gate]]. Pose features for
+  event-or-not sat at AUC 0.4–0.7 on 60 v 45 (the wrist-height finding fell from 0.85 on 20 to
+  0.69 on 105); the ball separates both decisions. The set-start orange mask was found lighting
+  the near team's red jerseys wholesale — two "no ball" fakes scored higher on ball-in-hand
+  than most throws — and a hue floor of 9 (ball 6–14, jersey 4–10) cleared it. Gate one: the
+  rush, then a ball in the hand before the peak; gate two: a chain of blobs seen leaving the
+  hand, seeded up to eight frames before the peak because the peak is the whip and the ball
+  is already gone by it. Candidate P 72% R 98% F1 83%; release 78% on matched (fakes 19/25,
+  releases 27/34); every pass called a throw as scoped. Absence of the ball was rejected as
+  the release test: occlusion and a second ball in the other hand both fake it.

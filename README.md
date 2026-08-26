@@ -41,6 +41,9 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt   # Python 3.1
 .venv/bin/python scripts/detect_set_start.py data/footage/wdbf2014_final_h2_set2.mp4 \
     --offset 360
 
+.venv/bin/python scripts/detect_candidates.py wdbf2014_final_h2_set2   # proposals for the labeller
+.venv/bin/python scripts/detect_events.py     wdbf2014_final_h2_set2   # events + releases -> data/timeline/
+.venv/bin/python scripts/evaluate.py          wdbf2014_final_h2_set2   # score against data/labels/
 for t in scripts/test_*.py; do .venv/bin/python "$t" -q || exit 1; done
 ```
 

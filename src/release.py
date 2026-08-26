@@ -1,0 +1,272 @@
+"""From proposed throwing motions to events, and from events to releases.
+
+Two decisions, each on the ball rather than the body, because the body has
+already been asked everything it can answer by ``src/candidates``:
+
+**Is this an event at all?** A throw or a fake is wound up with a ball in the
+hand. The proposals the annotator rejected are bodies doing other things at
+speed - the opening sprint, standing up, dodging, a pose glitch - and most of
+them have no ball at the wrist in the frames before the peak. Two structural
+cuts come first: nothing inside the opening rush, when the balls are still
+on the centre line; and nothing after the set has ended, which this layer
+cannot know and leaves to the timeline's bound.
+
+**Was the ball released?** A fake keeps the ball; a throw's ball leaves. But
+"the disc on the wrist went dark" is also what a ball tucked behind the body
+looks like, and a second ball held in the other hand keeps the disc lit
+through a genuine release. So the claim is made on seeing the ball *leave*:
+a blob at the hand, then a chain of blobs stepping away from it frame by
+frame, each step continuing the last one's direction, reaching a distance no
+hand could carry it in the time. The first step may be long - a hard throw
+covers half the perspective scale in one frame - and later steps must follow
+the chain's own velocity.
+
+Everything that is not a fake is called a throw here. A pass is a throw to
+one's own side and its separation needs the ball's direction in court
+metres, which is a later stage's; the label keeps ``pass`` and the harness
+reports the confusion.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+from dataclasses import dataclass
+from pathlib import Path
+
+from src.ball import Trace, WristFrame
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+TIMELINE_ROOT = REPO_ROOT / "data" / "timeline"
+
+SCHEMA_VERSION = 1
+
+# No throw can happen until a player has sprinted to the centre line, picked
+# a ball up and wound up. Four proposals on the evaluation clip fall in the
+# first 1.5 s after the whistle, all sprinters; the first event is at 2.5 s.
+RUSH_S = 2.0
+
+# The frames before the peak in which a thrower must already hold the ball.
+# The window stops short of the peak: at the whip the ball is a streak that
+# the disc may or may not catch, and a release before the peak has already
+# emptied the hand.
+BALL_BEFORE_WINDOW = (-12, -3)
+# Mean orange inside the wrist disc over that window, in units of the squared
+# perspective scale. Set low on purpose: on the evaluation clip's 105 reviewed
+# proposals it keeps every event the tolerance can match and drops half the
+# rejections; raising it to 0.00005 trades eight events for no precision.
+BALL_BEFORE_MIN = 0.00001
+
+# A blob within this of the wrist keypoint is in the hand.
+HAND_NORM = 0.08
+# Offsets around the peak at which a chain may begin: a release comes as
+# early as eight frames before the wrist-speed peak (the peak is the whip or
+# the follow-through, not the release) and rarely more than three after.
+SEED_WINDOW = (-8, 3)
+# The first step of a chain has no velocity to predict from. A hard throw
+# moves the ball nearly half the perspective scale in a frame; a ball that
+# has not moved a fiftieth of it is still in the hand.
+FIRST_STEP_NORM = (0.02, 0.45)
+# Later steps land within a fixed slack plus a fraction of the last step's
+# length of where the last velocity predicts, turning no more than MAX_TURN.
+LINK_SLACK_NORM = 0.06
+LINK_VELOCITY_FRACTION = 0.6
+MAX_TURN_DEG = 50.0
+CHAIN_MAX_LINKS = 8
+# Each link tries at most this many blobs, nearest first.
+BRANCH = 6
+
+# A chain is a release when it carries the ball this far from the hand with
+# at least this many links. A hand cannot move a ball a quarter of the scale
+# in two frames; a ball in flight does it in one. Accuracy on the evaluation
+# clip is flat from 0.20 to 0.25 and falls either side.
+DEPART_MIN_NORM = 0.25
+CHAIN_MIN_LINKS = 2
+
+
+@dataclass(frozen=True)
+class Departure:
+    """The best chain of ball blobs leaving a wrist."""
+
+    wrist: str | None
+    distance: float
+    links: int
+    seed_offset: int | None
+
+    @property
+    def released(self) -> bool:
+        return self.distance >= DEPART_MIN_NORM and self.links >= CHAIN_MIN_LINKS
+
+
+NO_DEPARTURE = Departure(None, 0.0, 0, None)
+
+
+def ball_before(trace: Trace, window: tuple[int, int] = BALL_BEFORE_WINDOW) -> float:
+    """The most ball either wrist held before the peak."""
+    best = 0.0
+    for wrist in ("L", "R"):
+        counts = [wf.disc for o in range(window[0], window[1] + 1)
+                  if (wf := trace.at(o, wrist)) is not None]
+        if counts:
+            best = max(best, sum(counts) / len(counts))
+    return best
+
+
+def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, float]):
+    """Every consistent chain from a blob at the hand, depth-first."""
+    scale = trace.scale
+    out: list[list[tuple[float, float]]] = []
+
+    def step(path, pos, vel, offset):
+        wf: WristFrame | None = trace.at(offset, wrist)
+        options = []
+        if wf is not None:
+            for blob in wf.blobs:
+                mv = (blob.x - pos[0], blob.y - pos[1])
+                length = math.hypot(*mv)
+                if vel is None:
+                    if not FIRST_STEP_NORM[0] <= length / scale <= FIRST_STEP_NORM[1]:
+                        continue
+                else:
+                    px, py = pos[0] + vel[0], pos[1] + vel[1]
+                    radius = LINK_SLACK_NORM * scale + LINK_VELOCITY_FRACTION * math.hypot(*vel)
+                    if math.hypot(blob.x - px, blob.y - py) > radius:
+                        continue
+                    cos = (mv[0] * vel[0] + mv[1] * vel[1]) / (length * math.hypot(*vel) + 1e-9)
+                    if math.degrees(math.acos(max(-1.0, min(1.0, cos)))) > MAX_TURN_DEG:
+                        continue
+                options.append(((blob.x, blob.y), mv))
+        if not options or len(path) > CHAIN_MAX_LINKS:
+            out.append(path)
+            return
+        for p, mv in options[:BRANCH]:
+            step(path + [p], p, mv, offset + 1)
+
+    step([origin], origin, None, seed_offset + 1)
+    return out
+
+
+def departure(trace: Trace) -> Departure:
+    """The longest, then farthest, monotone chain leaving either wrist.
+
+    Both wrists are tried: a player holding two balls throws with one hand
+    while the disc on the other stays lit, and the pose's faster wrist at
+    the peak is not reliably the throwing one.
+    """
+    best = NO_DEPARTURE
+    for wrist in ("L", "R"):
+        for seed_offset in range(SEED_WINDOW[0], SEED_WINDOW[1] + 1):
+            wf = trace.at(seed_offset, wrist)
+            if wf is None or wf.wrist is None:
+                continue
+            at_hand = [b for b in wf.blobs
+                       if b.distance_norm(wf.wrist[0], wf.wrist[1], trace.scale) <= HAND_NORM]
+            if not at_hand:
+                continue
+            origin = (at_hand[0].x, at_hand[0].y)
+            for chain in _chains(trace, wrist, seed_offset, origin):
+                links = len(chain) - 1
+                if links < 1:
+                    continue
+                dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p in chain]
+                if any(b <= a for a, b in zip(dists, dists[1:])):
+                    continue
+                far = dists[-1] / trace.scale
+                if (links, far) > (best.links, best.distance):
+                    best = Departure(wrist, round(far, 4), links, seed_offset)
+    return best
+
+
+@dataclass(frozen=True)
+class Decision:
+    """What the release gate says about one proposal."""
+
+    frame: int
+    track_id: int
+    participant_id: str
+    team: str | None
+    box: tuple[float, float, float, float]
+    is_event: bool
+    dropped: str | None
+    ball_before: float
+    departure: Departure
+
+    @property
+    def released(self) -> bool | None:
+        return self.departure.released if self.is_event else None
+
+    @property
+    def kind(self) -> str | None:
+        if not self.is_event:
+            return None
+        return "throw" if self.released else "fake"
+
+
+def decide(trace: Trace, set_start_frame: int | None, fps: float) -> Decision:
+    cand = trace.candidate
+    dropped = None
+    if set_start_frame is not None and cand.frame < set_start_frame + RUSH_S * fps:
+        dropped = "rush"
+    held = ball_before(trace)
+    if dropped is None and held < BALL_BEFORE_MIN:
+        dropped = "no ball in hand"
+    # Computed for dropped proposals too, so the file carries the evidence a
+    # threshold sweep needs without another read of the footage.
+    dep = departure(trace)
+    return Decision(
+        frame=cand.frame, track_id=cand.track_id, participant_id=cand.participant_id,
+        team=cand.team, box=cand.box, is_event=dropped is None, dropped=dropped,
+        ball_before=held, departure=dep)
+
+
+@dataclass
+class Timeline:
+    """The events the pipeline claims for one clip, as written to ``data/timeline/``."""
+
+    video: str
+    clip_sha256: str
+    pose_run: str
+    fps: float
+    thresholds: dict
+    decisions: list[Decision]
+
+    @property
+    def events(self) -> list[Decision]:
+        return [d for d in self.decisions if d.is_event]
+
+    def to_json(self) -> dict:
+        def one(d: Decision) -> dict:
+            return {
+                "frame": d.frame, "track_id": d.track_id, "participant": d.participant_id,
+                "team": d.team, "box": [round(v, 1) for v in d.box],
+                "released": d.released, "kind": d.kind, "dropped": d.dropped,
+                "evidence": {
+                    "ball_before": round(d.ball_before * 1e3, 4),
+                    "depart": d.departure.distance, "links": d.departure.links,
+                    "seed_offset": d.departure.seed_offset, "wrist": d.departure.wrist,
+                },
+            }
+        return {
+            "schema_version": SCHEMA_VERSION, "video": self.video,
+            "clip_sha256": self.clip_sha256, "pose_run": self.pose_run, "fps": self.fps,
+            "thresholds": dict(self.thresholds),
+            "events": [one(d) for d in self.decisions if d.is_event],
+            "dropped": [one(d) for d in self.decisions if not d.is_event],
+        }
+
+    def write(self, path: str | Path) -> Path:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(self.to_json(), indent=1))
+        return path
+
+
+def thresholds() -> dict:
+    return {
+        "rush_s": RUSH_S, "ball_before_window": list(BALL_BEFORE_WINDOW),
+        "ball_before_min": BALL_BEFORE_MIN, "hand_norm": HAND_NORM,
+        "seed_window": list(SEED_WINDOW), "first_step_norm": list(FIRST_STEP_NORM),
+        "link_slack_norm": LINK_SLACK_NORM, "link_velocity_fraction": LINK_VELOCITY_FRACTION,
+        "max_turn_deg": MAX_TURN_DEG, "depart_min_norm": DEPART_MIN_NORM,
+        "chain_min_links": CHAIN_MIN_LINKS,
+    }

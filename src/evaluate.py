@@ -326,7 +326,7 @@ def evaluate(truth: TruthSet, predictions: list[Prediction],
     outcome = confusion(out_pairs, OUTCOMES) if out_pairs else None
 
     eff = {"truth": efficiency(truth.events)}
-    if any(p.kind is not None for p in predictions):
+    if any(p.outcome is not None for p in predictions):
         eff["predicted"] = efficiency([p for p in predictions if truth.in_play(p.frame)])
 
     return Report(candidate=candidate, boundary=boundary, team=team, release=release,
