@@ -378,10 +378,10 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   }, [seekFrame])
 
   const walk = useCallback((dir: 1 | -1) => {
-    const next = nextRow(visible, frame, dir)
+    const next = nextRow(visible, selectedRowId, frame, dir)
     if (!next) return flash('nothing in the list')
     selectRow(next)
-  }, [visible, frame, selectRow, flash])
+  }, [visible, selectedRowId, frame, selectRow, flash])
 
   // Who a row's boxes are, looked up rather than stored: the roster names the
   // track behind the detection a box was snapped from, and the player key is

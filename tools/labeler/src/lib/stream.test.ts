@@ -114,11 +114,30 @@ describe('following the playhead', () => {
     expect(at(0)).toBe(0)
   })
 
-  it('walks strictly past the frame and wraps', () => {
-    expect(nextRow(rows, 100, 1)?.frame).toBe(300)
-    expect(nextRow(rows, 500, 1)?.frame).toBe(100)
-    expect(nextRow(rows, 100, -1)?.frame).toBe(500)
-    expect(nextRow(rows, 301, -1)?.frame).toBe(300)
+  it('walks strictly past the frame and wraps when nothing is selected', () => {
+    expect(nextRow(rows, null, 100, 1)?.frame).toBe(300)
+    expect(nextRow(rows, null, 500, 1)?.frame).toBe(100)
+    expect(nextRow(rows, null, 100, -1)?.frame).toBe(500)
+    expect(nextRow(rows, null, 301, -1)?.frame).toBe(300)
+  })
+
+  it('walks one card from the selected one, wherever the playhead has gone', () => {
+    // Selected at 100, then stepped past 300 to find the moment: down is still
+    // the very next card, not the first past the playhead.
+    expect(nextRow(rows, rows[0].id, 320, 1)?.frame).toBe(300)
+    expect(nextRow(rows, rows[1].id, 100, -1)?.frame).toBe(100)
+    expect(nextRow(rows, rows[2].id, 500, 1)?.frame).toBe(100)
+    expect(nextRow(rows, rows[0].id, 100, -1)?.frame).toBe(500)
+  })
+
+  it('walks through cards that share a frame', () => {
+    const shared = buildRows([], file(proposal(100, 1), proposal(100, 2), proposal(300)), [], null, [], [])
+    expect(nextRow(shared, shared[0].id, 100, 1)?.id).toBe(shared[1].id)
+    expect(nextRow(shared, shared[1].id, 100, 1)?.frame).toBe(300)
+  })
+
+  it('falls back to the playhead when the selected card is filtered out', () => {
+    expect(nextRow(rows, 'p-999-0', 100, 1)?.frame).toBe(300)
   })
 
   it('only the model\'s claims take a verdict', () => {

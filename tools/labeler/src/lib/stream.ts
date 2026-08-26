@@ -163,9 +163,18 @@ export function nearestRow(rows: StreamRow[], frame: number): StreamRow | null {
   return best
 }
 
-/** The next row strictly beyond a frame in the given direction, wrapping. */
-export function nextRow(rows: StreamRow[], frame: number, dir: 1 | -1): StreamRow | null {
+/**
+ * The next row in the given direction, wrapping. From a selected row it is the
+ * adjacent card - the walk is through the list, so stepping frames to find a
+ * release, or two cards sharing a frame, cannot make a press skip one. With
+ * nothing selected in the list, it is the first row strictly beyond the frame.
+ */
+export function nextRow(
+  rows: StreamRow[], selectedId: string | null, frame: number, dir: 1 | -1,
+): StreamRow | null {
   if (!rows.length) return null
+  const at = selectedId == null ? -1 : rows.findIndex((r) => r.id === selectedId)
+  if (at >= 0) return rows[(at + dir + rows.length) % rows.length]
   const ahead = dir === 1
     ? rows.filter((r) => r.frame > frame)
     : [...rows].reverse().filter((r) => r.frame < frame)

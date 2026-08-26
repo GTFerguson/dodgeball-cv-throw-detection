@@ -159,6 +159,13 @@ function SourceToggle({ on, label, tone, onClick }: {
   )
 }
 
+/** A neighbour near the playhead lifts by a transform; the selected card, by layout. */
+const NEAR_SCALE = 0.05
+/** How far the selected card reaches into the list's gutter on each side, in px. */
+const SELECTED_REACH = 5
+/** Clearance above and below the selected card, in px, past the list's usual gap. */
+const SELECTED_GAP = 14
+
 interface CardProps {
   row: StreamRow
   who: RowWho
@@ -194,10 +201,21 @@ const Card = memo(function Card({
   // Emphasis is lift, not colour - colour is semantic here. A card near the
   // playhead grows, its border darkens towards ink and it casts a shadow, all
   // in proportion to closeness, so two throws a few frames apart are both lifted
-  // and the one under the playhead most.
+  // and the one under the playhead most. The selected card is lifted above all
+  // of them wherever the playhead is: it is the one being edited, and it must
+  // never sit smaller than a neighbour that happens to be nearer the frame. It
+  // grows in layout rather than by transform - out into the gutter and taller,
+  // with room above and below - so its neighbours move aside instead of being
+  // covered.
   const pct = Math.round(proximity * 100)
-  const lift: React.CSSProperties = near && !selected ? {
-    transform: `scale(${1 + 0.05 * proximity})`,
+  const lift: React.CSSProperties = selected ? {
+    margin: `${SELECTED_GAP}px -${SELECTED_REACH}px ${SELECTED_GAP}px`,
+    padding: '11px 15px',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.22)',
+    position: 'relative',
+    zIndex: 20,
+  } : near ? {
+    transform: `scale(${1 + NEAR_SCALE * proximity})`,
     transformOrigin: 'center',
     borderColor: `color-mix(in srgb, var(--ink) ${Math.round(pct * 0.7)}%, var(--rule))`,
     boxShadow: `0 ${1 + 5 * proximity}px ${4 + 14 * proximity}px rgba(0,0,0,${0.06 + 0.16 * proximity})`,
@@ -205,7 +223,8 @@ const Card = memo(function Card({
     position: 'relative',
     zIndex: 1 + Math.round(proximity * 10),
   } : {}
-  const grow = near ? { fontSize: `${12 + 2 * proximity}px` } : undefined
+  const emphasis = selected ? 1 : proximity
+  const grow = selected || near ? { fontSize: `${12 + 2 * emphasis}px` } : undefined
   const open = selected && row.event != null
   const showVerdict = (judgeable(row) && row.verdict == null) || (selected && sides.model)
   // A proposal with no event yet is classified straight from its card: choosing
@@ -218,11 +237,11 @@ const Card = memo(function Card({
       onClick={onClick}
       style={lift}
       className={`mt-2.5 rounded-md border border-l-[3px] px-3 py-2 cursor-pointer shadow-panel
-        transition-[transform,box-shadow,border-color] duration-150
+        transition-[transform,box-shadow,border-color,margin,padding] duration-150
         ${edge} ${selected ? 'bg-surface-2 border-rule-strong ring-1 ring-ink' : 'bg-surface border-rule hover:border-rule-strong'}`}
     >
       <div className="grid grid-cols-[48px_1fr_auto] gap-2 items-center" style={grow}>
-        <span className={`font-mono text-[1em] tabular-nums leading-4 ${proximity > 0.5 ? 'font-semibold' : near ? 'font-medium' : ''}`}>
+        <span className={`font-mono text-[1em] tabular-nums leading-4 ${emphasis > 0.5 ? 'font-semibold' : near ? 'font-medium' : ''}`}>
           {row.frame}
           <span className={`block text-[9.5px] font-normal ${nearest ? 'text-ink-mute' : 'text-ink-faint'}`}>
             {formatSeconds(row.frame / fps)}
