@@ -1,25 +1,28 @@
 #!/usr/bin/env python3
-"""Put jersey numbers on the players in a clip.
+"""Put jersey numbers on the players in a clip, and write its roster.
 
-Two stages. ByteTrack follows every player on court for as long as it can, which
+Three stages. ByteTrack follows every player on court for as long as it can, which
 on the evaluation clip is most of a set. Then each track's largest crops - the
 frames where that player was closest to the camera - are read for a number, and a
-number several crops agree on is confirmed for the whole track.
+number several crops agree on is confirmed for the whole track. Then every track
+is given a role and a side, and tracks that confirm to the same number on the
+same side, one after another, are joined into one player.
 
 That order is what makes it work. Reading is hard at the far baseline and easy at
 the near one, and a track that spans a set contains both, so the number never has
 to be read where it is hard.
 
-Writes ``data/players/<stem>.json`` and, with --sheet, a contact sheet of the
-crops behind each confirmed number - and of every long track the vote declined to
-name, in time order, so a reader that keeps dropping a digit can be told by eye
-from a tracker that stitched two players together.
+Writes ``data/roster/<stem>.json`` - the one file that says who is a player, on
+which side, wearing what number, and which detection on which frame was them -
+and, with --sheet, a contact sheet of the crops behind each confirmed number and
+of every long player track the vote declined to name, in time order, so a reader
+that keeps dropping a digit can be told by eye from a tracker that stitched two
+players together.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -29,15 +32,21 @@ import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+# setstart imports its siblings bare, the rest of src by package; serve both.
+sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from src.court import Court  # noqa: E402
 from src.jersey import (Crop, JerseyReader, Reading, confirm,  # noqa: E402
                         in_time_order, needs_review, shortlist, switch,
                         torso_crop, unobstructed)
+from src.players import clash, join  # noqa: E402
 from src.pose import PoseRun  # noqa: E402
+from src.roster import (Participant, Roster, TrackRecord, assign_role,  # noqa: E402
+                        assign_team, chest_region, in_core, intervals_of,
+                        kit_fractions, live_cores, participant_id, sides_from,
+                        vote_kit)
+from setstart import SetTimeline  # noqa: E402
 from src.tracking import cut_frame, held_in_play, track as track_players  # noqa: E402
-
-SCHEMA_VERSION = 3
 
 # A track shorter than this is a detection artefact rather than a player, and
 # naming one spends an identity on noise.
@@ -47,6 +56,10 @@ MIN_TRACK_FRAMES = 25
 # the same distance, so they are near-duplicates as far as a reader is concerned,
 # and keeping all of them just fills the shortlist with one moment.
 SAMPLE_EVERY = 5
+
+# Kit colour is sampled more sparsely still: a chest is the same colour on every
+# frame, and it is sampled on every track, officials included.
+KIT_SAMPLE_EVERY = 10
 
 
 def main() -> int:
@@ -61,6 +74,11 @@ def main() -> int:
     stem = Path(args.video).stem
     court = Court.for_video(stem)
     run = PoseRun.for_video(stem)
+    timeline = SetTimeline.for_video(stem)
+    timeline.check_clip(run.manifest["clip_sha256"])
+    cores = live_cores(timeline, run.fps)
+    if not cores:
+        print("no confirmed set start: roles can only come from kit", file=sys.stderr)
 
     end = args.end if args.end is not None else run.frame_count
     frames = {f: run.frame(f) for f in range(args.start, end)}
@@ -82,16 +100,20 @@ def main() -> int:
     # the margin band, which is where the officials stand and the eliminated wait,
     # and a referee's stripes read as a digit as readily as a jersey does. Nothing
     # off court needs a name: attribution only ever asks about players in play.
-    in_play: dict[int, int] = {}
+    # Kit colour is the opposite: it is wanted on every track, because it is what
+    # tells an official from a player who was never in live play.
+    playing = {t.id: held_in_play(court, t) for t in tracks}
     wanted: dict[int, list] = defaultdict(list)
+    kit_wanted: dict[int, list] = defaultdict(list)
     for t in tracks:
-        playing = held_in_play(court, t)
-        in_play[t.id] = sum(playing)
-        for i, (f, on) in enumerate(zip(t.frames, playing)):
+        for i, (f, on) in enumerate(zip(t.frames, playing[t.id])):
             if on and i % SAMPLE_EVERY == 0:
                 wanted[f].append(t)
+            if i % KIT_SAMPLE_EVERY == 0:
+                kit_wanted[f].append(t)
 
     crops: dict[int, list[Crop]] = defaultdict(list)
+    kit_samples: dict[int, list[tuple[int, tuple[float, float, float]]]] = defaultdict(list)
     cap.set(cv2.CAP_PROP_POS_FRAMES, args.start)
     for f in range(args.start, end):
         ok, image = cap.read()
@@ -104,6 +126,17 @@ def main() -> int:
             crop = torso_crop(image, det)
             if crop is not None:
                 crops[t.id].append(Crop(frame=f, image=crop))
+        for t in kit_wanted.get(f, ()):
+            det = t.at(f)
+            if det is None or not unobstructed(det, frames[f]):
+                continue
+            region = chest_region(det)
+            if region is None:
+                continue
+            x1, y1, x2, y2 = region
+            chest = image[y1:y2, x1:x2]
+            if chest.size:
+                kit_samples[t.id].append((f, kit_fractions(chest)))
     cap.release()
 
     with_crops = sum(1 for t in tracks if crops.get(t.id))
@@ -127,6 +160,7 @@ def main() -> int:
     # half is named on its own readings. A half can switch again, so cut until
     # nothing does.
     splits: dict[int, tuple[int, int]] = {}
+    switched: dict[int, int] = {}
     next_id = max(t.id for t in tracks) + 1
     queue = list(tracks)
     tracks = []
@@ -142,62 +176,133 @@ def main() -> int:
         print(f"track {t.id} reads #{a} then #{b}: cut at {at} -> {head.id}, {tail.id}")
         # The head keeps the id, so take both halves before either is stored.
         whole_readings, whole_crops = evidence[t.id], shortlists[t.id]
+        whole_kit = kit_samples.get(t.id, [])
         evidence[head.id] = [r for r in whole_readings if r.frame < at]
         evidence[tail.id] = [r for r in whole_readings if r.frame >= at]
         shortlists[head.id] = [c for c in whole_crops if c.frame < at]
         shortlists[tail.id] = [c for c in whole_crops if c.frame >= at]
-        in_play[head.id] = sum(held_in_play(court, head)) if head.frames else 0
-        in_play[tail.id] = sum(held_in_play(court, tail)) if tail.frames else 0
+        kit_samples[head.id] = [k for k in whole_kit if k[0] < at]
+        kit_samples[tail.id] = [k for k in whole_kit if k[0] >= at]
+        switched[head.id], switched[tail.id] = a, b
         splits[tail.id] = (t.id, at)
         next_id += 1
         queue[:0] = [head, tail]
+    tracks = [t for t in tracks if t.frames]
     tracks.sort(key=lambda t: (t.start, t.id))
+    playing = {t.id: held_in_play(court, t) for t in tracks}
 
+    # A half cut off a switched track is named by the switch that cut it: the
+    # readings that confirmed a change of player are the readings it has, and
+    # asking them to confirm again at the higher bar leaves the new man unnamed.
     numbers: dict[int, int] = {}
     for t in tracks:
         got = confirm(evidence.get(t.id, []))
+        if got is None:
+            got = switched.get(t.id)
         if got is not None:
             numbers[t.id] = got
 
     read_any = sum(1 for r in evidence.values() if r)
     print(f"{read_any} tracks returned a reading, {len(numbers)} confirmed")
 
-    players: dict[int, list[int]] = defaultdict(list)
-    for tid, number in numbers.items():
-        players[number].append(tid)
-    print(f"{len(players)} distinct numbers: "
-          + ", ".join(str(n) for n in sorted(players)))
+    # Where each track was while in play, and whether that was inside the live
+    # core of a set - the evidence for calling it a player.
+    half_counts: dict[int, Counter] = {}
+    core_frames: dict[int, int] = {}
+    for t in tracks:
+        halves = Counter()
+        core = 0
+        for (cx, cy), f, on in zip(t.points, t.frames, playing[t.id]):
+            if on:
+                halves[str(court.half(cy))] += 1
+                core += in_core(f, cores)
+        half_counts[t.id], core_frames[t.id] = halves, core
+
+    kits = {t.id: vote_kit([k for _, k in kit_samples.get(t.id, [])]) for t in tracks}
+    sides = sides_from([(kits[t.id][0], half_counts[t.id].most_common(1)[0][0])
+                        for t in tracks if core_frames[t.id] and half_counts[t.id]])
+    print(f"sides: {sides or 'not established'}")
+    roles = {t.id: assign_role(kits[t.id][0], core_frames[t.id]) for t in tracks}
+    teams = {t.id: assign_team(dict(half_counts[t.id]), kits[t.id][0], sides) for t in tracks}
+
+    # Tracks that confirm to the same number on the same side, in sequence, are
+    # one player whose track broke; the same number on two tracks at once is two
+    # people the side could not tell apart.
+    spans = {t.id: (t.start, t.end) for t in tracks}
+    players = join(spans, numbers, {tid: teams[tid][0] for tid in numbers})
+    print(f"{len(players)} numbered players from {len(numbers)} named tracks")
+    for p in players:
+        print(f"  {p.team or '?':<5} #{p.number:<3} {p.start:>5}-{p.end:<5} "
+              f"tracks {', '.join(map(str, p.track_ids))}")
+    for key in sorted({(p.team, p.number) for p in players}, key=lambda k: (k[0] or "", k[1])):
+        worn_by = [tid for tid, n in numbers.items() if n == key[1] and teams[tid][0] == key[0]]
+        pair = clash(spans, worn_by)
+        if pair is not None:
+            print(f"  {key[0]} #{key[1]} is on tracks {pair[0]} and {pair[1]} at once: not joined")
+
     by_id = {t.id: t for t in tracks}
-    for number in sorted(players):
-        frames_held = sum(len(by_id[tid].frames) for tid in players[number])
-        print(f"  #{number:<3} {len(players[number]):2d} tracks, {frames_held:5d} frames")
+    owner: dict[int, str] = {}
+    participants: dict[str, Participant] = {}
+    for p in players:
+        ids = list(p.track_ids)
+        role = "player" if any(roles[i] == "player" for i in ids) else roles[ids[0]]
+        if role != "player":
+            print(f"  #{p.number} on tracks {ids} was never seen in play; kept as {role}")
+        pid = participant_id(role, p.team, p.number, ids[0])
+        while pid in participants:
+            pid += "'"
+        participants[pid] = Participant(
+            id=pid, role=role, team=p.team, number=p.number, track_ids=tuple(ids),
+            start_frame=p.start, end_frame=p.end)
+        for i in ids:
+            owner[i] = pid
+    for t in tracks:
+        if t.id in owner:
+            continue
+        role, (team, _) = roles[t.id], teams[t.id]
+        pid = participant_id(role, team, numbers.get(t.id), t.id)
+        while pid in participants:
+            pid += "'"
+        participants[pid] = Participant(id=pid, role=role, team=team, number=numbers.get(t.id),
+                                        track_ids=(t.id,), start_frame=t.start, end_frame=t.end)
+        owner[t.id] = pid
 
-    out = REPO_ROOT / "data" / "players" / f"{stem}.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({
-        "schema_version": SCHEMA_VERSION,
-        "video": f"{stem}.mp4",
-        "pose_run": run.dir.name,
-        "clip_sha256": run.manifest["clip_sha256"],
-        "tracks": [{
-            "id": t.id,
-            "start_frame": t.start,
-            "end_frame": t.end,
-            "frames": len(t.frames),
-            "in_play_frames": in_play[t.id],
-            "split_from": list(splits[t.id]) if t.id in splits else None,
-            "number": numbers.get(t.id),
-            "readings": [
-                {"number": r.number, "confidence": r.confidence, "frame": r.frame}
-                for r in sorted(evidence.get(t.id, []), key=lambda r: r.frame)
-            ],
-        } for t in tracks],
-    }, indent=1))
-    print(f"\nwrote {out.relative_to(REPO_ROOT)}")
+    records: dict[int, TrackRecord] = {}
+    for t in tracks:
+        detections = []
+        for f, det in zip(t.frames, t.detections):
+            index = next(i for i, d in enumerate(frames[f]) if d is det)
+            detections.append((f, index))
+        kit, share = kits[t.id]
+        team, source = teams[t.id]
+        records[t.id] = TrackRecord(
+            id=t.id, participant_id=owner[t.id], role=roles[t.id], team=team,
+            team_source=source, kit=kit, kit_share=share, number=numbers.get(t.id),
+            start_frame=t.start, end_frame=t.end, detections=tuple(detections),
+            in_play=tuple(intervals_of(t.frames, playing[t.id])),
+            core_in_play_frames=core_frames[t.id], split_from=splits.get(t.id),
+            readings=tuple((r.frame, r.number, r.confidence)
+                           for r in sorted(evidence.get(t.id, []), key=lambda r: r.frame)))
 
-    review = [t for t in tracks
-              if needs_review(numbers.get(t.id), in_play[t.id], span)]
-    print(f"{len(review)} long tracks left unnamed: "
+    roster = Roster(
+        video=f"{stem}.mp4", clip_sha256=run.manifest["clip_sha256"], pose_run=run.dir.name,
+        fps=run.fps, frame_count=run.frame_count, sides=sides,
+        live_core=cores[0] if cores else None, tracks=records, participants=participants)
+    out = roster.write(REPO_ROOT / "data" / "roster" / f"{stem}.json")
+    back = Roster.load(out)
+    by_role = Counter(t.role for t in back.tracks.values())
+    print(f"\n{len(back.tracks)} tracks: " + ", ".join(f"{n} {r}" for r, n in by_role.items()))
+    for team in ("near", "far"):
+        ps = back.players(team)
+        named = sorted(p.number for p in ps if p.number is not None)
+        print(f"  {team}: {len(ps)} players, numbered {named}, "
+              f"{sum(p.number is None for p in ps)} unnamed")
+    print(f"  {len(back.officials())} officials, {len(back.unknown())} unknown")
+    print(f"wrote {out.relative_to(REPO_ROOT)}")
+
+    review = [t for t in tracks if roles[t.id] == "player"
+              and needs_review(numbers.get(t.id), sum(playing[t.id]), span)]
+    print(f"{len(review)} long player tracks left unnamed: "
           + ", ".join(str(t.id) for t in review))
 
     if args.sheet:

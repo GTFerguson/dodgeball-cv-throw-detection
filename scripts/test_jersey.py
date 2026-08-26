@@ -99,6 +99,11 @@ class Confirmation(unittest.TestCase):
         # is sometimes read as 77 is still a 7.
         self.assertEqual(confirm(readings((7, 5), (77, 1))), 7)
 
+    def test_a_doubled_digit_does_not_dissent_either(self):
+        # CHALMERS after the swap, track 285: eight 7s, three 77s and a 1. The
+        # 77s counted as votes against left him unnamed for half a set.
+        self.assertEqual(confirm(readings((7, 8), (77, 3), (1, 1))), 7)
+
 
 class Switches(unittest.TestCase):
     # Two numbers each confirmed in disjoint stretches of one track is the

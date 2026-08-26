@@ -295,8 +295,11 @@ def confirm(readings: list[Reading],
     # A lost digit is not a dissenting vote. `1` read beside `18` is what the
     # reader returns when the 8 is on a fold, and it fits an 18 - so it neither
     # supports nor opposes, and the majority is taken over readings that do.
+    # Nor is a doubled one: `77` beside `7` is the reader repeating, and CHALMERS
+    # was left unnamed for half a set when three of them outweighed eight 7s.
     opposing = sum(w for n, w in weighted.items()
-                   if n != number and not _is_fragment_of(n, number))
+                   if n != number and not _is_fragment_of(n, number)
+                   and not _is_doubling_of(n, number))
     if weight / (weight + opposing) <= MIN_MAJORITY:
         return None
     frames = [r.frame for r in readings if r.number == number]
@@ -316,6 +319,12 @@ def _is_fragment_of(number: int, other: int) -> bool:
     """
     a, b = str(number), str(other)
     return len(a) == 1 and len(b) == 2 and a in b and b != a * 2
+
+
+def _is_doubling_of(number: int, other: int) -> bool:
+    """Whether `number` is `other` read twice - `77` from a 7."""
+    a, b = str(number), str(other)
+    return len(b) == 1 and a == b * 2
 
 
 def conflicts(a: int | None, b: int | None) -> bool:
