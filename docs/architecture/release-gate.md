@@ -106,11 +106,27 @@ construction: there is no ball to find. The label carries `ball_in_hand` on
 every fake so the harness reports those apart ([[evaluation]]); two on the
 clip, both dropped.
 
-What the rule cannot cut is a ball held by a body doing something else:
-hunkering down with a ball, blocking with it, raising a catch for the
-referee, dodging with one in hand. Those are the twenty false
-positives that remain, and they are the same class as a fake at the metric —
-a ball that never crossed.
+**Wound up with it.** A ball in the hand is not enough: a block, a raised
+catch, a hunkered player and a pickup all hold one. Each wrist's height
+along the torso is recorded on the trace (`WristFrame.height`, in torso
+lengths past the shoulder line, along the body rather than up the image so
+a prone player is measured the same way), and the hand holding the ball
+must have reached `WINDUP_MIN_HEIGHT` — the shoulder line — inside
+`WINDUP_WINDOW` before the peak. That is the plan's definition of a wind-up
+applied to the ball rather than the bare wrist: the candidate stage's
+wrist-only test is what a blocking arm satisfies. No pose feature had
+separated these on its own (AUC 0.4–0.7); the ball's height does because
+it is only measured on frames the hand holds a ball. Ten proposals fall
+here, and the one event with them is the wrong-track case described under
+the scores. The bar sits at zero because a sidearm throw reaches the line
+only at the whip; higher starts costing those.
+
+What the rules cannot cut is a ball wound up and not thrown at a moment the
+annotator judged not a fake: a crouch to dodge with the ball raised, a
+blocking arm that went past the line, the follow-through peak of a throw
+already counted. Those are the eleven false positives that remain, and
+they are the same class as a fake at the metric — a ball that never
+crossed.
 
 ## Gate two: was the ball released
 
@@ -188,13 +204,23 @@ On the evaluation clip, against the truth set, at the plan's tolerance of
 
 | Level | Before this stage | With it |
 |---|---|---|
-| Candidate | P 56% R 98% F1 72% | **P 74% R 95% F1 83%** |
-| Release, on matched events | not claimed | **84%** — fakes right 22 of 23, releases right 26 of 34 |
-| Kind, on matched events | not claimed | 75% — every pass is called a throw, by design |
+| Candidate | P 56% R 98% F1 72% | **P 84% R 93% F1 88%** |
+| Release, on matched events | not claimed | **86%** — fakes right 22 of 23, releases right 26 of 33 |
+| Kind, on matched events | not claimed | 77% — every pass is called a throw, by design |
 
-The three candidate misses: a throw whose peak landed twelve frames after
-the labelled release (the annotator's own note calls that one late), and
-the two fakes made with no ball, dropped by gate one as described above.
+The four candidate misses: a throw whose peak landed twelve frames after
+the labelled release (the annotator's own note calls that one late); the
+two fakes made with no ball, dropped by gate one as described above; and
+a throw whose labelled box sits on a second, empty detection of the
+thrower, so the real thrower's proposal — which shows a textbook departure
+— counts as a false positive against it while the empty track's proposal
+fails the wind-up. That one is the identity layer's, not this gate's.
+
+Of the eleven false positives, three are a second peak of a motion already
+matched (the follow-through, twelve to fifteen frames on), which the
+tolerance splits from the release; one is the wrong-track thrower above;
+the rest are a ball wound up and not thrown at a moment the annotator did
+not call a fake.
 
 The release errors are readable. The one fake called released is a ball
 that splits into two components in the fingers at the whip, one of which
@@ -202,9 +228,8 @@ seeds a chain while the ball stays in the hand. Of the eight releases
 called fakes: two far-court throws the mask never sees at the hand at all,
 and one whose ball moves under a diameter a frame; one a hair under the
 distance floor; a hand-over the annotator was unsure was a pass; a throw
-noted *hard to see*; one whose labelled box sits on a second detection of
-the thrower, so the match went to the empty track; and the two near
-throws released together at the set's end. None of these is a threshold
+noted *hard to see*; and the two near throws released together at the
+set's end. None of these is a threshold
 away; they are reported as what they are rather than tuned away. Before
 the chain was made to follow one ball the score was 79%, and it had been
 reached partly by chains that hopped to the right answer by luck.

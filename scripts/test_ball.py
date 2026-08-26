@@ -18,7 +18,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from src.ball import (BALL_HSV_HI, BALL_HSV_LO, BLOB_DIAMETER_NORM, DISC_RADIUS_NORM,  # noqa: E402
-                      ball_mask, blobs_in, disc_count, wrist_frame)
+                      ball_mask, blobs_in, disc_count, wrist_frame, wrist_height)
 
 
 def canvas(h: int = 300, w: int = 400) -> np.ndarray:
@@ -103,6 +103,32 @@ class Blobs(unittest.TestCase):
         self.assertIsNone(wf.wrist)
         self.assertEqual(wf.disc, 0.0)
         self.assertEqual(DISC_RADIUS_NORM * 500.0, 25.0)
+
+
+class Height(unittest.TestCase):
+
+    def person(self, shoulder_y=100.0, hip_y=160.0):
+        kpts = [[0.0, 0.0, 0.0] for _ in range(17)]
+        kpts[5] = [90.0, shoulder_y, 0.9]
+        kpts[6] = [110.0, shoulder_y, 0.9]
+        kpts[11] = [92.0, hip_y, 0.9]
+        kpts[12] = [108.0, hip_y, 0.9]
+        return {"box": [80.0, 80.0, 120.0, 250.0], "conf": 0.9, "kpts": kpts}
+
+    def test_a_wrist_a_torso_above_the_shoulder_is_at_height_one(self):
+        self.assertAlmostEqual(wrist_height(self.person(), (100.0, 40.0)), 1.0)
+
+    def test_a_wrist_at_the_hip_is_at_minus_one(self):
+        self.assertAlmostEqual(wrist_height(self.person(), (100.0, 160.0)), -1.0)
+
+    def test_up_is_along_the_body_not_the_image(self):
+        # Lying head towards the camera: shoulders below the hips in the image.
+        prone = self.person(shoulder_y=200.0, hip_y=150.0)
+        self.assertAlmostEqual(wrist_height(prone, (100.0, 250.0)), 1.0)
+
+    def test_no_body_no_height(self):
+        self.assertIsNone(wrist_height(None, (1.0, 1.0)))
+        self.assertIsNone(wrist_height(self.person(), None))
 
 
 if __name__ == "__main__":

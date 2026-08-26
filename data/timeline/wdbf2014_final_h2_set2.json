@@ -11,6 +11,11 @@
    -3
   ],
   "ball_before_min": 2e-05,
+  "windup_window": [
+   -10,
+   0
+  ],
+  "windup_min_height": 0.0,
   "hand_norm": 0.08,
   "seed_window": [
    -8,
@@ -137,28 +142,6 @@
     "links": 3,
     "seed_offset": 1,
     "wrist": "L"
-   }
-  },
-  {
-   "frame": 565,
-   "track_id": 75,
-   "participant": "player-t75",
-   "team": "far",
-   "box": [
-    617.2,
-    194.9,
-    689.8,
-    334.4
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.36,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
    }
   },
   {
@@ -404,28 +387,6 @@
    }
   },
   {
-   "frame": 1297,
-   "track_id": 139,
-   "participant": "player-t139",
-   "team": "far",
-   "box": [
-    1087.4,
-    159.7,
-    1146.1,
-    278.0
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.3084,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
-   }
-  },
-  {
    "frame": 1411,
    "track_id": 73,
    "participant": "far-55",
@@ -467,50 +428,6 @@
     "links": 6,
     "seed_offset": -3,
     "wrist": "R"
-   }
-  },
-  {
-   "frame": 1464,
-   "track_id": 54,
-   "participant": "near-18",
-   "team": "near",
-   "box": [
-    1582.5,
-    717.0,
-    1684.9,
-    916.5
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.0935,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
-   }
-  },
-  {
-   "frame": 1465,
-   "track_id": 73,
-   "participant": "far-55",
-   "team": "far",
-   "box": [
-    1165.0,
-    273.1,
-    1265.0,
-    476.7
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.022,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
    }
   },
   {
@@ -800,28 +717,6 @@
    }
   },
   {
-   "frame": 2026,
-   "track_id": 12,
-   "participant": "player-t12",
-   "team": "far",
-   "box": [
-    1138.2,
-    191.4,
-    1237.7,
-    275.4
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.0766,
-    "depart": 0.1014,
-    "links": 2,
-    "seed_offset": -2,
-    "wrist": "R"
-   }
-  },
-  {
    "frame": 2062,
    "track_id": 2,
    "participant": "near-44",
@@ -841,28 +736,6 @@
     "links": 4,
     "seed_offset": -6,
     "wrist": "L"
-   }
-  },
-  {
-   "frame": 2242,
-   "track_id": 171,
-   "participant": "far-1",
-   "team": "far",
-   "box": [
-    786.0,
-    204.5,
-    859.6,
-    311.1
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.1212,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
    }
   },
   {
@@ -1064,28 +937,6 @@
    }
   },
   {
-   "frame": 2727,
-   "track_id": 169,
-   "participant": "player-t169",
-   "team": "far",
-   "box": [
-    926.5,
-    308.2,
-    1049.4,
-    402.9
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.0223,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
-   }
-  },
-  {
    "frame": 2749,
    "track_id": 54,
    "participant": "near-18",
@@ -1145,28 +996,6 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1732,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
-   }
-  },
-  {
-   "frame": 3067,
-   "track_id": 73,
-   "participant": "far-55",
-   "team": "far",
-   "box": [
-    1009.7,
-    173.4,
-    1080.1,
-    283.5
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.4303,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,
@@ -1277,28 +1106,6 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3088,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
-   }
-  },
-  {
-   "frame": 3448,
-   "track_id": 17,
-   "participant": "far-27",
-   "team": "far",
-   "box": [
-    1297.6,
-    207.0,
-    1356.7,
-    328.0
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.3752,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,
@@ -1700,28 +1507,6 @@
     "seed_offset": null,
     "wrist": null
    }
-  },
-  {
-   "frame": 4739,
-   "track_id": 266,
-   "participant": "near-6",
-   "team": "near",
-   "box": [
-    976.4,
-    434.9,
-    1078.0,
-    673.4
-   ],
-   "released": false,
-   "kind": "fake",
-   "dropped": null,
-   "evidence": {
-    "ball_before": 0.0219,
-    "depart": 0.0,
-    "links": 0,
-    "seed_offset": null,
-    "wrist": null
-   }
   }
  ],
  "dropped": [
@@ -1807,6 +1592,28 @@
    "dropped": "rush",
    "evidence": {
     "ball_before": 0.0,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 565,
+   "track_id": 75,
+   "participant": "player-t75",
+   "team": "far",
+   "box": [
+    617.2,
+    194.9,
+    689.8,
+    334.4
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.36,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,
@@ -1946,6 +1753,28 @@
    }
   },
   {
+   "frame": 1297,
+   "track_id": 139,
+   "participant": "player-t139",
+   "team": "far",
+   "box": [
+    1087.4,
+    159.7,
+    1146.1,
+    278.0
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.3084,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
    "frame": 1448,
    "track_id": 82,
    "participant": "near-10",
@@ -1961,6 +1790,50 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.009,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 1464,
+   "track_id": 54,
+   "participant": "near-18",
+   "team": "near",
+   "box": [
+    1582.5,
+    717.0,
+    1684.9,
+    916.5
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.0935,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 1465,
+   "track_id": 73,
+   "participant": "far-55",
+   "team": "far",
+   "box": [
+    1165.0,
+    273.1,
+    1265.0,
+    476.7
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.022,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,
@@ -2078,6 +1951,28 @@
    }
   },
   {
+   "frame": 2026,
+   "track_id": 12,
+   "participant": "player-t12",
+   "team": "far",
+   "box": [
+    1138.2,
+    191.4,
+    1237.7,
+    275.4
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.0766,
+    "depart": 0.1014,
+    "links": 2,
+    "seed_offset": -2,
+    "wrist": "R"
+   }
+  },
+  {
    "frame": 2037,
    "track_id": 56,
    "participant": "near-7",
@@ -2093,6 +1988,28 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0003,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 2242,
+   "track_id": 171,
+   "participant": "far-1",
+   "team": "far",
+   "box": [
+    786.0,
+    204.5,
+    859.6,
+    311.1
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.1212,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,
@@ -2122,6 +2039,28 @@
    }
   },
   {
+   "frame": 2727,
+   "track_id": 169,
+   "participant": "player-t169",
+   "team": "far",
+   "box": [
+    926.5,
+    308.2,
+    1049.4,
+    402.9
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.0223,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
    "frame": 2794,
    "track_id": 82,
    "participant": "near-10",
@@ -2137,6 +2076,50 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 3067,
+   "track_id": 73,
+   "participant": "far-55",
+   "team": "far",
+   "box": [
+    1009.7,
+    173.4,
+    1080.1,
+    283.5
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.4303,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 3448,
+   "track_id": 17,
+   "participant": "far-27",
+   "team": "far",
+   "box": [
+    1297.6,
+    207.0,
+    1356.7,
+    328.0
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.3752,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,
@@ -2291,6 +2274,28 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0,
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
+   }
+  },
+  {
+   "frame": 4739,
+   "track_id": 266,
+   "participant": "near-6",
+   "team": "near",
+   "box": [
+    976.4,
+    434.9,
+    1078.0,
+    673.4
+   ],
+   "released": null,
+   "kind": null,
+   "dropped": "no wind-up with the ball",
+   "evidence": {
+    "ball_before": 0.0219,
     "depart": 0.0,
     "links": 0,
     "seed_offset": null,

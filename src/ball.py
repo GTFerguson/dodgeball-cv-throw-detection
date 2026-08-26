@@ -27,7 +27,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from src.candidates import LEFT_WRIST, RIGHT_WRIST, Candidate, _kp
+from src.candidates import (LEFT_HIP, LEFT_WRIST, RIGHT_HIP, RIGHT_WRIST, Candidate, _kp,
+                            shoulders, torso_up)
 from src.court import foot_point
 
 # Hue floor above the set-start mask's 5: red jersey pixels lie at hue 4-10 and
@@ -83,6 +84,10 @@ class WristFrame:
     # and a far ball count the same.
     disc: float
     blobs: tuple[Blob, ...]
+    # The wrist's height along the body, from the shoulders in torso lengths:
+    # positive is past the shoulder line towards the head, whichever way the
+    # body is lying. None where the shoulders or hips were not seen.
+    height: float | None = None
 
 
 @dataclass
@@ -135,8 +140,23 @@ def disc_count(mask: np.ndarray, x: float, y: float, radius: float) -> int:
     return int(np.count_nonzero(mask[y0:y1, x0:x1][inside]))
 
 
+def wrist_height(detection: dict | None, wrist: tuple[float, float] | None) -> float | None:
+    """How far past the shoulder line the wrist is, along the torso, in torso lengths."""
+    if detection is None or wrist is None:
+        return None
+    s, up = shoulders(detection), torso_up(detection)
+    hips = [p for p in (_kp(detection, LEFT_HIP), _kp(detection, RIGHT_HIP)) if p is not None]
+    if s is None or up is None or not hips:
+        return None
+    torso = float(np.linalg.norm(s - sum(hips) / len(hips)))
+    if torso <= 0:
+        return None
+    return float(np.dot(np.asarray(wrist) - s, up)) / torso
+
+
 def wrist_frame(mask: np.ndarray, components, labels: np.ndarray,
-                wrist: tuple[float, float] | None, seen: bool, scale: float) -> WristFrame:
+                wrist: tuple[float, float] | None, seen: bool, scale: float,
+                height: float | None = None) -> WristFrame:
     if wrist is None:
         return WristFrame(None, False, 0.0, ())
     x, y = wrist
@@ -152,7 +172,7 @@ def wrist_frame(mask: np.ndarray, components, labels: np.ndarray,
         near.append((distance, Blob(cx, cy, round(diameter, 4), area)))
     near.sort(key=lambda d: d[0])
     return WristFrame((x, y), seen, count / (scale * scale),
-                      tuple(b for _, b in near[:BLOBS_PER_WRIST]))
+                      tuple(b for _, b in near[:BLOBS_PER_WRIST]), height)
 
 
 def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pose, court,
@@ -199,7 +219,8 @@ def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pos
                     if seen:
                         last_wrist[(ti, name)] = (float(p[0]), float(p[1]))
                     wrist = last_wrist.get((ti, name))
-                    row[name] = wrist_frame(mask, components, labels, wrist, seen, trace.scale)
+                    row[name] = wrist_frame(mask, components, labels, wrist, seen, trace.scale,
+                                            wrist_height(det, wrist) if seen else None)
                 trace.frames[offset] = row
             if progress and index % 500 == 0:
                 progress(index)

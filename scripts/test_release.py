@@ -20,7 +20,7 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from src.ball import Blob, Trace, WristFrame  # noqa: E402
 from src.candidates import Candidate  # noqa: E402
 from src.release import (BALL_BEFORE_MIN, DEPART_MIN_NORM, RUSH_S, TIMELINE_ROOT,  # noqa: E402
-                         ball_before, decide, departure)
+                         WINDUP_MIN_HEIGHT, ball_before, decide, departure, wound_up_with_ball)
 
 CLIP = "wdbf2014_final_h2_set2"
 SCALE = 500.0
@@ -33,9 +33,11 @@ def candidate(frame: int = 1000) -> Candidate:
 
 
 def trace(ball_path: dict[int, tuple[float, float] | None] | None = None,
-          held: float = 0.001, frame: int = 1000) -> Trace:
+          held: float = 0.001, frame: int = 1000, height=None) -> Trace:
     """A trace where the right wrist holds `held` orange before the peak and
-    the ball, if a path is given, sits at those positions by offset."""
+    the ball, if a path is given, sits at those positions by offset. The
+    right wrist's height along the torso is `height` - a number for every
+    frame, or a dict by offset - and defaults to a wind-up past the shoulder."""
     t = Trace(candidate(frame), SCALE)
     for offset in range(-12, 17):
         blobs = ()
@@ -43,9 +45,13 @@ def trace(ball_path: dict[int, tuple[float, float] | None] | None = None,
         if pos is not None:
             blobs = (Blob(pos[0], pos[1], 0.03, 200),)
         disc = held if offset < 0 else 0.0
+        if isinstance(height, dict):
+            h = height.get(offset, -0.5)
+        else:
+            h = height if height is not None else (0.4 if -8 <= offset <= -3 else -0.5)
         t.frames[offset] = {
-            "L": WristFrame((800.0, 500.0), True, 0.0, ()),
-            "R": WristFrame(WRIST, True, disc, blobs),
+            "L": WristFrame((800.0, 500.0), True, 0.0, (), -0.8),
+            "R": WristFrame(WRIST, True, disc, blobs, h),
         }
     return t
 
@@ -138,7 +144,24 @@ class Departure(unittest.TestCase):
         self.assertEqual(departure(trace(path)).links, 0)
 
 
+class WindUp(unittest.TestCase):
+
+    def test_a_ball_carried_past_the_shoulder_is_a_wind_up(self):
+        self.assertTrue(wound_up_with_ball(trace(height=WINDUP_MIN_HEIGHT + 0.1)))
+
+    def test_a_ball_kept_below_the_shoulder_is_not(self):
+        # A block or a raised catch: high, but never past the line.
+        self.assertFalse(wound_up_with_ball(trace(height=WINDUP_MIN_HEIGHT - 0.1)))
+
+    def test_an_empty_hand_past_the_shoulder_is_not(self):
+        self.assertFalse(wound_up_with_ball(trace(held=0.0, height=0.5)))
+
+
 class Decide(unittest.TestCase):
+
+    def test_a_held_ball_never_past_the_shoulder_is_not_an_event(self):
+        d = decide(trace(height=-0.3), None, 25.0)
+        self.assertEqual(d.dropped, "no wind-up with the ball")
 
     def test_a_proposal_inside_the_rush_is_dropped(self):
         d = decide(trace(frame=440), set_start_frame=433, fps=25.0)

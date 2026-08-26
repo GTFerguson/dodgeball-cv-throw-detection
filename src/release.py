@@ -61,6 +61,13 @@ BALL_BEFORE_WINDOW = (-12, -3)
 # events for no precision.
 BALL_BEFORE_MIN = 0.00002
 
+# The frames before the peak in which the hand holding the ball must have
+# reached the shoulder line - the wind-up. Zero is the line itself, in torso
+# lengths along the body; a block or a raised catch peaks just below it, a
+# throw goes past it. Raising the bar past zero starts losing sidearm
+# throws, which reach the line only at the whip.
+WINDUP_WINDOW = (-10, 0)
+WINDUP_MIN_HEIGHT = 0.0
 # A blob within this of the wrist keypoint is in the hand.
 HAND_NORM = 0.08
 # Offsets around the peak at which a chain may begin: a release comes as
@@ -125,6 +132,22 @@ def ball_before(trace: Trace, window: tuple[int, int] = BALL_BEFORE_WINDOW) -> f
         if counts:
             best = max(best, sum(counts) / len(counts))
     return best
+
+
+def ball_heights(trace: Trace, window: tuple[int, int]) -> list[float]:
+    """The height of every hand seen holding the ball inside the window."""
+    out = []
+    for offset in range(window[0], window[1] + 1):
+        for wrist in ("L", "R"):
+            wf = trace.at(offset, wrist)
+            if wf is not None and wf.disc > 0 and wf.height is not None:
+                out.append(wf.height)
+    return out
+
+
+def wound_up_with_ball(trace: Trace) -> bool:
+    heights = ball_heights(trace, WINDUP_WINDOW)
+    return bool(heights) and max(heights) >= WINDUP_MIN_HEIGHT
 
 
 def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, float]):
@@ -241,6 +264,8 @@ def decide(trace: Trace, set_start_frame: int | None, fps: float) -> Decision:
     held = ball_before(trace)
     if dropped is None and held < BALL_BEFORE_MIN:
         dropped = "no ball in hand"
+    if dropped is None and not wound_up_with_ball(trace):
+        dropped = "no wind-up with the ball"
     # Computed for dropped proposals too, so the file carries the evidence a
     # threshold sweep needs without another read of the footage.
     dep = departure(trace)
@@ -295,7 +320,9 @@ class Timeline:
 def thresholds() -> dict:
     return {
         "rush_s": RUSH_S, "ball_before_window": list(BALL_BEFORE_WINDOW),
-        "ball_before_min": BALL_BEFORE_MIN, "hand_norm": HAND_NORM,
+        "ball_before_min": BALL_BEFORE_MIN,
+        "windup_window": list(WINDUP_WINDOW), "windup_min_height": WINDUP_MIN_HEIGHT,
+        "hand_norm": HAND_NORM,
         "seed_window": list(SEED_WINDOW), "first_step_norm": list(FIRST_STEP_NORM),
         "link_gap_frames": LINK_GAP_FRAMES,
         "static_tolerance_diameters": STATIC_TOLERANCE_DIAMETERS,

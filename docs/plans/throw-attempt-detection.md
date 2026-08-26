@@ -521,3 +521,8 @@ label-uncertainty case, not a model failure.
   fragmented ball, a hand-over, a wrong-track label and the end-of-set double throw. Still
   open from the analysis: held-ball non-throws at gate one (blocking, hunkering, pickups -
   ~10 false positives) and one motion proposed twice (5).
+- 2026-08-26 — gate one asks for a wind-up *with the ball*: the hand holding it must reach
+  the shoulder line before the peak, the plan's own definition applied to the ball rather than
+  the bare wrist. Blocks, raised catches, hunkering and pickups hold a ball and never get it
+  there. Candidate P 74% → 84% at R 93%, F1 88%; release 86%. The one event it costs is the
+  wrong-track label. A "held a torso below the shoulder" rule was tried and cut nothing more.
