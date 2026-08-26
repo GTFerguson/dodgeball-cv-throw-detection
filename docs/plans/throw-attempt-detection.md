@@ -370,3 +370,30 @@ label-uncertainty case, not a model failure.
   carry frames, crops are read across a track's whole life, a switch of number cuts the track
   (54 at 2881, the frame the swap completed), officials fall out via in-play gating, and
   three tracker-side preventions were measured and rejected. 12 names, all right by eye.
+- 2026-08-26 — fragments joined by number and graduated to
+  [[player-identity#Fragments are joined by their number]]. Tracks that confirm to the same
+  number in sequence are one player; the same number on two tracks at once is two people
+  and the number is left unjoined. 12 named tracks become 7 players on the clip, every join
+  right by the sheet. The `players` block is what attribution will name the thrower from.
+- 2026-08-26 — bootstrap candidates measured on the pose run before any tool work: raw
+  wrist speed fires on sprints, dives and pickups (55/min at a usable threshold, ~1 in 8 a
+  throw); wrist speed relative to the torso, gated on the wrist having been above the
+  shoulder, gives 31/min at threshold 30 with about half real and, of eight fast non-overhead
+  peaks, no throws lost. One proposal per expected event is the loose setting. Blocked on a
+  clean answer to "is this a player" — a referee's arm at frame 4881 was proposed.
+- 2026-08-26 — the roster shipped and graduated to [[roster]]: every track and person with a
+  role and a team, one reader, no stage re-deriving either. Role comes from the game's rule —
+  in play inside the live core is a player, whatever the kit — because USA #2's black chest
+  print reads as dark as a referee's shirt; kit decides only for tracks never in live play.
+  Four referees and the court-side staff are officials, no official is in play in the core,
+  and `on_court` gives the elimination curve (6 v 6 at the rush, 6 v 1 by frame 4500) with no
+  ball tracked. Built as a bridge over the identity pass's output; folding the writer into
+  `identify_players.py` is handed off.
+- 2026-08-26 — the identity pass writes the roster; the players file and the bridge builder
+  are gone. Joining is by side and number, not number alone, because a chest-colour
+  measurement showed #13 and #2 are USA (graduated to
+  [[player-identity#Fragments are joined by their number]] and [[roster#How it is built]]).
+  Two vote fixes on the way: a doubled digit (`77` beside `7`) no longer counts as dissent, and
+  a half cut off a switched track keeps the number the switch found - CHALMERS 7 now runs
+  56 → 422 → 285 through the swap. 14 named tracks, 7 players; roles and sides identical to
+  the bridge's.
