@@ -535,3 +535,10 @@ label-uncertainty case, not a model failure.
   two pairs is not a rule. The chain's seed frame as the release frame was measured too and
   is no better than the peak against this truth set (MAE 2.2 v 1.3) - not decidable here,
   since 41 of 60 labelled releases sit on the proposed peak.
+- 2026-08-26 — destination shipped and graduated to [[destination]]. The floor homography
+  cannot place a ball in the air (near throwers "stand" at court y 11–15 m by their ball), but
+  the ball's first direction in the image can: this camera looks along the court, so the
+  opponent is straight up or down the frame and a pass goes across. Every labelled pass is
+  at 81° or beyond, most throws under 70°, and perspective flattens a cross-court throw into
+  the high seventies, so the bar sits at 80 and a throw is the default. Kind 82% on matched:
+  fakes 22/23, passes 4/6, throws 20/27, six of those the release misses carried down.

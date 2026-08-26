@@ -206,7 +206,7 @@ On the evaluation clip, against the truth set, at the plan's tolerance of
 |---|---|---|
 | Candidate | P 56% R 98% F1 72% | **P 84% R 93% F1 88%** |
 | Release, on matched events | not claimed | **86%** — fakes right 22 of 23, releases right 26 of 33 |
-| Kind, on matched events | not claimed | 77% — every pass is called a throw, by design |
+| Kind, on matched events | not claimed | 82% — see [[destination]] |
 
 The four candidate misses: a throw whose peak landed twelve frames after
 the labelled release (the annotator's own note calls that one late); the
@@ -247,10 +247,10 @@ the footage.
 
 `data/timeline/<stem>.json`, schema 1: the clip hash and pose run, the
 thresholds, `events` (proposals that passed gate one, each with `released`,
-`kind` and its evidence) and `dropped` (the rest, each with why). Everything
-that is not a fake is a `throw`; a pass is a throw to one's own side and its
-separation needs the ball's direction in court metres, which is the next
-stage's.
+`kind` and its evidence, including the chain's `path` and its `angle` to
+the opponent) and `dropped` (the rest, each with why). `kind` is `fake`,
+`pass` or `throw`; pass against throw is [[destination]]'s reading of the
+same chain.
 
 ## Boundaries
 

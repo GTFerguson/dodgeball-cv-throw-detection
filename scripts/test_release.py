@@ -19,8 +19,9 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from src.ball import Blob, Trace, WristFrame  # noqa: E402
 from src.candidates import Candidate  # noqa: E402
-from src.release import (BALL_BEFORE_MIN, DEPART_MIN_NORM, RUSH_S, TIMELINE_ROOT,  # noqa: E402
-                         WINDUP_MIN_HEIGHT, ball_before, decide, departure, wound_up_with_ball)
+from src.release import (BALL_BEFORE_MIN, DEPART_MIN_NORM, PASS_MIN_ANGLE_DEG, RUSH_S,  # noqa: E402
+                         TIMELINE_ROOT, WINDUP_MIN_HEIGHT, ball_before, decide, departure,
+                         wound_up_with_ball)
 
 CLIP = "wdbf2014_final_h2_set2"
 SCALE = 500.0
@@ -56,12 +57,13 @@ def trace(ball_path: dict[int, tuple[float, float] | None] | None = None,
     return t
 
 
-def flight(start: int, step: float, frames: int = 8, missing: int | None = None) -> dict:
-    """The ball leaving the wrist rightwards at `step` px a frame from offset `start`;
-    unseen on offset `missing` if given."""
+def flight(start: int, step: float, frames: int = 8, missing: int | None = None,
+           direction=(1.0, 0.0)) -> dict:
+    """The ball leaving the wrist at `step` px a frame along `direction` from
+    offset `start`; unseen on offset `missing` if given."""
     path = {o: WRIST for o in range(-8, start)}
     for k in range(frames + 1):
-        path[start + k] = (WRIST[0] + step * k, WRIST[1])
+        path[start + k] = (WRIST[0] + step * k * direction[0], WRIST[1] + step * k * direction[1])
     if missing is not None:
         path[missing] = None
     return path
@@ -157,6 +159,49 @@ class WindUp(unittest.TestCase):
         self.assertFalse(wound_up_with_ball(trace(held=0.0, height=0.5)))
 
 
+class Direction(unittest.TestCase):
+    # The near team's opponent is up the image; the far team's is down.
+
+    def test_a_ball_going_up_the_image_from_a_near_player_is_a_throw(self):
+        d = decide(trace(flight(0, 0.15 * SCALE, direction=(0.0, -1.0))), None, 25.0)
+        self.assertEqual(d.kind, "throw")
+        self.assertAlmostEqual(d.angle, 0.0)
+
+    def test_the_same_ball_from_a_far_player_goes_backwards(self):
+        t = trace(flight(0, 0.15 * SCALE, direction=(0.0, -1.0)))
+        t.candidate = Candidate(**{**t.candidate.__dict__, "team": "far"})
+        d = decide(t, None, 25.0)
+        self.assertAlmostEqual(d.angle, 180.0)
+        self.assertEqual(d.kind, "pass")
+
+    def test_a_sideways_ball_is_a_pass(self):
+        d = decide(trace(flight(0, 0.15 * SCALE, direction=(1.0, 0.0))), None, 25.0)
+        self.assertGreaterEqual(d.angle, PASS_MIN_ANGLE_DEG)
+        self.assertEqual(d.kind, "pass")
+
+    def test_a_diagonal_towards_the_opponent_is_a_throw(self):
+        d = decide(trace(flight(0, 0.15 * SCALE, direction=(0.7, -0.7))), None, 25.0)
+        self.assertAlmostEqual(d.angle, 45.0, places=0)
+        self.assertEqual(d.kind, "throw")
+
+    def test_a_sideways_ball_on_too_short_a_chain_is_still_a_throw(self):
+        # Two links: one hop's jitter is not a direction.
+        d = decide(trace(flight(0, 0.15 * SCALE, frames=2, direction=(1.0, 0.0))), None, 25.0)
+        self.assertTrue(d.released, d)
+        self.assertEqual(d.kind, "throw")
+
+    def test_no_team_no_angle_and_a_throw_by_default(self):
+        t = trace(flight(0, 0.15 * SCALE, direction=(1.0, 0.0)))
+        t.candidate = Candidate(**{**t.candidate.__dict__, "team": None})
+        d = decide(t, None, 25.0)
+        self.assertIsNone(d.angle)
+        self.assertEqual(d.kind, "throw")
+
+    def test_a_fake_has_no_angle(self):
+        d = decide(trace({o: WRIST for o in range(-8, 12)}), None, 25.0)
+        self.assertIsNone(d.angle)
+
+
 class Decide(unittest.TestCase):
 
     def test_a_held_ball_never_past_the_shoulder_is_not_an_event(self):
@@ -182,8 +227,8 @@ class Decide(unittest.TestCase):
         self.assertTrue(d.is_event)
         self.assertEqual(d.kind, "fake")
 
-    def test_a_held_ball_that_leaves_is_a_throw(self):
-        d = decide(trace(flight(0, 0.15 * SCALE)), None, 25.0)
+    def test_a_held_ball_that_leaves_towards_the_opponent_is_a_throw(self):
+        d = decide(trace(flight(0, 0.15 * SCALE, direction=(0.0, -1.0))), None, 25.0)
         self.assertEqual(d.kind, "throw")
         self.assertTrue(d.released)
 
@@ -203,8 +248,9 @@ class OnTheClip(unittest.TestCase):
 
     def test_every_event_carries_its_evidence(self):
         for e in self.data["events"]:
-            self.assertIn(e["kind"], ("fake", "throw"))
-            self.assertEqual(e["kind"] == "throw", e["released"])
+            self.assertIn(e["kind"], ("fake", "pass", "throw"))
+            self.assertEqual(e["kind"] != "fake", e["released"])
+            self.assertEqual(e["evidence"]["angle"] is not None, e["released"])
             self.assertGreaterEqual(e["evidence"]["ball_before"], BALL_BEFORE_MIN * 1e3)
 
 

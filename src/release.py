@@ -24,10 +24,17 @@ before, because a ball in flight is never where it was: that one test is
 what stops a chain hopping between socks, a ball on the floor and the
 other hand's ball.
 
-Everything that is not a fake is called a throw here. A pass is a throw to
-one's own side and its separation needs the ball's direction in court
-metres, which is a later stage's; the label keeps ``pass`` and the harness
-reports the confusion.
+**Where did it go?** A pass is a throw that stays on the thrower's side
+(WDBF 16.2), and the only evidence at release is the ball's direction. The
+floor homography cannot place a ball in the air - at shoulder height it
+projects metres beyond the hand - so the direction is taken in the image,
+where this camera looks along the court and the opponent is straight up or
+down the frame: the angle between the chain's first few links and that
+axis. Every labelled pass on the clip goes sideways or back; a throw goes
+along the court, though perspective flattens a cross-court throw towards
+the lateral, so the bar for calling a pass is set high and a throw is the
+default. Where the ball ends up will settle it better, and that is the
+outcome stage's.
 """
 
 from __future__ import annotations
@@ -105,6 +112,15 @@ BRANCH = 6
 DEPART_MIN_NORM = 0.25
 CHAIN_MIN_LINKS = 2
 
+# The links whose direction says where the ball went: enough to average the
+# jitter of the first hop, few enough to precede any bounce. From the axis
+# towards the opponent, 0 is straight at them, 90 sideways, 180 backwards.
+# Every labelled pass on the clip is at 81 or more and most throws under 70;
+# perspective flattens a cross-court throw to the high seventies, so the
+# bar is set where every pass clears it and a throw is the default.
+DIRECTION_LINKS = 3
+PASS_MIN_ANGLE_DEG = 80.0
+
 
 @dataclass(frozen=True)
 class Departure:
@@ -114,10 +130,25 @@ class Departure:
     distance: float
     links: int
     seed_offset: int | None
+    # The chain's points in image pixels, the blob at the hand first.
+    path: tuple[tuple[float, float], ...] = ()
 
     @property
     def released(self) -> bool:
         return self.distance >= DEPART_MIN_NORM and self.links >= CHAIN_MIN_LINKS
+
+    def angle_from(self, team: str | None) -> float | None:
+        """Degrees between the ball's first direction and the way to the opponent.
+
+        The near team throws up the image, the far team down. None without a
+        team to say which, or without a chain.
+        """
+        if team not in ("near", "far") or self.links < 1:
+            return None
+        k = min(DIRECTION_LINKS, self.links)
+        (x0, y0), (x1, y1) = self.path[0], self.path[k]
+        towards = -1.0 if team == "near" else 1.0
+        return math.degrees(math.atan2(abs(x1 - x0), towards * (y1 - y0)))
 
 
 NO_DEPARTURE = Departure(None, 0.0, 0, None)
@@ -227,7 +258,8 @@ def departure(trace: Trace) -> Departure:
                     continue
                 far = dists[-1] / trace.scale
                 if (far, links) > (best.distance, best.links):
-                    best = Departure(wrist, round(far, 4), links, seed_offset)
+                    best = Departure(wrist, round(far, 4), links, seed_offset,
+                                     tuple((round(x, 1), round(y, 1)) for x, y in chain))
     return best
 
 
@@ -250,10 +282,21 @@ class Decision:
         return self.departure.released if self.is_event else None
 
     @property
+    def angle(self) -> float | None:
+        return self.departure.angle_from(self.team) if self.released else None
+
+    @property
     def kind(self) -> str | None:
         if not self.is_event:
             return None
-        return "throw" if self.released else "fake"
+        if not self.released:
+            return "fake"
+        # A pass is claimed only on a direction measured over the full
+        # DIRECTION_LINKS: a two-link chain's heading is one hop's jitter.
+        angle = self.angle
+        if angle is None or self.departure.links < DIRECTION_LINKS:
+            return "throw"
+        return "pass" if angle >= PASS_MIN_ANGLE_DEG else "throw"
 
 
 def decide(trace: Trace, set_start_frame: int | None, fps: float) -> Decision:
@@ -300,6 +343,8 @@ class Timeline:
                     "ball_before": round(d.ball_before * 1e3, 4),
                     "depart": d.departure.distance, "links": d.departure.links,
                     "seed_offset": d.departure.seed_offset, "wrist": d.departure.wrist,
+                    "angle": round(d.angle, 1) if d.angle is not None else None,
+                    "path": [list(p) for p in d.departure.path],
                 },
             }
         return {
