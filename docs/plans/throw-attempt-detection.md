@@ -1,7 +1,7 @@
 ---
 title: Dodgeball Throw-Attempt Detection — Plan
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 status: footage chosen, labelling tool in progress
 tags: [plan, dodgeball, event-detection, temporal]
 ---
@@ -129,7 +129,7 @@ than a fourth class, so it can be reported separately instead of defaulting into
 | `kind` | `fake` (no release), `pass` (released, ball stays on the thrower's own side), `throw` (released, ball crosses to the opposing side) |
 | `start` | First frame of the wind-up: throwing arm moves behind the shoulder line with a ball in hand |
 | `release` | First frame the ball is no longer in contact with the hand |
-| `end` | Outcome resolution: ball contacts an opponent, is caught, is blocked, or crosses the far boundary / hits the floor unimpeded |
+| `end` | Outcome resolution: the first contact that settles the ball — an opponent, a catch, a block, the floor or the far boundary. A pass ends the same way on its own side: the receiver's catch, or the floor if it is not caught |
 | `actor` | Thrower (track ID + team). Team is required; player ID reported when the track is stable |
 | `outcome` | one of `hit`, `catch`, `block`, `miss` (dodged or unobstructed), `unresolved` (occluded / off-frame) |
 | `target` | player the ball reached, for `hit` / `catch` / `block` — required, since a catch eliminates the *thrower* and returns a player to the catcher's side while a hit eliminates the *target*. A pass reuses the same field for the receiver, which is optional |
@@ -400,3 +400,77 @@ label-uncertainty case, not a model failure.
   on a folded 0), KUTNER (track 268, `4` ×3 declined beside one `45`), USA 27 and 55 (tracks
   17, 73 — full-set, one or two readings each) and two more far-side full-set tracks
   (12→167, 21).
+- 2026-08-26 — throw candidates shipped and graduated to [[throw-candidates]]. Wrist speed
+  relative to the shoulders, scale-normalised, gated on a wind-up past the shoulder line along
+  the torso; only roster players, in play, inside live play. 105 proposals on the clip for
+  80–100 expected events; every throw found by eye (16, overhand and sidearm, both ends) is
+  proposed within a frame or two. Two refinements measured and rejected: an upright-torso gate
+  removed nothing, and two-frame smoothing lost six of sixteen throws. The tool draws them as
+  rings on `MODEL`, `>` walks the unreviewed ones, `⇧A` / `⇧R` judge; an accepted proposal is
+  an ordinary event carrying `source: model` and its `proposed_frame`, so the anchoring is
+  measurable. Label schema 4.
+- 2026-08-26 — the tool's three event areas became one stream, per the design system's own
+  rule: labels and the model's claims are both events at frames, switched on as two sources
+  rather than chosen as views, with both on being the comparison. Rows name the thrower and
+  the target as `key #number Name` from the roster, with names hand-authored beside it
+  (`data/roster/<stem>.names.json`) because the reader reads digits only. The list follows
+  the playhead with emphasis scaled by closeness, so simultaneous throws light up together;
+  selection stays explicit so scrubbing cannot move what the keys edit. `F` marks the
+  selected event a fake. Graduated to [[design-system#Event stream]].
+- 2026-08-26 — the stream became cards that are the editor: a selected proposal is classified
+  straight from its card (choosing what it was accepts it), a selected event opens into the full
+  form, choices wear their outcome colours and verdicts the good/bad tones, reviews carry a
+  note, emphasis is a lift scaled by closeness, `↑` `↓` walk the cards, and the proposal being
+  looked at is drawn loud and follows its player through the roster's track. Label schema 4
+  gains `note` on candidate reviews. Graduated to [[design-system#Event stream]].
+- 2026-08-26 — player keys go to players in play per the roster, not to whoever the geometry
+  admits: labelling at 0:21 found `Q` on a queued player outside the far touchline and `4` on
+  an official, with two far players and #7 past the ends of the key rows. With a roster file
+  the tool's held-on-court test is replaced by `RosterIndex.isPlayerInPlay`; checked on the
+  real data at frames 515–535, `1`–`6` and `Q`–`Y` cover exactly the twelve in play.
+  Graduated to [[roster#Queries]] and [[labeling-tool#Resolved]].
+
+- 2026-08-26 — first experiments on the truth set (32 proposals reviewed, 20 events: 10 fake,
+  3 pass, 7 throw). Pose alone cannot tell a fake from a release: wrist extension, elbow
+  angle, follow-through depth, speed decay and re-wind-up all sit at AUC 0.3–0.7 on 10 v 10,
+  which is the physically expected answer — a fake is the same motion with the ball kept. The
+  ball can: the set-start orange mask counted inside a disc round the wrist goes dark within
+  a few frames of the peak for a throw and stays lit for a fake (6 of 7 throws, 7 of 10 fakes
+  on a crude +8..+14 presence rule). The misses were all instructive rather than noise: one
+  fake tucks the ball in front of a body turned to the camera (occlusion, not release); one
+  "pass" lobs one ball while holding a second; and two release frames in the truth set are
+  not releases — 500 is a pickup with the pass ~30 frames later, and 565 is the wind-up with
+  the release at 596 (its own note says so). The stock COCO ball detector was tried first and
+  rejected: conf 0.1–0.6 and it drops out on exactly the blurred frames that matter; the mask
+  sees the same ball at 20 px. Two consequences for labelling before this becomes a stage:
+  every accepted proposal's `release_frame` equals its `proposed_frame`, and the strips show
+  the peak is the whip, not the release (556 releases at +3/+4) — so the release frame must be
+  stepped to by hand, or recorded as unset until it is; and a second ball in hand is a state
+  the schema does not carry. One side finding for the candidate stage: the wrist's height at
+  the peak, along the torso, separates the 12 rejects from the 20 accepted at AUC 0.85 — every
+  set-start sprint has the wrist a full torso below the shoulder — but 20 samples is too few to
+  move a threshold on, so it waits for the rest of the clip.
+- 2026-08-26 — following the ball from release works, on the same orange mask and nothing
+  else: seed on the blob that leaves the wrist, link blob to blob with a search radius that
+  grows with the ball's image speed (a ball coming toward the camera accelerates and grows
+  every frame; a hard throw moves 40 px in its first frame). Four of ten labelled releases
+  were followed for the full 24-frame window and each path reads as its label: 535 runs from
+  the thrower to a far player and kinks straight up off him (the block); 1077 crosses the far
+  half past a diving player and bounces off the back (the miss); 728 lobs laterally along the
+  far side, bounces once, reaches the far-right player (the pass). The six failures are all
+  linker engineering rather than absent signal: greedy nearest-neighbour takes a wrong blob
+  for one frame and its velocity is corrupted (556, the ball is visible in every frame); the
+  seed picks the second ball still in the thrower's hand rather than the one that departs
+  (511); the 565 and 500 rows are the mislabelled release frames above. Two design points
+  for the stage: court metres from the floor homography are meaningless for an airborne ball,
+  but a path's kinks are contacts — a player, the floor, the wall — and those project; and a
+  path run backwards to the wrist it left is attribution, and is easier than reading the
+  release frame itself, which the annotator's notes already say is the hard frame to name.
+  Tolerances on the release frame, and whether release is defined from the ball path rather
+  than the hand, are open.
+- 2026-08-26 — scope for the next stage: the model's question is release or no release.
+  Everything that is not a fake is a throw for now, a pass being a throw to one's own team;
+  direction, and so pass against throw, is layered on later once the ball path exists. The
+  label keeps `pass` as a kind and the metric still excludes it - only what is scored changes.
+  The truth set makes the same cut: 10 fakes against 10 releases, where pass against throw
+  is 3 against 7.
