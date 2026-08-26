@@ -487,13 +487,20 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
         return flash(`fake at ${frame}`)
       }
       case 'markPass': {
+        // A pass has a receiver the way a hit has a target, so the next player
+        // key places it - the same hand movement as the targeted outcomes.
         if (!selected && selectedRow?.proposal) {
-          return classifyProposal(selectedRow.proposal, (s) => markPass(s, frame)) && flash('pass')
+          if (!classifyProposal(selectedRow.proposal, (s) => markPass(s, frame))) return
+          setFocus('target')
+          setArmed(true)
+          return flash('pass')
         }
         const next = markPass(state, frame)
         // A fake released no ball, so it has no destination to record.
         if (!next) return flash('no event selected, or the selection is a fake')
         apply(next)
+        setFocus('target')
+        setArmed(true)
         return flash('pass')
       }
       case 'markFake':
