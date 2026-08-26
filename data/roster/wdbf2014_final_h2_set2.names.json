@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "video": "wdbf2014_final_h2_set2.mp4",
+  "source": "hand-authored from the names printed above the numbers, read by eye off the jersey sheet; the reader reads digits only",
+  "near": {
+    "6": "Snow",
+    "7": "Chalmers",
+    "10": "DiCarlo",
+    "44": "Sarault"
+  },
+  "far": {}
+}

@@ -163,6 +163,19 @@ exists, so they are the test of its shape:
 On the clip `on_court` reads 6 v 6 at the rush and 6 v 1 by frame 4500 — the
 elimination curve, without a ball ever being tracked.
 
+The labelling tool reads the same file through `RosterIndex`
+(`tools/labeler/src/lib/roster.ts`): `trackAt(frame, index)` and `inPlay(track_id,
+frame)` mirror `at` and `in_play`, and `isPlayerInPlay(frame, index)` is the two
+together. That last one decides who gets a player key on a frame. The tool's own
+geometry — the paint, the boundary slack, the hold window — admits whoever stands
+within the slack of the line, and on a crowded sideline that handed keys to the
+eliminated queue and an official while players in play ran past the end of the
+six-key row. The roster decided in play once over the whole track with the same
+slack and window, and it knows who is not a player, so with a roster present the
+tool takes its word and the geometry only stands in when there is none. A key is
+still a placement aid on one frame and the label still stores the box; see
+[[labeling-tool#Resolved]].
+
 ## How it is built
 
 The identity pass (`scripts/identify_players.py`, [[player-identity]]) writes

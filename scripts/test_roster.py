@@ -251,11 +251,11 @@ class OnTheClip(unittest.TestCase):
         cls.roster = Roster.for_video(CLIP)
 
     def test_the_referees_are_officials(self):
-        for tid in (8, 122, 13, 174):
+        for tid in (8, 95, 13, 178):
             self.assertEqual(self.roster.track(tid).role, "official", tid)
 
     def test_usa_2_in_a_black_print_jersey_is_a_player_on_the_far_side(self):
-        for tid in (19, 137):
+        for tid in (19, 139):
             t = self.roster.track(tid)
             self.assertEqual((t.role, t.team), ("player", "far"), tid)
 
@@ -274,8 +274,8 @@ class OnTheClip(unittest.TestCase):
         # and CHALMERS 7 runs through the swap that cut track 54.
         self.assertEqual(self.roster.participant("far-13").track_ids, (75,))
         self.assertEqual(self.roster.participant("far-2").track_ids, (165,))
-        self.assertEqual(self.roster.participant("near-44").track_ids, (2, 227, 270))
-        self.assertEqual(self.roster.participant("near-7").track_ids, (56, 422, 285))
+        self.assertEqual(self.roster.participant("near-44").track_ids, (2, 231, 274))
+        self.assertEqual(self.roster.participant("near-7").track_ids, (56, 422, 291))
 
     def test_the_readings_behind_a_name_are_on_the_track(self):
         t = self.roster.track(56)

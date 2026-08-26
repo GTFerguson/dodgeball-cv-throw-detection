@@ -54,7 +54,7 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROSTER_ROOT = REPO_ROOT / "data" / "roster"
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 ROLES = ("player", "official", "unknown")
 TEAMS = ("near", "far")
@@ -113,7 +113,7 @@ def in_core(frame: int, cores: list[tuple[int, int]]) -> bool:
     return any(a <= frame <= b for a, b in cores)
 
 
-def participant_id(role: str, team: str | None, number: int | None, track_id: int) -> str:
+def participant_id(role: str, team: str | None, number: str | None, track_id: int) -> str:
     """`near-7` for a numbered player on a known side; `<role>-t<track>` otherwise.
 
     An id says what is known about the person and nothing more.
@@ -256,7 +256,7 @@ class TrackRecord:
     team_source: str | None
     kit: str
     kit_share: float
-    number: int | None
+    number: str | None
     start_frame: int
     end_frame: int
     # (frame, index of the detection in the pose run's list for that frame).
@@ -290,7 +290,7 @@ class Participant:
     id: str
     role: str
     team: str | None
-    number: int | None
+    number: str | None
     track_ids: tuple[int, ...]
     start_frame: int
     end_frame: int
@@ -406,7 +406,7 @@ class Roster:
                 "track_ids": list(p.track_ids),
                 "start_frame": p.start_frame, "end_frame": p.end_frame,
             } for p in sorted(self.participants.values(),
-                              key=lambda p: (ROLES.index(p.role), p.team or "", p.number or 0, p.id))],
+                              key=lambda p: (ROLES.index(p.role), p.team or "", p.number or "", p.id))],
             "tracks": [{
                 "id": t.id, "participant": t.participant_id, "role": t.role,
                 "team": t.team, "team_source": t.team_source,

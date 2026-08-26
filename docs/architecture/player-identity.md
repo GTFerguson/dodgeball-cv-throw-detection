@@ -18,7 +18,7 @@ different problems wearing one name, and they are solved by different means.
 | `src/roster.py` | Role and side per track, and the file all of this is written to - see [[roster]] |
 | `scripts/identify_players.py` | Runs all of it over a clip, writes `data/roster/<stem>.json` and, with `--sheet`, the contact sheet |
 | `scripts/test_jersey.py` | Checks on the confirmation and switch rules |
-| `scripts/test_tracking.py` | Checks on cutting a track where it changed player |
+| `scripts/test_tracking.py` | Checks on the tracker gate and on cutting a track where it changed player |
 | `scripts/test_players.py` | Checks on joining fragments by number and the same-time veto |
 
 ## Two problems, not one
@@ -48,6 +48,23 @@ tracking costs no inference - the detections the labelling tool draws are the on
 tracked. Off-court detections are dropped *before* tracking: the pose run sees the
 whole hall, and a bench that is never tracked costs nothing downstream, where a
 bench that is tracked competes for association with the players in front of it.
+
+That gate is temporal, not frame-by-frame. A jump lifts the ankles, and at the far
+end of an end-on view a few dozen pixels of lift is metres of court: number 55
+throwing from the far baseline at frame 4001 rose seventy pixels, which projected
+three metres past the baseline, outside the margin. Read one frame at a time,
+every airborne frame was a person standing behind the court, dropped before the
+tracker saw it - so the throw belonged to no track, and the labelling tool, which
+takes who is in play from the roster, showed the thrower as a bystander for the
+length of the jump. Widening the margin does not fix it: a jump's worth of margin
+at the far end admits about one standing spectator per frame on the evaluation
+clip, which is what the gate exists to keep out. Instead `admit` carries a chain:
+a detection past the margin is admitted while it continues, by box overlap
+(`CONTINUITY_MIN_IOU`), a detection that stood in play within
+`AIRBORNE_HOLD_FRAMES`; it inherits the chain's age rather than resetting it, so a
+spectator who once overlapped a player is carried for the hold and then let go,
+and a chain survives a frame the detector missed. The crowd behind the baseline
+never stood in play, so it never starts a chain.
 
 The difference on the evaluation clip's first 2067 frames:
 

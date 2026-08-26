@@ -29,12 +29,63 @@ from dataclasses import dataclass
 JOIN_MAX_OVERLAP = 50
 
 
+# Two players can wear one number at one moment: the teams are numbered
+# separately, so a near 2 and a far 2 are both real and the join key carries the
+# side for exactly that reason. Three cannot - there are two teams on court.
+MAX_WEARERS = 2
+
+# A track is only claiming a number if it read it often enough that the number
+# could have named it. One or two readings is the reader guessing at a fold, and
+# counting those as claims lets stray misreads condemn a real number.
+CLAIM_MIN_READINGS = 3
+
+
+def worn_at_once(spans: dict[int, tuple[int, int]],
+                 counts: dict[int, dict[str, int]],
+                 max_wearers: int = MAX_WEARERS,
+                 min_readings: int = CLAIM_MIN_READINGS) -> set[str]:
+    """The numbers claimed by more players than could be wearing them.
+
+    `counts` maps each track to how many times it read each number. A number
+    claimed by more tracks than there are teams, while all of those tracks are
+    on court together, is not a number at all: it is something every player on a
+    side wears, which is what the team's name across the chest is. On the
+    evaluation clip the reader returns `54` for the `USA` print, and six far
+    tracks claim it in the same frames.
+
+    This is the same argument `clash` makes when it refuses to join, made one
+    stage earlier and against the reading rather than the name - because a print
+    read as a number does not just fail to join, it outvotes the real number on
+    the crops it appears in.
+    """
+    claimants: dict[str, list[int]] = {}
+    for tid, per_number in counts.items():
+        if tid not in spans:
+            continue
+        for number, count in per_number.items():
+            if count >= min_readings:
+                claimants.setdefault(number, []).append(tid)
+    impossible = set()
+    for number, ids in claimants.items():
+        if len(ids) <= max_wearers:
+            continue
+        # Most tracks on court at any one moment, by sweeping their ends.
+        edges = sorted([(spans[i][0], 1) for i in ids] + [(spans[i][1] + 1, -1) for i in ids])
+        live = most = 0
+        for _, step in edges:
+            live += step
+            most = max(most, live)
+        if most > max_wearers:
+            impossible.add(number)
+    return impossible
+
+
 @dataclass(frozen=True)
 class Player:
     """A team and number, and every track that wore it in the order worn."""
 
     team: str | None
-    number: int
+    number: str
     track_ids: tuple[int, ...]
     start: int
     end: int
@@ -55,7 +106,7 @@ def clash(spans: dict[int, tuple[int, int]], ids: list[int],
     return None
 
 
-def join(spans: dict[int, tuple[int, int]], numbers: dict[int, int],
+def join(spans: dict[int, tuple[int, int]], numbers: dict[int, str],
          teams: dict[int, str | None] | None = None,
          max_overlap: int = JOIN_MAX_OVERLAP) -> list[Player]:
     """The players in a clip: one per team and number, or one per track where
@@ -66,7 +117,7 @@ def join(spans: dict[int, tuple[int, int]], numbers: dict[int, int],
     where known. Unnamed tracks are nobody's, and are not returned.
     """
     teams = teams or {}
-    by_key: dict[tuple[str, int], list[int]] = {}
+    by_key: dict[tuple[str, str], list[int]] = {}
     for tid, number in numbers.items():
         by_key.setdefault((teams.get(tid) or "", number), []).append(tid)
     players: list[Player] = []

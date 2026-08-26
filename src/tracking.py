@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from types import SimpleNamespace
+from typing import Callable
 
 import numpy as np
 
@@ -43,6 +44,72 @@ TRACKER_ARGS = SimpleNamespace(
     match_thresh=0.80,
     fuse_score=True,
 )
+
+
+# A jump lifts the ankles, and at the far end of an end-on view a few dozen
+# pixels of lift is metres of court: a far-baseline thrower leaves the margin in
+# the air and lands back in it. Read frame by frame, the airborne frames are a
+# person standing well behind the baseline, and dropping them before tracking
+# leaves the throw itself untracked. So the gate holds: a detection past the
+# margin is still admitted while it continues one that stood in play within the
+# hold, and the crowd behind the baseline, which never stood in play, is not.
+# A jump is airborne for well under a second; the hold is one, at the clip's
+# 25 fps, the same window as the in-play hold.
+AIRBORNE_HOLD_FRAMES = IN_PLAY_HOLD_FRAMES
+
+# How much a detection must overlap the box it continues, frame to frame. A
+# box moves a small fraction of itself per frame, in the air or on the ground;
+# the tracker itself accepts far less, so this admits nothing it would not.
+CONTINUITY_MIN_IOU = 0.5
+
+
+@dataclass
+class Carried:
+    """An admitted box, and the frame its chain of detections last stood in play."""
+
+    box: tuple[float, float, float, float]
+    last_playing: int
+
+
+def box_iou(a, b) -> float:
+    w = min(a[2], b[2]) - max(a[0], b[0])
+    h = min(a[3], b[3]) - max(a[1], b[1])
+    if w <= 0 or h <= 0:
+        return 0.0
+    inter = w * h
+    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
+    return inter / union if union > 0 else 0.0
+
+
+def admit(
+    detections: list[dict], playing: Callable[[dict], bool],
+    carried: list[Carried], frame: int, hold: int = AIRBORNE_HOLD_FRAMES,
+) -> tuple[list[dict], list[Carried]]:
+    """The detections on a frame that the tracker should see, and what to carry.
+
+    A detection in play is admitted outright and starts a fresh chain. One out
+    of play is admitted if it continues a carried box whose chain stood in play
+    within the hold, and inherits that chain's age rather than resetting it, so
+    a bystander who once overlapped a player is carried for the hold and then
+    let go. Carried boxes nothing continued survive to the next frame, so a
+    frame the detector missed does not break a chain, and expire with the hold.
+    """
+    live = [c for c in carried if frame - c.last_playing <= hold]
+    admitted: list[dict] = []
+    fresh: list[Carried] = []
+    for d in detections:
+        box = tuple(d["box"])
+        if playing(d):
+            admitted.append(d)
+            fresh.append(Carried(box, frame))
+            continue
+        best = max(live, key=lambda c: box_iou(c.box, box), default=None)
+        if best is not None and box_iou(best.box, box) >= CONTINUITY_MIN_IOU:
+            admitted.append(d)
+            fresh.append(Carried(box, best.last_playing))
+    kept = [c for c in live
+            if all(box_iou(c.box, f.box) < CONTINUITY_MIN_IOU for f in fresh)]
+    return admitted, fresh + kept
 
 
 @dataclass
@@ -125,18 +192,21 @@ def track(
     Detections off the court are dropped before tracking rather than after. The
     pose run sees the whole hall, and a bench that is never tracked costs nothing
     downstream - where a bench that is tracked competes for association with the
-    players in front of it.
+    players in front of it. A player in the air is not off the court, whatever
+    the foot point says for those frames; `admit` carries them through.
     """
     from ultralytics.trackers.byte_tracker import BYTETracker
 
     tracker = BYTETracker(TRACKER_ARGS)
     tracker.frame_rate = fps
     out: dict[int, Track] = {}
+    carried: list[Carried] = []
 
     for frame in sorted(frames):
         detections = frames[frame]
         if on_court_only:
-            detections = [d for d in detections if _is_playing(court, d)]
+            detections, carried = admit(
+                detections, lambda d: _is_playing(court, d), carried, frame)
         boxes = np.array([d["box"] for d in detections], dtype=np.float32).reshape(-1, 4)
         conf = np.array([d.get("conf", 1.0) for d in detections], dtype=np.float32)
 

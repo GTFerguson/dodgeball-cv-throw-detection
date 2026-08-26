@@ -18,9 +18,11 @@ A single reading of a folded jersey can say anything; the same number returned b
 several independent crops of one track cannot.
 
 The OCR configuration is carried over from prior work on football footage:
-digits-only, magnified, with CRAFT's detection thresholds dropped well below their
-defaults, because a jersey number is large bold print on moving cloth rather than
-a line of text on a page.
+magnified, with CRAFT's confidence thresholds dropped well below their defaults,
+because a jersey number is large bold print on moving cloth rather than a line of
+text on a page. Letters are read as well as digits, because both kits print text
+above the number and a reader confined to digits has to return that text as
+digits - which is how the team's name came to outvote the numbers under it.
 """
 
 from __future__ import annotations
@@ -79,9 +81,13 @@ MIN_AGREEMENT_SPAN = 100
 # Below this the reader is guessing at cloth texture.
 MIN_OCR_CONF = 0.3
 
-# Jersey numbers run 1-99. A reading outside that is a misparse of print that is
-# not a number.
-MIN_NUMBER, MAX_NUMBER = 1, 99
+# What a jersey carries here is at most two characters, the first of them a
+# digit. That admits `7`, `44`, DICARLO's `10`, the far side's `01` and KUTNER's
+# `4C`, and turns away what the print throws off once letters are read: `USA`,
+# `US4`, `S4IULT`, `IUT`. It is kept as written rather than as a count, because
+# `01` is not 1 and `4C` is not a number at all - and a player whose shirt the
+# reader can read but the roster cannot hold is a player it can only misname.
+MAX_PRINT_LENGTH = 2
 
 # A track this much of the clip long that the vote declined to name is either a
 # player the reader keeps misreading or two players stitched together, and only
@@ -90,15 +96,31 @@ MIN_NUMBER, MAX_NUMBER = 1, 99
 REVIEW_FRACTION = 0.5
 
 # CRAFT is tuned for text on a page and finds almost nothing on a jersey at its
-# defaults. Magnifying and dropping all three detection thresholds is what makes
-# large bold digits on moving cloth detectable at all.
+# defaults. Magnifying and dropping the confidence thresholds is what makes large
+# bold digits on moving cloth detectable at all.
+#
+# `low_text` is the exception, and is left where CRAFT puts it. It is not a
+# confidence bar but the floor on the region-score map that decides how far each
+# character's blob grows before boxes are cut, and one text box is one connected
+# component of that map - a step with no notion of lines. Lowered, the blobs of a
+# two-line chest print grow together, and the reader is handed the team name and
+# the number as one image: `USA` over `01` comes back as `73`, `70` or `6`. The
+# recogniser is not the weak part. Given the number alone it reads it at full
+# confidence, so the detector is left able to cut the number out.
+#
+# Letters are admitted so that the print can say what it is. Both kits put text
+# above the number - the team's name on one side, the player's surname on the
+# other - and a reader confined to digits has no way to return it except as
+# digits: `USA` comes back as `54`, and `KUTNER 4C` as `40`. A token that is
+# still not a number once it has been read is the print, and can be set aside
+# instead of outvoting the number below it.
 OCR_PARAMS = dict(
-    allowlist="0123456789",
+    allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     paragraph=False,
     detail=1,
     mag_ratio=2.0,
     text_threshold=0.2,
-    low_text=0.1,
+    low_text=0.4,
     link_threshold=0.1,
 )
 
@@ -125,7 +147,7 @@ class Crop:
 class Reading:
     """One number seen on one crop, before anything has agreed with it."""
 
-    number: int
+    number: str
     confidence: float
     frame: int
 
@@ -189,7 +211,7 @@ def shortlist(crops: list[Crop], limit: int = CROPS_PER_TRACK,
     return sorted(picked.values(), key=lambda c: c.height, reverse=True)
 
 
-def switch(readings: list[Reading]) -> tuple[int, int, int, int] | None:
+def switch(readings: list[Reading]) -> tuple[str, str, int, int] | None:
     """Whether a track's readings name one player and then another.
 
     Returns `(first, second, last_frame_of_first, first_frame_of_second)` when
@@ -233,13 +255,40 @@ def in_time_order(crops: list[Crop]) -> list[Crop]:
     return sorted(crops, key=lambda c: c.frame)
 
 
-def needs_review(number: int | None, in_play_frames: int, span: int) -> bool:
+def needs_review(number: str | None, in_play_frames: int, span: int) -> bool:
     """Whether an unnamed track is long enough that its silence is a question.
 
     Measured in frames *in play*: an official is tracked from the sideline for
     the whole set and carries no number, and that is an answer.
     """
     return number is None and in_play_frames >= span * REVIEW_FRACTION
+
+
+# At jersey size `1` and `I` are one shape, and so are `0` and `O`. Once letters
+# are on the table the reader prefers the letter: DICARLO's `10` comes back as
+# `I0` on five crops in six. They are read back before anything asks whether a
+# token is a number, so that admitting letters cannot cost a digit.
+CONFUSED_LETTERS = {"I": "1", "O": "0"}
+
+
+def as_number(text: str) -> str | None:
+    """What a reader's token says a player wears, or None where it is not that.
+
+    A number here is what is printed on the shirt, which is usually digits and on
+    this footage is sometimes not: KUTNER wears `4C`. What separates a shirt from
+    the team's name above it is shape rather than spelling - a shirt is short and
+    it leads with a digit, and `USA`, `US4` and `S4IULT` are neither.
+    """
+    token = "".join(CONFUSED_LETTERS.get(c, c) for c in text.strip().upper())
+    if not token or len(token) > MAX_PRINT_LENGTH or not token[0].isdigit():
+        return None
+    if not token.isalnum():
+        return None
+    # Nobody is numbered nothing, and `0` is what the reader offers for a fold,
+    # a shadow and half a digit alike.
+    if token.isdigit() and int(token) == 0:
+        return None
+    return token
 
 
 class JerseyReader:
@@ -254,21 +303,15 @@ class JerseyReader:
         """Every number the reader finds on one crop."""
         out: list[Reading] = []
         for _, text, conf in self.reader.readtext(crop.image, **OCR_PARAMS):
-            text = text.strip()
-            if not text:
-                continue
-            try:
-                number = int(text)
-            except ValueError:
-                continue
-            if MIN_NUMBER <= number <= MAX_NUMBER and conf > MIN_OCR_CONF:
+            number = as_number(text)
+            if number is not None and conf > MIN_OCR_CONF:
                 out.append(Reading(number=number, confidence=round(float(conf), 3),
                                    frame=crop.frame))
         return out
 
 
 def confirm(readings: list[Reading],
-            min_confirmations: int = MIN_CONFIRMATIONS) -> int | None:
+            min_confirmations: int = MIN_CONFIRMATIONS) -> str | None:
     """The number a track carries, or None where its readings do not agree.
 
     Agreement, not confidence: the reader is confident about folds. None is the
@@ -288,7 +331,7 @@ def confirm(readings: list[Reading],
     counts = Counter(r.number for r in readings)
     weighted = Counter()
     for number, count in counts.items():
-        weighted[number] = count * len(str(number))
+        weighted[number] = count * len(number)
     number, weight = weighted.most_common(1)[0]
     if counts[number] < min_confirmations:
         return None
@@ -310,24 +353,22 @@ def confirm(readings: list[Reading],
     return number
 
 
-def _is_fragment_of(number: int, other: int) -> bool:
+def _is_fragment_of(number: str, other: str) -> bool:
     """Whether `number` is what the reader returns when it drops a digit of `other`.
 
     A `4` read five times beside a `40` read once fits a 40 whose 0 was lost as
     well as it fits a 4, so the track is left unnamed. A `7` beside a `77` is not
     that case: the doubled digit is the reader repeating, not dropping.
     """
-    a, b = str(number), str(other)
-    return len(a) == 1 and len(b) == 2 and a in b and b != a * 2
+    return len(number) == 1 and len(other) == 2 and number in other and other != number * 2
 
 
-def _is_doubling_of(number: int, other: int) -> bool:
+def _is_doubling_of(number: str, other: str) -> bool:
     """Whether `number` is `other` read twice - `77` from a 7."""
-    a, b = str(number), str(other)
-    return len(b) == 1 and a == b * 2
+    return len(other) == 1 and number == other * 2
 
 
-def conflicts(a: int | None, b: int | None) -> bool:
+def conflicts(a: str | None, b: str | None) -> bool:
     """Whether two confirmed numbers rule out their tracks being one player.
 
     The number's job is to *forbid* joins rather than to propose them. Prior work

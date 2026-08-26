@@ -39,7 +39,8 @@ from src.court import Court  # noqa: E402
 from src.jersey import (Crop, JerseyReader, Reading, confirm,  # noqa: E402
                         in_time_order, needs_review, shortlist, switch,
                         torso_crop, unobstructed)
-from src.players import clash, join  # noqa: E402
+from src.players import (CLAIM_MIN_READINGS, clash, join,  # noqa: E402
+                         worn_at_once)
 from src.pose import PoseRun  # noqa: E402
 from src.roster import (Participant, Roster, TrackRecord, assign_role,  # noqa: E402
                         assign_team, chest_region, in_core, intervals_of,
@@ -155,6 +156,23 @@ def main() -> int:
             readings.extend(reader.read(crop))
         evidence[t.id] = readings
 
+    # What every player on a side wears is not a number. The team's name sits
+    # above the number on the chest and the reader returns it as digits, so it
+    # arrives looking like a number several players wear at once - which no
+    # number is. Dropped here, before anything is cut or named, so that neither
+    # the switch nor the vote ever sees it.
+    counts = {tid: Counter(r.number for r in rs) for tid, rs in evidence.items()}
+    spans = {t.id: (t.start, t.end) for t in tracks}
+    not_numbers = worn_at_once(spans, counts)
+    if not_numbers:
+        wearers = {n: sorted(i for i in counts if counts[i][n] >= CLAIM_MIN_READINGS)
+                   for n in sorted(not_numbers)}
+        for number, ids in wearers.items():
+            print(f"#{number} is worn by {len(ids)} players at once - not a number: "
+                  f"tracks {', '.join(str(i) for i in ids)}")
+        evidence = {tid: [r for r in rs if r.number not in not_numbers]
+                    for tid, rs in evidence.items()}
+
     # A track whose readings name one player and then another changed player
     # while the tracker was not looking. It is cut where the change is, and each
     # half is named on its own readings. A half can switch again, so cut until
@@ -194,7 +212,7 @@ def main() -> int:
     # A half cut off a switched track is named by the switch that cut it: the
     # readings that confirmed a change of player are the readings it has, and
     # asking them to confirm again at the higher bar leaves the new man unnamed.
-    numbers: dict[int, int] = {}
+    numbers: dict[int, str] = {}
     for t in tracks:
         got = confirm(evidence.get(t.id, []))
         if got is None:

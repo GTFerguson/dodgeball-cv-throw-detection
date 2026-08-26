@@ -2,13 +2,16 @@ import type { EventKind, Outcome, RefSignal, Team, ThrowEvent } from '../types'
 import { EVENT_KINDS, OUTCOMES, REF_SIGNALS, TERMINAL_KINDS, missingFields } from '../types'
 import { kindAfterOutcome } from '../lib/events'
 import type { PlacementTarget } from '../lib/keys'
-import { Eyebrow, Kbd, Pill, signalOf } from './ui'
+import { describe, type Who } from '../lib/roster'
+import { Kbd, SignalChoice } from './ui'
 
-interface Props {
-  event: ThrowEvent | null
+export interface EditorProps {
+  event: ThrowEvent
   frame: number
   focus: PlacementTarget
   armed: boolean
+  /** Who the thrower and target boxes are, looked up from the roster. */
+  who: { thrower: Who | null; target: Who | null }
   noteRef: React.RefObject<HTMLInputElement | null>
   onChange: (patch: Partial<ThrowEvent>) => void
   onFocus: (target: PlacementTarget) => void
@@ -26,15 +29,12 @@ const CHOICE = 'px-2 py-[3px] rounded text-[11px] border'
 const ON = 'bg-ink border-ink text-surface'
 const OFF = 'bg-surface border-rule-strong text-ink-mute hover:bg-surface-2'
 
-export function EventPanel({ event, frame, focus, armed, noteRef, onChange, onFocus }: Props) {
-  if (!event) {
-    return (
-      <div className="px-3 py-4 border-b border-rule text-[12px] text-ink-mute leading-relaxed">
-        No event selected. <Kbd>T</Kbd> opens a release at this frame, <Kbd>F</Kbd> marks a fake.
-      </div>
-    )
-  }
-
+/**
+ * The form an event is edited in. It lives inside the event's own card in the
+ * stream - the card is where an event gets its kind, outcome and target, not a
+ * panel somewhere else - so it carries no header of its own.
+ */
+export function EventEditor({ event, frame, focus, armed, who, noteRef, onChange, onFocus }: EditorProps) {
   const missing = missingFields(event)
 
   const frameRow = (label: string, k: string, value: number | null) => (
@@ -49,20 +49,20 @@ export function EventPanel({ event, frame, focus, armed, noteRef, onChange, onFo
 
   const boxRow = (target: PlacementTarget) => {
     const placed = event[target]
+    const person = who[target]
     return (
       <button
-        onClick={() => onFocus(target)}
+        onClick={(e) => { e.stopPropagation(); onFocus(target) }}
         className={`flex items-center gap-2 text-left px-1 py-0.5 rounded text-[12px] w-full ${
           focus === target ? 'bg-surface-2' : ''
         }`}
       >
         <span className="w-[68px] text-ink-mute">{target}</span>
         {placed ? (
-          <span className="font-mono text-[11px] tabular-nums text-ink">
-            {Math.round(placed.box.x1)},{Math.round(placed.box.y1)}–
-            {Math.round(placed.box.x2)},{Math.round(placed.box.y2)}
-            <span className="text-ink-mute"> @{placed.frame}</span>
-            <span className="ml-1.5 text-ink-faint">
+          <span className="text-[11.5px] text-ink">
+            <span className="font-medium">{person ? describe(person) : '—'}</span>
+            <span className="font-mono text-[10.5px] tabular-nums text-ink-mute"> @{placed.frame}</span>
+            <span className="ml-1.5 text-[10.5px] text-ink-faint">
               {placed.source}{placed.adjusted ? '+adj' : ''}
             </span>
           </span>
@@ -76,12 +76,8 @@ export function EventPanel({ event, frame, focus, armed, noteRef, onChange, onFo
   }
 
   return (
-    <div className="border-b border-rule">
-      <Eyebrow count={<span className="font-mono">{event.id}</span>}>Selected</Eyebrow>
-
-      <div className="px-3 pb-3 flex flex-col gap-2">
-        <Pill signal={signalOf(event)} />
-
+    <div onClick={(e) => e.stopPropagation()} className="pt-2 mt-2 border-t border-surface-2">
+      <div className="flex flex-col gap-2">
         <div className="flex flex-col gap-1">
           {frameRow('start', 'S', event.start_frame)}
           {frameRow('release', 'T', event.release_frame)}
@@ -110,11 +106,13 @@ export function EventPanel({ event, frame, focus, armed, noteRef, onChange, onFo
           <Kbd>P</Kbd>
           <span className="w-10 text-ink-mute">kind</span>
           {EVENT_KINDS.map((k: EventKind) => (
-            <button
+            <SignalChoice
               key={k}
+              signal={k === 'throw' ? (event.outcome ?? 'open') : k}
+              on={event.kind === k}
+              shortcut={k === 'fake' ? '⇧F' : k === 'pass' ? 'P' : undefined}
               onClick={() => onChange(kindPatch(k))}
-              className={`${CHOICE} ${event.kind === k ? ON : OFF}`}
-            >{k}</button>
+            >{k}</SignalChoice>
           ))}
           {event.kind == null && (
             <span className="text-[10.5px] text-ink-faint">destination undecided</span>
@@ -125,13 +123,15 @@ export function EventPanel({ event, frame, focus, armed, noteRef, onChange, onFo
           <div className="flex items-center gap-1.5 flex-wrap text-[12px]">
             <span className="w-[52px] text-ink-mute">outcome</span>
             {OUTCOMES.map((o: Outcome) => (
-              <button
+              <SignalChoice
                 key={o}
+                signal={o}
+                on={event.outcome === o}
+                shortcut={o[0].toUpperCase()}
                 onClick={() => onChange({
                   outcome: o, status: 'closed', kind: kindAfterOutcome(event.kind, o),
                 })}
-                className={`${CHOICE} ${event.outcome === o ? ON : OFF}`}
-              >{o}</button>
+              />
             ))}
           </div>
         )}

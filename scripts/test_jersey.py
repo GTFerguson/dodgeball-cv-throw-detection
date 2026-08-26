@@ -19,17 +19,17 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from jersey import (MIN_AGREEMENT_SPAN, MIN_CROP_HEIGHT, READ_BIN_FRAMES,  # noqa: E402
-                    Crop, Reading, confirm, conflicts, in_time_order,
-                    largest_crops, needs_review, shortlist, switch, torso_crop,
-                    unobstructed)
+from jersey import (MAX_PRINT_LENGTH, MIN_AGREEMENT_SPAN,  # noqa: E402
+                    MIN_CROP_HEIGHT, READ_BIN_FRAMES, Crop, Reading, as_number,
+                    confirm, conflicts, in_time_order, largest_crops,
+                    needs_review, shortlist, switch, torso_crop, unobstructed)
 
 
 def readings(*pairs: tuple[int, int], spread: int = MIN_AGREEMENT_SPAN) -> list[Reading]:
     """`(number, times)` pairs as a flat list of readings, spread out in time."""
     out = []
     for number, times in pairs:
-        out.extend(Reading(number=number, confidence=0.8, frame=i * spread)
+        out.extend(Reading(number=str(number), confidence=0.8, frame=i * spread)
                    for i in range(times))
     return out
 
@@ -40,7 +40,7 @@ def crop(frame: int, height: int) -> Crop:
 
 class Confirmation(unittest.TestCase):
     def test_agreeing_readings_confirm(self):
-        self.assertEqual(confirm(readings((6, 6))), 6)
+        self.assertEqual(confirm(readings((6, 6))), "6")
 
     def test_a_single_reading_is_not_evidence(self):
         # One crop of a folded jersey can say anything; the claim needs further
@@ -63,7 +63,7 @@ class Confirmation(unittest.TestCase):
     def test_a_repeated_digit_is_not_invented(self):
         # The mirror case, and the reason the weighting cannot simply prefer the
         # longer reading: CHALMERS 7 reads as `77` twice and `7` seven times.
-        self.assertEqual(confirm(readings((7, 7), (77, 2))), 7)
+        self.assertEqual(confirm(readings((7, 7), (77, 2))), "7")
 
     def test_a_split_vote_is_left_unnamed(self):
         # DICARLO 10, read as 6, 1 and 10. No reading has the clear majority the
@@ -71,7 +71,7 @@ class Confirmation(unittest.TestCase):
         self.assertIsNone(confirm(readings((6, 4), (1, 2), (10, 1))))
 
     def test_two_digit_numbers_survive_a_stray_misread(self):
-        self.assertEqual(confirm(readings((55, 3), (75, 1))), 55)
+        self.assertEqual(confirm(readings((55, 3), (75, 1))), "55")
 
     def test_agreement_within_a_moment_is_one_view(self):
         # A referee's stripes read as `6` four times in twenty frames on the full
@@ -79,14 +79,14 @@ class Confirmation(unittest.TestCase):
         # and the claim needs views that are independent, which means apart in
         # time.
         self.assertIsNone(confirm(readings((6, 4), spread=5)))
-        self.assertEqual(confirm(readings((6, 4), spread=MIN_AGREEMENT_SPAN)), 6)
+        self.assertEqual(confirm(readings((6, 4), spread=MIN_AGREEMENT_SPAN)), "6")
 
     def test_a_lost_digit_does_not_dissent(self):
         # Track 54's first half, read across its whole life: five 18s, four 1s,
         # and a 78, a 70, a 6 and a 3 from the far court. The 1s fit an 18 and
         # must not be counted as votes against it, or reading the far court
         # costs the name the near court gave.
-        self.assertEqual(confirm(readings((18, 5), (1, 4), (78, 1), (70, 1), (6, 1), (3, 1))), 18)
+        self.assertEqual(confirm(readings((18, 5), (1, 4), (78, 1), (70, 1), (6, 1), (3, 1))), "18")
 
     def test_a_fragment_of_a_longer_reading_is_ambiguous(self):
         # KUTNER 40 read as `4` five times and `40` once. The `4` is what the
@@ -97,12 +97,12 @@ class Confirmation(unittest.TestCase):
     def test_a_doubled_digit_does_not_make_the_digit_ambiguous(self):
         # `77` from a 7 is the reader repeating, not the reader dropping; a 7 that
         # is sometimes read as 77 is still a 7.
-        self.assertEqual(confirm(readings((7, 5), (77, 1))), 7)
+        self.assertEqual(confirm(readings((7, 5), (77, 1))), "7")
 
     def test_a_doubled_digit_does_not_dissent_either(self):
         # CHALMERS after the swap, track 285: eight 7s, three 77s and a 1. The
         # 77s counted as votes against left him unnamed for half a set.
-        self.assertEqual(confirm(readings((7, 8), (77, 3), (1, 1))), 7)
+        self.assertEqual(confirm(readings((7, 8), (77, 3), (1, 1))), "7")
 
 
 class Switches(unittest.TestCase):
@@ -111,19 +111,19 @@ class Switches(unittest.TestCase):
     # being wrong about one player.
 
     def stretch(self, number, start, count, step=MIN_AGREEMENT_SPAN):
-        return [Reading(number=number, confidence=0.8, frame=start + i * step)
+        return [Reading(number=str(number), confidence=0.8, frame=start + i * step)
                 for i in range(count)]
 
     def test_a_clean_switch_is_found_between_the_stretches(self):
         rs = self.stretch(18, 0, 5) + self.stretch(7, 3000, 5)
-        self.assertEqual(switch(rs), (18, 7, 400, 3000))
+        self.assertEqual(switch(rs), ("18", "7", 400, 3000))
 
     def test_a_switch_needs_fewer_reads_than_a_name(self):
         # CHALMERS after frame 2881 on track 54 was read `7, 5, 7` - too few to
         # name, enough to say the 18 has stopped.
-        rs = self.stretch(18, 0, 5) + [Reading(number=n, confidence=0.8, frame=f)
+        rs = self.stretch(18, 0, 5) + [Reading(number=str(n), confidence=0.8, frame=f)
                                        for f, n in ((2891, 7), (3397, 5), (3517, 7))]
-        self.assertEqual(switch(rs)[:2], (18, 7))
+        self.assertEqual(switch(rs)[:2], ("18", "7"))
 
     def test_interleaved_numbers_are_not_a_switch(self):
         rs = self.stretch(6, 0, 4) + self.stretch(10, 50, 4)
@@ -133,7 +133,7 @@ class Switches(unittest.TestCase):
         # DICARLO 10 on the evaluation clip: `6, 6, 1, 10, 1, 6, 6, 1, 1, 10, 1`.
         # The prefix confirms 6 and the suffix confirms 10, and it is one man
         # whose 0 reads as a 6 - which the 6s after the first 10 give away.
-        rs = [Reading(number=n, confidence=0.8, frame=f) for f, n in
+        rs = [Reading(number=str(n), confidence=0.8, frame=f) for f, n in
               ((307, 6), (458, 6), (598, 1), (683, 10), (813, 1), (1573, 6),
                (1718, 6), (1753, 1), (2018, 1), (2743, 10), (3063, 1))]
         self.assertIsNone(switch(rs))
@@ -144,7 +144,7 @@ class Switches(unittest.TestCase):
     def test_a_stray_fragment_does_not_split_a_track(self):
         # A `1` read late on an 18 is the reader dropping a digit, not a new
         # player; the second stretch has to confirm on its own terms.
-        rs = self.stretch(18, 0, 5) + [Reading(number=1, confidence=0.8, frame=3000)]
+        rs = self.stretch(18, 0, 5) + [Reading(number="1", confidence=0.8, frame=3000)]
         self.assertIsNone(switch(rs))
 
     def test_a_second_stretch_too_brief_to_confirm_is_not_a_switch(self):
@@ -154,26 +154,26 @@ class Switches(unittest.TestCase):
     def test_the_boundary_is_placed_between_the_last_and_first_agreeing_reads(self):
         # Noise between the stretches must not move the boundary.
         rs = (self.stretch(18, 0, 5)
-              + [Reading(number=44, confidence=0.5, frame=1500)]
+              + [Reading(number="44", confidence=0.5, frame=1500)]
               + self.stretch(7, 3000, 5))
         a, b, last_a, first_b = switch(rs)
-        self.assertEqual((a, b), (18, 7))
+        self.assertEqual((a, b), ("18", "7"))
         self.assertLessEqual(last_a, 1500)
         self.assertGreaterEqual(first_b, 1500)
 
 
 class Vetoes(unittest.TestCase):
     def test_different_numbers_cannot_be_one_player(self):
-        self.assertTrue(conflicts(7, 23))
+        self.assertTrue(conflicts("7", "23"))
 
     def test_the_same_number_does_not_conflict(self):
-        self.assertFalse(conflicts(7, 7))
+        self.assertFalse(conflicts("7", "7"))
 
     def test_an_unread_track_vetoes_nothing(self):
         # Most tracks carry no number at all. If absence vetoed, the veto would
         # forbid every join rather than the wrong ones.
-        self.assertFalse(conflicts(None, 7))
-        self.assertFalse(conflicts(7, None))
+        self.assertFalse(conflicts(None, "7"))
+        self.assertFalse(conflicts("7", None))
         self.assertFalse(conflicts(None, None))
 
 
@@ -264,7 +264,7 @@ class Review(unittest.TestCase):
         self.assertTrue(needs_review(None, in_play_frames=1500, span=2000))
 
     def test_a_named_track_is_already_on_the_sheet(self):
-        self.assertFalse(needs_review(18, in_play_frames=1500, span=2000))
+        self.assertFalse(needs_review("18", in_play_frames=1500, span=2000))
 
     def test_a_short_unnamed_track_is_not_worth_the_space(self):
         # There are dozens of these and most are a player glimpsed for a second.
@@ -274,6 +274,55 @@ class Review(unittest.TestCase):
         # A referee is tracked for the whole set from the sideline. Long, unnamed,
         # and never in play - which is the answer, not a question.
         self.assertFalse(needs_review(None, in_play_frames=0, span=2000))
+
+
+class TokensThatAreNotNumbers(unittest.TestCase):
+    # Both kits carry text above the number, and a reader confined to digits has
+    # to return it as digits: `USA` came back as `54` on four far tracks at once
+    # and `4C` as `40` on KUTNER.
+
+    def test_the_team_print_is_not_a_number(self):
+        for token in ("USA", "VSA", "US4", "JSA", "WSA", "0S4", "SA"):
+            self.assertIsNone(as_number(token), token)
+
+    def test_a_shirt_that_is_not_all_digits_is_still_what_is_worn(self):
+        # KUTNER wears `4C`. `40` is what a digits-only reader had to call it.
+        self.assertEqual(as_number("4C"), "4C")
+
+    def test_a_number_is_a_number(self):
+        self.assertEqual(as_number("27"), "27")
+        self.assertEqual(as_number("7"), "7")
+
+    def test_the_letters_that_are_digits_at_this_size_are_read_back(self):
+        # `1` and `I`, `0` and `O`, are one shape on a jersey.
+        self.assertEqual(as_number("I0"), "10")
+        self.assertEqual(as_number("IO"), "10")
+        self.assertEqual(as_number("I8"), "18")
+        self.assertEqual(as_number("0I"), "01")
+
+    def test_case_and_surrounding_space_do_not_matter(self):
+        self.assertEqual(as_number(" i0 "), "10")
+
+    def test_a_token_longer_than_a_jersey_print_is_not_one(self):
+        self.assertIsNone(as_number("1" * (MAX_PRINT_LENGTH + 1)))
+        self.assertEqual(as_number("1" * MAX_PRINT_LENGTH), "1" * MAX_PRINT_LENGTH)
+
+    def test_nobody_is_numbered_nothing(self):
+        # `0` is what the reader offers for a fold, a shadow and half a digit.
+        self.assertIsNone(as_number("0"))
+        self.assertIsNone(as_number("00"))
+        self.assertIsNone(as_number("O"))
+
+    def test_a_leading_zero_is_kept_because_01_is_not_1(self):
+        self.assertEqual(as_number("01"), "01")
+
+    def test_print_that_leads_with_a_letter_is_not_a_number(self):
+        for token in ("T4", "S5", "US", "JS"):
+            self.assertIsNone(as_number(token), token)
+
+    def test_an_empty_token_is_not_a_number(self):
+        self.assertIsNone(as_number(""))
+        self.assertIsNone(as_number("   "))
 
 
 if __name__ == "__main__":
