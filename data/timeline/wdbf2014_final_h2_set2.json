@@ -147,7 +147,7 @@
   {
    "frame": 596,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     642.6,
@@ -169,7 +169,7 @@
   {
    "frame": 728,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     598.2,
@@ -257,7 +257,7 @@
   {
    "frame": 1027,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     620.6,
@@ -367,7 +367,7 @@
   {
    "frame": 1168,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     643.8,
@@ -499,7 +499,7 @@
   {
    "frame": 1527,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     679.3,
@@ -609,7 +609,7 @@
   {
    "frame": 1902,
    "track_id": 12,
-   "participant": "player-t12",
+   "participant": "far-01",
    "team": "far",
    "box": [
     925.8,
@@ -653,7 +653,7 @@
   {
    "frame": 1989,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     699.8,
@@ -741,7 +741,7 @@
   {
    "frame": 2568,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "box": [
     672.8,
@@ -763,7 +763,7 @@
   {
    "frame": 2616,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "box": [
     692.5,
@@ -785,7 +785,7 @@
   {
    "frame": 2645,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     1335.1,
@@ -807,7 +807,7 @@
   {
    "frame": 2664,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "box": [
     691.2,
@@ -829,7 +829,7 @@
   {
    "frame": 2682,
    "track_id": 169,
-   "participant": "player-t169",
+   "participant": "far-2",
    "team": "far",
    "box": [
     1008.3,
@@ -917,7 +917,7 @@
   {
    "frame": 2727,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     1389.0,
@@ -1005,7 +1005,7 @@
   {
    "frame": 3178,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "box": [
     660.4,
@@ -1159,7 +1159,7 @@
   {
    "frame": 3833,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "box": [
     677.9,
@@ -1269,7 +1269,7 @@
   {
    "frame": 4030,
    "track_id": 288,
-   "participant": "near-18'''",
+   "participant": "near-18",
    "team": "near",
    "box": [
     663.6,
@@ -1445,7 +1445,7 @@
   {
    "frame": 4647,
    "track_id": 272,
-   "participant": "near-40",
+   "participant": "near-4C",
    "team": "near",
    "box": [
     801.9,
@@ -1513,7 +1513,7 @@
   {
    "frame": 445,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     615.8,
@@ -1601,7 +1601,7 @@
   {
    "frame": 565,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     617.2,
@@ -1887,7 +1887,7 @@
   {
    "frame": 1573,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "box": [
     718.2,
@@ -1953,7 +1953,7 @@
   {
    "frame": 2026,
    "track_id": 12,
-   "participant": "player-t12",
+   "participant": "far-01",
    "team": "far",
    "box": [
     1138.2,
@@ -1997,7 +1997,7 @@
   {
    "frame": 2242,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "box": [
     786.0,
@@ -2041,7 +2041,7 @@
   {
    "frame": 2727,
    "track_id": 169,
-   "participant": "player-t169",
+   "participant": "far-2",
    "team": "far",
    "box": [
     926.5,
@@ -2305,7 +2305,7 @@
   {
    "frame": 4758,
    "track_id": 272,
-   "participant": "near-40",
+   "participant": "near-4C",
    "team": "near",
    "box": [
     1595.5,

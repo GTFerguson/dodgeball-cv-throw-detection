@@ -13,7 +13,7 @@
   {
    "frame": 445,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 64.2,
    "detection_index": 32,
@@ -139,7 +139,7 @@
   {
    "frame": 565,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 36.1,
    "detection_index": 16,
@@ -181,7 +181,7 @@
   {
    "frame": 596,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 69.4,
    "detection_index": 24,
@@ -223,7 +223,7 @@
   {
    "frame": 728,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 36.8,
    "detection_index": 22,
@@ -293,7 +293,7 @@
   {
    "frame": 1027,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 81.2,
    "detection_index": 16,
@@ -377,7 +377,7 @@
   {
    "frame": 1168,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 48.4,
    "detection_index": 12,
@@ -531,7 +531,7 @@
   {
    "frame": 1527,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 95.1,
    "detection_index": 8,
@@ -559,7 +559,7 @@
   {
    "frame": 1573,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 56.7,
    "detection_index": 14,
@@ -643,7 +643,7 @@
   {
    "frame": 1902,
    "track_id": 12,
-   "participant": "player-t12",
+   "participant": "far-01",
    "team": "far",
    "score": 86.1,
    "detection_index": 10,
@@ -671,7 +671,7 @@
   {
    "frame": 1989,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 88.4,
    "detection_index": 10,
@@ -727,7 +727,7 @@
   {
    "frame": 2026,
    "track_id": 12,
-   "participant": "player-t12",
+   "participant": "far-01",
    "team": "far",
    "score": 41.8,
    "detection_index": 26,
@@ -769,7 +769,7 @@
   {
    "frame": 2242,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "score": 58.5,
    "detection_index": 22,
@@ -797,7 +797,7 @@
   {
    "frame": 2568,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "score": 109.2,
    "detection_index": 27,
@@ -811,7 +811,7 @@
   {
    "frame": 2616,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "score": 92.1,
    "detection_index": 11,
@@ -825,7 +825,7 @@
   {
    "frame": 2645,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 92.7,
    "detection_index": 24,
@@ -839,7 +839,7 @@
   {
    "frame": 2664,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "score": 37.2,
    "detection_index": 29,
@@ -853,7 +853,7 @@
   {
    "frame": 2682,
    "track_id": 169,
-   "participant": "player-t169",
+   "participant": "far-2",
    "team": "far",
    "score": 106.4,
    "detection_index": 16,
@@ -909,7 +909,7 @@
   {
    "frame": 2727,
    "track_id": 75,
-   "participant": "player-t75",
+   "participant": "far-13",
    "team": "far",
    "score": 95.2,
    "detection_index": 13,
@@ -923,7 +923,7 @@
   {
    "frame": 2727,
    "track_id": 169,
-   "participant": "player-t169",
+   "participant": "far-2",
    "team": "far",
    "score": 37.1,
    "detection_index": 11,
@@ -1007,7 +1007,7 @@
   {
    "frame": 3178,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "score": 115.6,
    "detection_index": 15,
@@ -1133,7 +1133,7 @@
   {
    "frame": 3833,
    "track_id": 171,
-   "participant": "far-1",
+   "participant": "far-01",
    "team": "far",
    "score": 125.7,
    "detection_index": 5,
@@ -1231,7 +1231,7 @@
   {
    "frame": 4030,
    "track_id": 288,
-   "participant": "near-18'''",
+   "participant": "near-18",
    "team": "near",
    "score": 42.2,
    "detection_index": 4,
@@ -1371,7 +1371,7 @@
   {
    "frame": 4647,
    "track_id": 272,
-   "participant": "near-40",
+   "participant": "near-4C",
    "team": "near",
    "score": 104.6,
    "detection_index": 22,
@@ -1455,7 +1455,7 @@
   {
    "frame": 4758,
    "track_id": 272,
-   "participant": "near-40",
+   "participant": "near-4C",
    "team": "near",
    "score": 73.5,
    "detection_index": 21,
