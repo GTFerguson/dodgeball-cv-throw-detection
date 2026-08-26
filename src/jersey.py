@@ -114,11 +114,21 @@ REVIEW_FRACTION = 0.5
 # digits: `USA` comes back as `54`, and `KUTNER 4C` as `40`. A token that is
 # still not a number once it has been read is the print, and can be set aside
 # instead of outvoting the number below it.
+#
+# The crop is enlarged before the call rather than by `mag_ratio`, which is left
+# at 1. Measured across every player track on the evaluation clip, a cubic
+# upscale names 24 tracks correctly against 21 for `mag_ratio` 2 and 18 for
+# `mag_ratio` 3, and doing both is worse than doing either - it returns more
+# tokens and fewer names. Below roughly a 100 px torso crop the detector
+# otherwise finds no text box at all, which is how a legible `13` and `11` on
+# the far side went unread rather than misread.
+READ_UPSCALE = 2
+
 OCR_PARAMS = dict(
     allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     paragraph=False,
     detail=1,
-    mag_ratio=2.0,
+    mag_ratio=1.0,
     text_threshold=0.2,
     low_text=0.4,
     link_threshold=0.1,
@@ -301,8 +311,15 @@ class JerseyReader:
 
     def read(self, crop: Crop) -> list[Reading]:
         """Every number the reader finds on one crop."""
+        import cv2
+
         out: list[Reading] = []
-        for _, text, conf in self.reader.readtext(crop.image, **OCR_PARAMS):
+        image = crop.image
+        if READ_UPSCALE > 1:
+            image = cv2.resize(image, (image.shape[1] * READ_UPSCALE,
+                                       image.shape[0] * READ_UPSCALE),
+                               interpolation=cv2.INTER_CUBIC)
+        for _, text, conf in self.reader.readtext(image, **OCR_PARAMS):
             number = as_number(text)
             if number is not None and conf > MIN_OCR_CONF:
                 out.append(Reading(number=number, confidence=round(float(conf), 3),

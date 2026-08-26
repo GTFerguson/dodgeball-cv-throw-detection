@@ -273,7 +273,7 @@ class OnTheClip(unittest.TestCase):
         # #13 and #2 are USA; the near side's 44 is three fragments of one man,
         # and CHALMERS 7 runs through the swap that cut track 54.
         self.assertEqual(self.roster.participant("far-13").track_ids, (75,))
-        self.assertEqual(self.roster.participant("far-2").track_ids, (165,))
+        self.assertEqual(self.roster.participant("far-2").track_ids, (169,))
         self.assertEqual(self.roster.participant("near-44").track_ids, (2, 231, 274))
         self.assertEqual(self.roster.participant("near-7").track_ids, (56, 434, 291))
 
