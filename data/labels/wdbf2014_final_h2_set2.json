@@ -6,7 +6,7 @@
   "height": 1080,
   "annotator": "default",
   "created": "2026-08-25T19:53:20.550Z",
-  "updated": "2026-08-26T19:08:31.305Z",
+  "updated": "2026-08-26T20:11:29.653Z",
   "events": [
     {
       "id": "xgxcrlkv",
@@ -58,7 +58,7 @@
       "outcome_visible": true,
       "ref_signal": null,
       "uncertain": false,
-      "note": ""
+      "note": " "
     },
     {
       "id": "83eumeqg",
@@ -156,7 +156,7 @@
       "proposed_frame": 535,
       "release_frame": 535,
       "start_frame": null,
-      "end_frame": 546,
+      "end_frame": 543,
       "thrower": {
         "box": {
           "x1": 867.7,
@@ -286,7 +286,7 @@
       "outcome_visible": true,
       "ref_signal": null,
       "uncertain": false,
-      "note": "proposal caught the wind-up; the rejected proposal at 596 is this throw's follow-through"
+      "note": "this is the wind up and event 596 seems to be the aftermath just after release, so this one is correct enough but we need to figure out why they're ending up as two"
     },
     {
       "id": "i7glpspy",
@@ -528,7 +528,7 @@
       "proposed_frame": 1067,
       "release_frame": 1067,
       "start_frame": null,
-      "end_frame": 1067,
+      "end_frame": 1077,
       "thrower": {
         "box": {
           "x1": 711.3,
@@ -760,7 +760,7 @@
       "proposed_frame": 1451,
       "release_frame": 1451,
       "start_frame": null,
-      "end_frame": 1461,
+      "end_frame": 1458,
       "thrower": {
         "box": {
           "x1": 1180,
@@ -853,8 +853,1656 @@
       "release_visible": true,
       "outcome_visible": true,
       "ref_signal": null,
+      "uncertain": false,
+      "note": "this ones a fraction late and it looks like it could be a super narrow miss or a hit, will have to check for corroboration from other signals."
+    },
+    {
+      "id": "knn7djh8",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 1492,
+      "release_frame": 1485,
+      "start_frame": null,
+      "end_frame": 1494,
+      "thrower": {
+        "box": {
+          "x1": 1366.2,
+          "y1": 316.5,
+          "x2": 1469.2,
+          "y2": 488.7
+        },
+        "frame": 1492,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "catch",
+      "target": {
+        "box": {
+          "x1": 1219.9,
+          "y1": 784.4,
+          "x2": 1425.1,
+          "y2": 964.5
+        },
+        "frame": 1494,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": false,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": "hard to see could be block or catch but they have the ball on the ground next to them after, would need better signaling to corroborate, check the ruling, what is supposed to happen after these two events, can we find anything to help tell us which it was"
+    },
+    {
+      "id": "g9e79sip",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 1499,
+      "release_frame": 1498,
+      "start_frame": null,
+      "end_frame": 1510,
+      "thrower": {
+        "box": {
+          "x1": 243.2,
+          "y1": 710.7,
+          "x2": 490.4,
+          "y2": 961
+        },
+        "frame": 1499,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "mqunix8x",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 1527,
+      "release_frame": 1527,
+      "start_frame": null,
+      "end_frame": 1538,
+      "thrower": {
+        "box": {
+          "x1": 679.3,
+          "y1": 315.7,
+          "x2": 747.3,
+          "y2": 488.7
+        },
+        "frame": 1527,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "35wq7kzb",
+      "status": "closed",
+      "kind": "pass",
+      "source": "model",
+      "proposed_frame": 1856,
+      "release_frame": 1851,
+      "start_frame": null,
+      "end_frame": 1894,
+      "thrower": {
+        "box": {
+          "x1": 1313.5,
+          "y1": 133.9,
+          "x2": 1389.1,
+          "y2": 298.2
+        },
+        "frame": 1856,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": {
+        "box": {
+          "x1": 632.6,
+          "y1": 139.3,
+          "x2": 686.9,
+          "y2": 286.7
+        },
+        "frame": 1851,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "k1h4v7qu",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 1870,
+      "release_frame": 1870,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 775.6,
+          "y1": 456.8,
+          "x2": 885.8,
+          "y2": 669.8
+        },
+        "frame": 1870,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "1i6v6f6d",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 1896,
+      "release_frame": 1896,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 821.8,
+          "y1": 428.2,
+          "x2": 935.3,
+          "y2": 677.5
+        },
+        "frame": 1896,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "dkyya77f",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 1901,
+      "release_frame": 1901,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 1205.2,
+          "y1": 416.5,
+          "x2": 1272.9,
+          "y2": 600.4
+        },
+        "frame": 1901,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "3y1iaiaw",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 1902,
+      "release_frame": 1898,
+      "start_frame": null,
+      "end_frame": 1905,
+      "thrower": {
+        "box": {
+          "x1": 925.8,
+          "y1": 160.6,
+          "x2": 1002.3,
+          "y2": 312.5
+        },
+        "frame": 1902,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "block",
+      "target": {
+        "box": {
+          "x1": 1207.7,
+          "y1": 400,
+          "x2": 1282.5,
+          "y2": 597.5
+        },
+        "frame": 1898,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "xjloeetu",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 1973,
+      "release_frame": 1973,
+      "start_frame": null,
+      "end_frame": 1986,
+      "thrower": {
+        "box": {
+          "x1": 1180.5,
+          "y1": 358.9,
+          "x2": 1323.1,
+          "y2": 553.7
+        },
+        "frame": 1973,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "9im3geq0",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 1989,
+      "release_frame": 1989,
+      "start_frame": null,
+      "end_frame": 2000,
+      "thrower": {
+        "box": {
+          "x1": 699.8,
+          "y1": 196.5,
+          "x2": 788.5,
+          "y2": 335.5
+        },
+        "frame": 1989,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "vk011r88",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 2012,
+      "release_frame": 2012,
+      "start_frame": null,
+      "end_frame": 2025,
+      "thrower": {
+        "box": {
+          "x1": 1400,
+          "y1": 398.6,
+          "x2": 1512.7,
+          "y2": 601
+        },
+        "frame": 2012,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": {
+        "box": {
+          "x1": 1070.2,
+          "y1": 236.1,
+          "x2": 1182,
+          "y2": 333.9
+        },
+        "frame": 2034,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
       "uncertain": true,
-      "note": "narrow miss or a hit - needs corroboration from other signals"
+      "note": "looks to be a very cclose miss "
+    },
+    {
+      "id": "e5cph7hh",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 2062,
+      "release_frame": 2062,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 1033.2,
+          "y1": 544.8,
+          "x2": 1148,
+          "y2": 825.7
+        },
+        "frame": 2062,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "3jrhpr5o",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 2568,
+      "release_frame": 2568,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 672.8,
+          "y1": 250.5,
+          "x2": 764.6,
+          "y2": 434.6
+        },
+        "frame": 2568,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "kjjyj21l",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 2616,
+      "release_frame": 2616,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 692.5,
+          "y1": 233.7,
+          "x2": 768.7,
+          "y2": 446.5
+        },
+        "frame": 2616,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "sbr0tnhc",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 2645,
+      "release_frame": 2645,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 1335.1,
+          "y1": 253.6,
+          "x2": 1434.6,
+          "y2": 449.4
+        },
+        "frame": 2645,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "ibwdxl7x",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 2664,
+      "release_frame": 2664,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 691.2,
+          "y1": 266.5,
+          "x2": 759.6,
+          "y2": 444.5
+        },
+        "frame": 2664,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "rhdlb15l",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 2682,
+      "release_frame": 2681,
+      "start_frame": null,
+      "end_frame": 2700,
+      "thrower": {
+        "box": {
+          "x1": 1008.3,
+          "y1": 310.1,
+          "x2": 1078.8,
+          "y2": 485.7
+        },
+        "frame": 2682,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "catch",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": "very close to fumbling but recovered and caught it"
+    },
+    {
+      "id": "3bh0ie8p",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 2693,
+      "release_frame": 2691,
+      "start_frame": null,
+      "end_frame": 2708,
+      "thrower": {
+        "box": {
+          "x1": 185.9,
+          "y1": 712,
+          "x2": 416.1,
+          "y2": 979.3
+        },
+        "frame": 2693,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "rauh75nw",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 2700,
+      "release_frame": 2701,
+      "start_frame": null,
+      "end_frame": 2722,
+      "thrower": {
+        "box": {
+          "x1": 1469.9,
+          "y1": 623.2,
+          "x2": 1636,
+          "y2": 888.4
+        },
+        "frame": 2700,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "hit",
+      "target": {
+        "box": {
+          "x1": 926.3,
+          "y1": 322.4,
+          "x2": 1051.2,
+          "y2": 404.2
+        },
+        "frame": 2722,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "4ovau51f",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 2727,
+      "release_frame": 2725,
+      "start_frame": null,
+      "end_frame": 2733,
+      "thrower": {
+        "box": {
+          "x1": 926.5,
+          "y1": 308.2,
+          "x2": 1049.4,
+          "y2": 402.9
+        },
+        "frame": 2727,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "catch",
+      "target": {
+        "box": {
+          "x1": 1437.5,
+          "y1": 722.4,
+          "x2": 1574,
+          "y2": 957.1
+        },
+        "frame": 2733,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "7yli19e3",
+      "status": "closed",
+      "kind": "pass",
+      "source": "model",
+      "proposed_frame": 2840,
+      "release_frame": 2835,
+      "start_frame": null,
+      "end_frame": 2835,
+      "thrower": {
+        "box": {
+          "x1": 704.4,
+          "y1": 636.6,
+          "x2": 901.4,
+          "y2": 925.1
+        },
+        "frame": 2840,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": {
+        "box": {
+          "x1": 452,
+          "y1": 661.1,
+          "x2": 638.2,
+          "y2": 964.3
+        },
+        "frame": 2835,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": true,
+      "note": "not sure how to call this one as its not a throw pass he literally hands it over"
+    },
+    {
+      "id": "oesrfs6b",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 3178,
+      "release_frame": 3178,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 660.4,
+          "y1": 132.3,
+          "x2": 714.8,
+          "y2": 305.7
+        },
+        "frame": 3178,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "n6v8z9hj",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 3191,
+      "release_frame": 3191,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 789.1,
+          "y1": 402.5,
+          "x2": 864.4,
+          "y2": 608.6
+        },
+        "frame": 3191,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "xr535fu1",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 3209,
+      "release_frame": 3214,
+      "start_frame": null,
+      "end_frame": 3219,
+      "thrower": {
+        "box": {
+          "x1": 812,
+          "y1": 363.5,
+          "x2": 889.9,
+          "y2": 568.6
+        },
+        "frame": 3209,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "block",
+      "target": {
+        "box": {
+          "x1": 1040.7,
+          "y1": 196.2,
+          "x2": 1104.7,
+          "y2": 275.8
+        },
+        "frame": 3219,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "ibc5npd6",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 3483,
+      "release_frame": 3486,
+      "start_frame": null,
+      "end_frame": 3498,
+      "thrower": {
+        "box": {
+          "x1": 1371.3,
+          "y1": 243,
+          "x2": 1468.9,
+          "y2": 428.2
+        },
+        "frame": 3483,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "z3546ken",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 3488,
+      "release_frame": 3491,
+      "start_frame": null,
+      "end_frame": 3500,
+      "thrower": {
+        "box": {
+          "x1": 1134.4,
+          "y1": 261.4,
+          "x2": 1204.1,
+          "y2": 454.3
+        },
+        "frame": 3488,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "74k1y7tu",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 3833,
+      "release_frame": 3833,
+      "start_frame": null,
+      "end_frame": 3847,
+      "thrower": {
+        "box": {
+          "x1": 677.9,
+          "y1": 144.2,
+          "x2": 758.4,
+          "y2": 292
+        },
+        "frame": 3833,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "h5ximvia",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 3849,
+      "release_frame": 3849,
+      "start_frame": null,
+      "end_frame": 3858,
+      "thrower": {
+        "box": {
+          "x1": 454.5,
+          "y1": 349.9,
+          "x2": 560.7,
+          "y2": 579.6
+        },
+        "frame": 3849,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "hit",
+      "target": {
+        "box": {
+          "x1": 672.1,
+          "y1": 178.8,
+          "x2": 762.1,
+          "y2": 293.1
+        },
+        "frame": 3860,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "mdj4630f",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 3966,
+      "release_frame": 3966,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 1253.5,
+          "y1": 157.7,
+          "x2": 1332.9,
+          "y2": 302.6
+        },
+        "frame": 3966,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "uzylflcx",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 3995,
+      "release_frame": 3995,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 509.9,
+          "y1": 367.3,
+          "x2": 616.4,
+          "y2": 564.9
+        },
+        "frame": 3995,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "pktnawt5",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 4018,
+      "release_frame": 4018,
+      "start_frame": null,
+      "end_frame": 4031,
+      "thrower": {
+        "box": {
+          "x1": 514.2,
+          "y1": 370.9,
+          "x2": 593.1,
+          "y2": 565.8
+        },
+        "frame": 4018,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "k69ade8p",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 4030,
+      "release_frame": 4030,
+      "start_frame": null,
+      "end_frame": 4032,
+      "thrower": {
+        "box": {
+          "x1": 663.6,
+          "y1": 371.3,
+          "x2": 749.3,
+          "y2": 563.9
+        },
+        "frame": 4030,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "hit",
+      "target": {
+        "box": {
+          "x1": 620.6,
+          "y1": 104.4,
+          "x2": 740.6,
+          "y2": 257.1
+        },
+        "frame": 4032,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "vgha4iva",
+      "status": "closed",
+      "kind": "pass",
+      "source": "model",
+      "proposed_frame": 4122,
+      "release_frame": 4121,
+      "start_frame": null,
+      "end_frame": 4143,
+      "thrower": {
+        "box": {
+          "x1": 1336.6,
+          "y1": 532.9,
+          "x2": 1538.4,
+          "y2": 785.4
+        },
+        "frame": 4122,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": {
+        "box": {
+          "x1": 298.6,
+          "y1": 628.5,
+          "x2": 448.5,
+          "y2": 929.6
+        },
+        "frame": 4143,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "bujlbgfr",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 4323,
+      "release_frame": 4323,
+      "start_frame": null,
+      "end_frame": 4339,
+      "thrower": {
+        "box": {
+          "x1": 204.2,
+          "y1": 686.5,
+          "x2": 385.9,
+          "y2": 975.3
+        },
+        "frame": 4323,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "6fvlu1l7",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 4327,
+      "release_frame": 4327,
+      "start_frame": null,
+      "end_frame": 4334,
+      "thrower": {
+        "box": {
+          "x1": 1078.9,
+          "y1": 215.8,
+          "x2": 1148.3,
+          "y2": 374.9
+        },
+        "frame": 4327,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "tei9e4za",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 4605,
+      "release_frame": 4609,
+      "start_frame": null,
+      "end_frame": 4624,
+      "thrower": {
+        "box": {
+          "x1": 1302.8,
+          "y1": 165.1,
+          "x2": 1374.2,
+          "y2": 324.1
+        },
+        "frame": 4605,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": "hit",
+      "target": {
+        "box": {
+          "x1": 1438.4,
+          "y1": 798.3,
+          "x2": 1610.9,
+          "y2": 987.6
+        },
+        "frame": 4623,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "plek47it",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 4641,
+      "release_frame": 4650,
+      "start_frame": null,
+      "end_frame": 4658,
+      "thrower": {
+        "box": {
+          "x1": 1393.2,
+          "y1": 433.1,
+          "x2": 1500.2,
+          "y2": 630.6
+        },
+        "frame": 4641,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "miss",
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "m5vkb6d1",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 4650,
+      "release_frame": 4650,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 1245.9,
+          "y1": 154.4,
+          "x2": 1362,
+          "y2": 283.5
+        },
+        "frame": 4650,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "far",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": true,
+      "note": "ambiguous as it looks to be start of fake but then he throws himself to the side in an attempt to dodge"
+    },
+    {
+      "id": "21tbo6qz",
+      "status": "closed",
+      "kind": "throw",
+      "source": "model",
+      "proposed_frame": 4647,
+      "release_frame": 4651,
+      "start_frame": null,
+      "end_frame": 4660,
+      "thrower": {
+        "box": {
+          "x1": 801.9,
+          "y1": 374,
+          "x2": 902.5,
+          "y2": 577.1
+        },
+        "frame": 4647,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": "hit",
+      "target": {
+        "box": {
+          "x1": 1158.7,
+          "y1": 203.8,
+          "x2": 1310.7,
+          "y2": 271.2
+        },
+        "frame": 4660,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": ""
+    },
+    {
+      "id": "11588b8z",
+      "status": "closed",
+      "kind": "fake",
+      "source": "model",
+      "proposed_frame": 3490,
+      "release_frame": 3490,
+      "start_frame": null,
+      "end_frame": null,
+      "thrower": {
+        "box": {
+          "x1": 453.5,
+          "y1": 725.4,
+          "x2": 625.1,
+          "y2": 1014.4
+        },
+        "frame": 3490,
+        "source": "snapped",
+        "adjusted": false,
+        "pose_run": {
+          "run_id": "yolo11x-pose-1920-013c4354",
+          "model": "yolo11x-pose.pt",
+          "weights_sha256": "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8",
+          "imgsz": 1920
+        }
+      },
+      "team": "near",
+      "team_source": "inferred",
+      "outcome": null,
+      "target": null,
+      "release_visible": true,
+      "outcome_visible": true,
+      "ref_signal": null,
+      "uncertain": false,
+      "note": "fake with no ball "
     }
   ],
   "live_play": [
@@ -1339,6 +2987,1014 @@
       "event_id": null,
       "note": "he's dodging a ball",
       "reviewed": "2026-08-26T19:02:18.094Z"
+    },
+    {
+      "id": "6059iuq5",
+      "frame": 1479,
+      "box": {
+        "x1": 1406.8,
+        "y1": 272.2,
+        "x2": 1469.9,
+        "y2": 477
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:11:38.342Z"
+    },
+    {
+      "id": "6c6qll3t",
+      "frame": 1492,
+      "box": {
+        "x1": 1366.2,
+        "y1": 316.5,
+        "x2": 1469.2,
+        "y2": 488.7
+      },
+      "verdict": "accepted",
+      "event_id": "knn7djh8",
+      "note": "",
+      "reviewed": "2026-08-26T19:11:44.878Z"
+    },
+    {
+      "id": "4ok2gsu1",
+      "frame": 1499,
+      "box": {
+        "x1": 243.2,
+        "y1": 710.7,
+        "x2": 490.4,
+        "y2": 961
+      },
+      "verdict": "accepted",
+      "event_id": "g9e79sip",
+      "note": "",
+      "reviewed": "2026-08-26T19:13:53.504Z"
+    },
+    {
+      "id": "07vx6uc6",
+      "frame": 1527,
+      "box": {
+        "x1": 679.3,
+        "y1": 315.7,
+        "x2": 747.3,
+        "y2": 488.7
+      },
+      "verdict": "accepted",
+      "event_id": "mqunix8x",
+      "note": "",
+      "reviewed": "2026-08-26T19:14:33.884Z"
+    },
+    {
+      "id": "byl90yq8",
+      "frame": 1540,
+      "box": {
+        "x1": 1072,
+        "y1": 123.2,
+        "x2": 1132.9,
+        "y2": 283.2
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:14:49.444Z"
+    },
+    {
+      "id": "h0uqhlq2",
+      "frame": 1573,
+      "box": {
+        "x1": 718.2,
+        "y1": 210.5,
+        "x2": 775.4,
+        "y2": 378.1
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:15:19.861Z"
+    },
+    {
+      "id": "ft1ca4jg",
+      "frame": 1726,
+      "box": {
+        "x1": 1057.4,
+        "y1": 159,
+        "x2": 1147,
+        "y2": 273.2
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "pose model glitch caused by person walking behind them",
+      "reviewed": "2026-08-26T19:15:37.793Z"
+    },
+    {
+      "id": "s0e3o2lw",
+      "frame": 1856,
+      "box": {
+        "x1": 1313.5,
+        "y1": 133.9,
+        "x2": 1389.1,
+        "y2": 298.2
+      },
+      "verdict": "accepted",
+      "event_id": "35wq7kzb",
+      "note": "",
+      "reviewed": "2026-08-26T19:16:42.081Z"
+    },
+    {
+      "id": "6alda4zs",
+      "frame": 1870,
+      "box": {
+        "x1": 775.6,
+        "y1": 456.8,
+        "x2": 885.8,
+        "y2": 669.8
+      },
+      "verdict": "accepted",
+      "event_id": "k1h4v7qu",
+      "note": "",
+      "reviewed": "2026-08-26T19:34:23.475Z"
+    },
+    {
+      "id": "7epwofkj",
+      "frame": 1896,
+      "box": {
+        "x1": 821.8,
+        "y1": 428.2,
+        "x2": 935.3,
+        "y2": 677.5
+      },
+      "verdict": "accepted",
+      "event_id": "1i6v6f6d",
+      "note": "",
+      "reviewed": "2026-08-26T19:34:46.902Z"
+    },
+    {
+      "id": "quqdck1v",
+      "frame": 1901,
+      "box": {
+        "x1": 1205.2,
+        "y1": 416.5,
+        "x2": 1272.9,
+        "y2": 600.4
+      },
+      "verdict": "accepted",
+      "event_id": "dkyya77f",
+      "note": "",
+      "reviewed": "2026-08-26T19:36:05.012Z"
+    },
+    {
+      "id": "ba8wk8io",
+      "frame": 1902,
+      "box": {
+        "x1": 925.8,
+        "y1": 160.6,
+        "x2": 1002.3,
+        "y2": 312.5
+      },
+      "verdict": "accepted",
+      "event_id": "3y1iaiaw",
+      "note": "",
+      "reviewed": "2026-08-26T19:36:10.418Z"
+    },
+    {
+      "id": "co45t1x6",
+      "frame": 1973,
+      "box": {
+        "x1": 1180.5,
+        "y1": 358.9,
+        "x2": 1323.1,
+        "y2": 553.7
+      },
+      "verdict": "accepted",
+      "event_id": "xjloeetu",
+      "note": "",
+      "reviewed": "2026-08-26T19:37:13.560Z"
+    },
+    {
+      "id": "9ly6j4c5",
+      "frame": 1989,
+      "box": {
+        "x1": 699.8,
+        "y1": 196.5,
+        "x2": 788.5,
+        "y2": 335.5
+      },
+      "verdict": "accepted",
+      "event_id": "9im3geq0",
+      "note": "",
+      "reviewed": "2026-08-26T19:37:48.752Z"
+    },
+    {
+      "id": "8e5x00lz",
+      "frame": 1999,
+      "box": {
+        "x1": 1420.3,
+        "y1": 472.7,
+        "x2": 1518,
+        "y2": 606.9
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "crouch to dodge",
+      "reviewed": "2026-08-26T19:38:08.167Z"
+    },
+    {
+      "id": "lparifj5",
+      "frame": 2004,
+      "box": {
+        "x1": 1220.3,
+        "y1": 489.2,
+        "x2": 1329.5,
+        "y2": 592.9
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:49:17.014Z"
+    },
+    {
+      "id": "bc49bvhe",
+      "frame": 2012,
+      "box": {
+        "x1": 1400,
+        "y1": 398.6,
+        "x2": 1512.7,
+        "y2": 601
+      },
+      "verdict": "accepted",
+      "event_id": "vk011r88",
+      "note": "",
+      "reviewed": "2026-08-26T19:50:11.618Z"
+    },
+    {
+      "id": "gb23v8le",
+      "frame": 2026,
+      "box": {
+        "x1": 1138.2,
+        "y1": 191.4,
+        "x2": 1237.7,
+        "y2": 275.4
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:51:09.930Z"
+    },
+    {
+      "id": "zoesw9xy",
+      "frame": 2037,
+      "box": {
+        "x1": 1226.7,
+        "y1": 503.7,
+        "x2": 1361.2,
+        "y2": 674.9
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:51:47.539Z"
+    },
+    {
+      "id": "ylx1yyho",
+      "frame": 2062,
+      "box": {
+        "x1": 1033.2,
+        "y1": 544.8,
+        "x2": 1148,
+        "y2": 825.7
+      },
+      "verdict": "accepted",
+      "event_id": "e5cph7hh",
+      "note": "",
+      "reviewed": "2026-08-26T19:51:54.315Z"
+    },
+    {
+      "id": "aukraevj",
+      "frame": 2242,
+      "box": {
+        "x1": 786,
+        "y1": 204.5,
+        "x2": 859.6,
+        "y2": 311.1
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "picking up ball",
+      "reviewed": "2026-08-26T19:52:06.659Z"
+    },
+    {
+      "id": "b935zhig",
+      "frame": 2359,
+      "box": {
+        "x1": 1126.4,
+        "y1": 139.8,
+        "x2": 1193.1,
+        "y2": 300.5
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "scratching his head",
+      "reviewed": "2026-08-26T19:52:22.283Z"
+    },
+    {
+      "id": "s6vfrqa2",
+      "frame": 2568,
+      "box": {
+        "x1": 672.8,
+        "y1": 250.5,
+        "x2": 764.6,
+        "y2": 434.6
+      },
+      "verdict": "accepted",
+      "event_id": "3jrhpr5o",
+      "note": "",
+      "reviewed": "2026-08-26T19:52:36.539Z"
+    },
+    {
+      "id": "t59uri67",
+      "frame": 2616,
+      "box": {
+        "x1": 692.5,
+        "y1": 233.7,
+        "x2": 768.7,
+        "y2": 446.5
+      },
+      "verdict": "accepted",
+      "event_id": "kjjyj21l",
+      "note": "",
+      "reviewed": "2026-08-26T19:52:42.707Z"
+    },
+    {
+      "id": "ulux6mdp",
+      "frame": 2645,
+      "box": {
+        "x1": 1335.1,
+        "y1": 253.6,
+        "x2": 1434.6,
+        "y2": 449.4
+      },
+      "verdict": "accepted",
+      "event_id": "sbr0tnhc",
+      "note": "",
+      "reviewed": "2026-08-26T19:52:49.012Z"
+    },
+    {
+      "id": "o6xemxfd",
+      "frame": 2664,
+      "box": {
+        "x1": 691.2,
+        "y1": 266.5,
+        "x2": 759.6,
+        "y2": 444.5
+      },
+      "verdict": "accepted",
+      "event_id": "ibwdxl7x",
+      "note": "",
+      "reviewed": "2026-08-26T19:52:53.307Z"
+    },
+    {
+      "id": "yt745h9r",
+      "frame": 2682,
+      "box": {
+        "x1": 1008.3,
+        "y1": 310.1,
+        "x2": 1078.8,
+        "y2": 485.7
+      },
+      "verdict": "accepted",
+      "event_id": "rhdlb15l",
+      "note": "",
+      "reviewed": "2026-08-26T19:53:06.364Z"
+    },
+    {
+      "id": "d01twvte",
+      "frame": 2693,
+      "box": {
+        "x1": 185.9,
+        "y1": 712,
+        "x2": 416.1,
+        "y2": 979.3
+      },
+      "verdict": "accepted",
+      "event_id": "3bh0ie8p",
+      "note": "",
+      "reviewed": "2026-08-26T19:54:04.256Z"
+    },
+    {
+      "id": "zaeb76oz",
+      "frame": 2700,
+      "box": {
+        "x1": 1469.9,
+        "y1": 623.2,
+        "x2": 1636,
+        "y2": 888.4
+      },
+      "verdict": "accepted",
+      "event_id": "rauh75nw",
+      "note": "",
+      "reviewed": "2026-08-26T19:54:25.292Z"
+    },
+    {
+      "id": "och8slhg",
+      "frame": 2707,
+      "box": {
+        "x1": 805.9,
+        "y1": 770.6,
+        "x2": 939.4,
+        "y2": 1016.9
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "outcome of him catching ball he's raising it so everyone sees",
+      "reviewed": "2026-08-26T19:55:07.125Z"
+    },
+    {
+      "id": "s6x8nmuz",
+      "frame": 2727,
+      "box": {
+        "x1": 926.5,
+        "y1": 308.2,
+        "x2": 1049.4,
+        "y2": 402.9
+      },
+      "verdict": "accepted",
+      "event_id": "4ovau51f",
+      "note": "",
+      "reviewed": "2026-08-26T19:55:37.001Z"
+    },
+    {
+      "id": "0xm8t43j",
+      "frame": 2727,
+      "box": {
+        "x1": 1389,
+        "y1": 318.2,
+        "x2": 1457,
+        "y2": 492.3
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "duplicate",
+      "reviewed": "2026-08-26T19:56:22.085Z"
+    },
+    {
+      "id": "w8170hyy",
+      "frame": 2749,
+      "box": {
+        "x1": 1400.6,
+        "y1": 684.7,
+        "x2": 1583.4,
+        "y2": 961.3
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:56:58.174Z"
+    },
+    {
+      "id": "0gl5vviu",
+      "frame": 2794,
+      "box": {
+        "x1": 658.4,
+        "y1": 648.5,
+        "x2": 777.9,
+        "y2": 944
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:57:08.190Z"
+    },
+    {
+      "id": "9pw0leoi",
+      "frame": 2812,
+      "box": {
+        "x1": 1773.5,
+        "y1": 693,
+        "x2": 1920,
+        "y2": 1048
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:57:12.574Z"
+    },
+    {
+      "id": "3xbqkqfc",
+      "frame": 2840,
+      "box": {
+        "x1": 704.4,
+        "y1": 636.6,
+        "x2": 901.4,
+        "y2": 925.1
+      },
+      "verdict": "accepted",
+      "event_id": "7yli19e3",
+      "note": "",
+      "reviewed": "2026-08-26T19:57:22.922Z"
+    },
+    {
+      "id": "5diychng",
+      "frame": 3067,
+      "box": {
+        "x1": 1009.7,
+        "y1": 173.4,
+        "x2": 1080.1,
+        "y2": 283.5
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:58:26.286Z"
+    },
+    {
+      "id": "upgnl6uj",
+      "frame": 3178,
+      "box": {
+        "x1": 660.4,
+        "y1": 132.3,
+        "x2": 714.8,
+        "y2": 305.7
+      },
+      "verdict": "accepted",
+      "event_id": "oesrfs6b",
+      "note": "",
+      "reviewed": "2026-08-26T19:58:33.203Z"
+    },
+    {
+      "id": "6qhkyfdl",
+      "frame": 3191,
+      "box": {
+        "x1": 789.1,
+        "y1": 402.5,
+        "x2": 864.4,
+        "y2": 608.6
+      },
+      "verdict": "accepted",
+      "event_id": "n6v8z9hj",
+      "note": "",
+      "reviewed": "2026-08-26T19:58:37.770Z"
+    },
+    {
+      "id": "w8qr3ucn",
+      "frame": 3209,
+      "box": {
+        "x1": 812,
+        "y1": 363.5,
+        "x2": 889.9,
+        "y2": 568.6
+      },
+      "verdict": "accepted",
+      "event_id": "xr535fu1",
+      "note": "",
+      "reviewed": "2026-08-26T19:58:50.387Z"
+    },
+    {
+      "id": "37x2y20q",
+      "frame": 3219,
+      "box": {
+        "x1": 1040.7,
+        "y1": 196.2,
+        "x2": 1104.7,
+        "y2": 275.8
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "is blocking",
+      "reviewed": "2026-08-26T19:59:30.883Z"
+    },
+    {
+      "id": "3817nqth",
+      "frame": 3422,
+      "box": {
+        "x1": 1281.3,
+        "y1": 190.7,
+        "x2": 1355.6,
+        "y2": 305.4
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:59:53.531Z"
+    },
+    {
+      "id": "r0x0vwyk",
+      "frame": 3448,
+      "box": {
+        "x1": 1297.6,
+        "y1": 207,
+        "x2": 1356.7,
+        "y2": 328
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T19:59:56.824Z"
+    },
+    {
+      "id": "xvae84xn",
+      "frame": 3483,
+      "box": {
+        "x1": 1371.3,
+        "y1": 243,
+        "x2": 1468.9,
+        "y2": 428.2
+      },
+      "verdict": "accepted",
+      "event_id": "ibc5npd6",
+      "note": "",
+      "reviewed": "2026-08-26T20:00:15.059Z"
+    },
+    {
+      "id": "ufc5m52a",
+      "frame": 3488,
+      "box": {
+        "x1": 1134.4,
+        "y1": 261.4,
+        "x2": 1204.1,
+        "y2": 454.3
+      },
+      "verdict": "accepted",
+      "event_id": "z3546ken",
+      "note": "",
+      "reviewed": "2026-08-26T20:00:38.784Z"
+    },
+    {
+      "id": "qlqschwd",
+      "frame": 3833,
+      "box": {
+        "x1": 677.9,
+        "y1": 144.2,
+        "x2": 758.4,
+        "y2": 292
+      },
+      "verdict": "accepted",
+      "event_id": "74k1y7tu",
+      "note": "",
+      "reviewed": "2026-08-26T20:00:57.704Z"
+    },
+    {
+      "id": "j4t5284d",
+      "frame": 3849,
+      "box": {
+        "x1": 454.5,
+        "y1": 349.9,
+        "x2": 560.7,
+        "y2": 579.6
+      },
+      "verdict": "accepted",
+      "event_id": "h5ximvia",
+      "note": "",
+      "reviewed": "2026-08-26T20:01:11.328Z"
+    },
+    {
+      "id": "u3zb0d7x",
+      "frame": 3858,
+      "box": {
+        "x1": 1091.9,
+        "y1": 141.2,
+        "x2": 1172.5,
+        "y2": 278.7
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:01:43.548Z"
+    },
+    {
+      "id": "7z3jca1q",
+      "frame": 3966,
+      "box": {
+        "x1": 1253.5,
+        "y1": 157.7,
+        "x2": 1332.9,
+        "y2": 302.6
+      },
+      "verdict": "accepted",
+      "event_id": "mdj4630f",
+      "note": "",
+      "reviewed": "2026-08-26T20:01:59.504Z"
+    },
+    {
+      "id": "zs24hakj",
+      "frame": 3995,
+      "box": {
+        "x1": 509.9,
+        "y1": 367.3,
+        "x2": 616.4,
+        "y2": 564.9
+      },
+      "verdict": "accepted",
+      "event_id": "uzylflcx",
+      "note": "",
+      "reviewed": "2026-08-26T20:02:13.020Z"
+    },
+    {
+      "id": "oig56a8t",
+      "frame": 4000,
+      "box": {
+        "x1": 843.9,
+        "y1": 128.6,
+        "x2": 960,
+        "y2": 285.2
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:02:20.597Z"
+    },
+    {
+      "id": "i3i2tdk8",
+      "frame": 4018,
+      "box": {
+        "x1": 514.2,
+        "y1": 370.9,
+        "x2": 593.1,
+        "y2": 565.8
+      },
+      "verdict": "accepted",
+      "event_id": "pktnawt5",
+      "note": "",
+      "reviewed": "2026-08-26T20:03:11.005Z"
+    },
+    {
+      "id": "owi58ums",
+      "frame": 4030,
+      "box": {
+        "x1": 663.6,
+        "y1": 371.3,
+        "x2": 749.3,
+        "y2": 563.9
+      },
+      "verdict": "accepted",
+      "event_id": "k69ade8p",
+      "note": "",
+      "reviewed": "2026-08-26T20:03:32.989Z"
+    },
+    {
+      "id": "uw4p6h50",
+      "frame": 4048,
+      "box": {
+        "x1": 522,
+        "y1": 196.7,
+        "x2": 644,
+        "y2": 282.8
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:03:55.185Z"
+    },
+    {
+      "id": "95s74nfi",
+      "frame": 4122,
+      "box": {
+        "x1": 1336.6,
+        "y1": 532.9,
+        "x2": 1538.4,
+        "y2": 785.4
+      },
+      "verdict": "accepted",
+      "event_id": "vgha4iva",
+      "note": "",
+      "reviewed": "2026-08-26T20:04:03.649Z"
+    },
+    {
+      "id": "z9rk688n",
+      "frame": 4265,
+      "box": {
+        "x1": 959.2,
+        "y1": 687.6,
+        "x2": 1107.2,
+        "y2": 1002.7
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:04:25.973Z"
+    },
+    {
+      "id": "zpft5msd",
+      "frame": 4323,
+      "box": {
+        "x1": 204.2,
+        "y1": 686.5,
+        "x2": 385.9,
+        "y2": 975.3
+      },
+      "verdict": "accepted",
+      "event_id": "bujlbgfr",
+      "note": "",
+      "reviewed": "2026-08-26T20:04:42.078Z"
+    },
+    {
+      "id": "b4ghtpds",
+      "frame": 4327,
+      "box": {
+        "x1": 1078.9,
+        "y1": 215.8,
+        "x2": 1148.3,
+        "y2": 374.9
+      },
+      "verdict": "accepted",
+      "event_id": "6fvlu1l7",
+      "note": "",
+      "reviewed": "2026-08-26T20:05:04.585Z"
+    },
+    {
+      "id": "inhn7zsg",
+      "frame": 4605,
+      "box": {
+        "x1": 1302.8,
+        "y1": 165.1,
+        "x2": 1374.2,
+        "y2": 324.1
+      },
+      "verdict": "accepted",
+      "event_id": "tei9e4za",
+      "note": "",
+      "reviewed": "2026-08-26T20:05:13.582Z"
+    },
+    {
+      "id": "qa1mkrkk",
+      "frame": 4626,
+      "box": {
+        "x1": 1392,
+        "y1": 483.4,
+        "x2": 1532.3,
+        "y2": 716.3
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:07:01.595Z"
+    },
+    {
+      "id": "ho9oxehy",
+      "frame": 4630,
+      "box": {
+        "x1": 1439.6,
+        "y1": 784.8,
+        "x2": 1620.9,
+        "y2": 986
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:07:08.643Z"
+    },
+    {
+      "id": "q24ijba6",
+      "frame": 4641,
+      "box": {
+        "x1": 1393.2,
+        "y1": 433.1,
+        "x2": 1500.2,
+        "y2": 630.6
+      },
+      "verdict": "accepted",
+      "event_id": "plek47it",
+      "note": "",
+      "reviewed": "2026-08-26T20:07:23.371Z"
+    },
+    {
+      "id": "7mjxrsgw",
+      "frame": 4650,
+      "box": {
+        "x1": 1245.9,
+        "y1": 154.4,
+        "x2": 1362,
+        "y2": 283.5
+      },
+      "verdict": "accepted",
+      "event_id": "m5vkb6d1",
+      "note": "",
+      "reviewed": "2026-08-26T20:08:00.903Z"
+    },
+    {
+      "id": "0mtmfdiz",
+      "frame": 4676,
+      "box": {
+        "x1": 1355.6,
+        "y1": 337.8,
+        "x2": 1427.5,
+        "y2": 551.4
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:08:48.936Z"
+    },
+    {
+      "id": "apca7tgg",
+      "frame": 4647,
+      "box": {
+        "x1": 801.9,
+        "y1": 374,
+        "x2": 902.5,
+        "y2": 577.1
+      },
+      "verdict": "accepted",
+      "event_id": "21tbo6qz",
+      "note": "",
+      "reviewed": "2026-08-26T20:09:11.635Z"
+    },
+    {
+      "id": "s1soo73g",
+      "frame": 4739,
+      "box": {
+        "x1": 976.4,
+        "y1": 434.9,
+        "x2": 1078,
+        "y2": 673.4
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:10:08.060Z"
+    },
+    {
+      "id": "3dvwrq7z",
+      "frame": 4758,
+      "box": {
+        "x1": 1595.5,
+        "y1": 506.3,
+        "x2": 1685.4,
+        "y2": 745.6
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:10:16.540Z"
+    },
+    {
+      "id": "fz86ich4",
+      "frame": 4785,
+      "box": {
+        "x1": 1210.9,
+        "y1": 457.3,
+        "x2": 1332,
+        "y2": 729.7
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:10:18.992Z"
+    },
+    {
+      "id": "zsis3nix",
+      "frame": 4701,
+      "box": {
+        "x1": 1110.2,
+        "y1": 163.7,
+        "x2": 1172.9,
+        "y2": 275
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:10:05.728Z"
+    },
+    {
+      "id": "nbpxy5be",
+      "frame": 4656,
+      "box": {
+        "x1": 1356.9,
+        "y1": 398.2,
+        "x2": 1503.3,
+        "y2": 557.6
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "the previous hit was last player set is done so this is all just players shaking hands and moving about etc",
+      "reviewed": "2026-08-26T20:08:39.159Z"
+    },
+    {
+      "id": "iuyc51rr",
+      "frame": 1509,
+      "box": {
+        "x1": 1344.3,
+        "y1": 275.5,
+        "x2": 1420.8,
+        "y2": 466.4
+      },
+      "verdict": "rejected",
+      "event_id": null,
+      "note": "",
+      "reviewed": "2026-08-26T20:11:06.981Z"
+    },
+    {
+      "id": "n2kmyxvg",
+      "frame": 3490,
+      "box": {
+        "x1": 453.5,
+        "y1": 725.4,
+        "x2": 625.1,
+        "y2": 1014.4
+      },
+      "verdict": "accepted",
+      "event_id": "11588b8z",
+      "note": "",
+      "reviewed": "2026-08-26T20:11:11.837Z"
     }
   ]
 }
