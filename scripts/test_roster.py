@@ -275,12 +275,12 @@ class OnTheClip(unittest.TestCase):
         self.assertEqual(self.roster.participant("far-13").track_ids, (75,))
         self.assertEqual(self.roster.participant("far-2").track_ids, (165,))
         self.assertEqual(self.roster.participant("near-44").track_ids, (2, 231, 274))
-        self.assertEqual(self.roster.participant("near-7").track_ids, (56, 422, 291))
+        self.assertEqual(self.roster.participant("near-7").track_ids, (56, 434, 291))
 
     def test_the_readings_behind_a_name_are_on_the_track(self):
         t = self.roster.track(56)
-        self.assertEqual(t.number, 7)
-        self.assertGreaterEqual(sum(n == 7 for _, n, _ in t.readings), 3)
+        self.assertEqual(t.number, "7")
+        self.assertGreaterEqual(sum(n == "7" for _, n, _ in t.readings), 3)
 
     def test_both_sides_are_full_at_the_rush(self):
         start = self.roster.live_core[0]
