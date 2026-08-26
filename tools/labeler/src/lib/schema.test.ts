@@ -3,7 +3,7 @@ import type { LabelFile, PoseManifest, SetReview, ThrowEvent, VideoInfo } from '
 import { missingFields, newEvent } from '../types'
 import { snapToDetection } from './boxes'
 import { chunkFor, detectionsAt } from './pose'
-import { LABEL_SCHEMA_VERSION, labelKey, newLabelFile, videoStem } from './storage'
+import { LABEL_SCHEMA_VERSION, labelKey, newLabelFile, upgradeLabels, videoStem } from './storage'
 
 const info: VideoInfo = {
   name: 'clip.mp4', fps: 25, width: 1920, height: 1080, frames: 5250, duration: 210,
@@ -49,8 +49,29 @@ describe('label file', () => {
         id: 'r1', armed_start_frame: 135, armed_end_frame: 490, detected_frame: 433,
         verdict: 'accepted', interval_id: 'l1', reviewed: '2026-08-25T10:00:00.000Z',
       }],
+      candidate_reviews: [{
+        id: 'c1', frame: 1411, box: { x1: 800, y1: 400, x2: 900, y2: 700 }, verdict: 'accepted', event_id: 'e1',
+        note: '', reviewed: '2026-08-26T10:00:00.000Z',
+      }],
     }
     expect(JSON.parse(JSON.stringify(file))).toEqual(file)
+  })
+
+  it('drops a candidate review that no longer says where its player was', () => {
+    const kept = {
+      id: 'c1', frame: 1411, box: { x1: 800, y1: 400, x2: 900, y2: 700 }, verdict: 'accepted' as const,
+      event_id: 'e1', note: '', reviewed: '2026-08-26T10:00:00.000Z',
+    }
+    // A review from before boxes, naming its proposal by a track id.
+    const byTrack = { id: 'c0', frame: 500, track_id: 17, verdict: 'rejected', event_id: null, reviewed: '' }
+    const file = { ...newLabelFile(info, 'default'), candidate_reviews: [kept, byTrack] } as unknown as LabelFile
+    expect(upgradeLabels(file).candidate_reviews).toEqual([kept])
+  })
+
+  it('records where an event came from, not just when it was', () => {
+    const e = newEvent('e', 10, null)
+    expect(e.source).toBe('manual')
+    expect(e.proposed_frame).toBeNull()
   })
 
   it('records where a set start came from, not just when it was', () => {
@@ -75,8 +96,8 @@ describe('label file', () => {
 
   it('carries every field the label is defined by', () => {
     expect(Object.keys(fullEvent()).sort()).toEqual([
-      'end_frame', 'id', 'kind', 'note', 'outcome', 'outcome_visible',
-      'ref_signal', 'release_frame', 'release_visible', 'start_frame', 'status',
+      'end_frame', 'id', 'kind', 'note', 'outcome', 'outcome_visible', 'proposed_frame',
+      'ref_signal', 'release_frame', 'release_visible', 'source', 'start_frame', 'status',
       'target', 'team', 'team_source', 'thrower', 'uncertain',
     ])
   })

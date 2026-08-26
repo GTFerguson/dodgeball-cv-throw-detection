@@ -66,3 +66,50 @@ export function Eyebrow({ children, count }: { children: React.ReactNode; count?
     </div>
   )
 }
+
+// A choice that means an outcome or a kind wears that signal's colour, soft
+// until chosen and full once it is - the same tones as the pill it produces, so
+// what you press and what you get read as one thing.
+const CHOICE_OFF: Record<Signal, string> = {
+  hit: 'bg-hit-soft text-hit border-transparent hover:border-hit',
+  catch: 'bg-catch-soft text-catch border-transparent hover:border-catch',
+  block: 'bg-block-soft text-block border-transparent hover:border-block',
+  miss: 'bg-miss-soft text-miss border-transparent hover:border-miss',
+  unresolved: 'bg-transparent text-ink-faint border-dashed border-rule-strong hover:border-ink',
+  pass: 'bg-transparent text-ink-mute border-rule-strong hover:border-ink',
+  fake: 'bg-transparent text-open border-open hover:bg-open-soft',
+  open: 'bg-open-soft text-open border-transparent',
+}
+
+const CHOICE_ON: Record<Signal, string> = {
+  hit: 'bg-hit text-surface border-hit',
+  catch: 'bg-catch text-surface border-catch',
+  block: 'bg-block text-surface border-block',
+  miss: 'bg-miss text-surface border-miss',
+  unresolved: 'bg-ink text-surface border-ink border-dashed',
+  pass: 'bg-ink text-surface border-ink',
+  fake: 'bg-open text-surface border-open',
+  open: 'bg-open text-surface border-open',
+}
+
+export function SignalChoice({ signal, on, shortcut, onClick, children }: {
+  signal: Signal
+  on: boolean
+  shortcut?: string
+  onClick: () => void
+  children?: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick() }}
+      aria-pressed={on}
+      className={`px-2 py-[3px] rounded text-[11px] font-medium border ${on ? CHOICE_ON[signal] : CHOICE_OFF[signal]}`}
+    >
+      {children ?? signal}
+      {shortcut && (
+        <span className={`ml-1.5 font-mono text-[10px] ${on ? 'opacity-70' : 'opacity-60'}`}>{shortcut}</span>
+      )}
+    </button>
+  )
+}
+

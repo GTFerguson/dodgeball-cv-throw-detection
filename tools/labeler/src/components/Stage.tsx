@@ -28,6 +28,17 @@ import {
 } from '../lib/transform'
 import { KEYPOINT_MIN_CONF, SKELETON, WIRE_TOKEN, casingToken } from '../lib/wire'
 
+// Text over footage: the key badge and every box label share one chip height
+// and face, so a badge and the label beside it read as one line.
+const CHIP_FONT = '600 13px "IBM Plex Mono", monospace'
+const CHIP_H = 18
+/** Between a chip and the box edge it sits above, and between two chips. */
+const CHIP_GAP = 3
+const KEY_BADGE_W = 22
+/** A followed box carries a green dot on its chip: the player is being held
+ *  through the roster's track, and the box is theirs now rather than then. */
+const FOLLOW_DOT_R = 3.5
+
 const WHEEL_ZOOM_STEP = 1.15
 
 /** Something to draw on the frame. The stage is handed these rather than
@@ -36,8 +47,14 @@ export interface OverlayBox {
   box: Box
   label: string
   color: string
+  /** The box is where the roster says this player is now, not where it was
+   *  placed; shown as a dot on the chip rather than a word. */
+  following?: boolean
   /** The box the mouse and the arrow keys are editing. */
   active: boolean
+  /** Drawn to be found at a glance - cased, filled, labelled on a chip - for a
+   *  claim the annotator is being asked to look at rather than one they placed. */
+  loud?: boolean
 }
 
 /** What the overlay draws. Each is a separate claim about the frame, and being
@@ -206,6 +223,8 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage(props, ref) {
       }
     }
 
+    // Where key badges were drawn, so box labels can step aside from them.
+    const badgeCorners: [number, number][] = []
     for (const slot of s.players) {
       if (!s.layers.skeletons && !s.layers.keys) break
       if (s.layers.skeletons) {
@@ -225,38 +244,80 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage(props, ref) {
       // The wire and the key row both carry the team, so the badge stays achromatic.
       if (slot.key && s.layers.keys) {
         const [vx, vy] = at(slot.box.x1, slot.box.y1)
-        const w = 20, h = 16
+        badgeCorners.push([vx, vy])
         ctx.fillStyle = paper
         ctx.strokeStyle = alpha(ink, 0.35)
         ctx.lineWidth = 1
         ctx.beginPath()
-        ctx.roundRect(vx, vy - h - 3, w, h, 2)
+        ctx.roundRect(vx, vy - CHIP_H - CHIP_GAP, KEY_BADGE_W, CHIP_H, 2)
         ctx.fill()
         ctx.stroke()
         ctx.fillStyle = ink
-        ctx.font = '600 11px "IBM Plex Mono", monospace'
+        ctx.font = CHIP_FONT
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText(slot.key.toUpperCase(), vx + w / 2, vy - h / 2 - 3)
+        ctx.fillText(slot.key.toUpperCase(), vx + KEY_BADGE_W / 2, vy - CHIP_GAP - CHIP_H / 2)
         ctx.textAlign = 'start'
         ctx.textBaseline = 'alphabetic'
       }
     }
 
-    const pendingBox = s.pending ? [{ box: s.pending, label: '', color: css('--sig-open'), active: true }] : []
+    const pendingBox: OverlayBox[] = s.pending ? [{ box: s.pending, label: '', color: css('--sig-open'), active: true }] : []
     for (const b of s.layers.boxes ? [...s.boxes, ...pendingBox] : []) {
       const [x1, y1] = at(b.box.x1, b.box.y1)
       const [x2, y2] = at(b.box.x2, b.box.y2)
       const boxColour = resolve(b.color)
-      ctx.strokeStyle = boxColour
-      ctx.lineWidth = b.active ? 2 : 1
-      ctx.setLineDash(b.active ? [] : [4, 3])
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
-      ctx.setLineDash([])
+      if (b.loud) {
+        // A proposal has to be found before it can be judged, on a frame full
+        // of skeletons in team colours: a soft fill, a white casing under a
+        // heavy stroke, and the label on a chip rather than bare text.
+        ctx.fillStyle = alpha(boxColour, 0.14)
+        ctx.fillRect(x1, y1, x2 - x1, y2 - y1)
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+        ctx.lineWidth = 5
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
+        ctx.strokeStyle = boxColour
+        ctx.lineWidth = 2.5
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)'
+        ctx.lineWidth = b.active ? 4 : 3
+        ctx.setLineDash(b.active ? [] : [4, 3])
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
+        ctx.strokeStyle = boxColour
+        ctx.lineWidth = b.active ? 2 : 1.4
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
+        ctx.setLineDash([])
+      }
       if (b.label) {
-        ctx.fillStyle = boxColour
-        ctx.font = '600 11px "IBM Plex Mono", monospace'
-        ctx.fillText(b.label, x1, y1 - 4)
+        // Every label sits on a chip: bare text on video is unreadable over a
+        // pale floor or a white jersey. A loud box fills the chip in its own
+        // colour; a quiet one is paper under coloured text, like the key badge.
+        // A player's key badge owns the corner above the box, so the chip steps
+        // right of it and the two read as one line: `Q proposed @525`.
+        ctx.font = CHIP_FONT
+        const w = ctx.measureText(b.label).width + 12 + (b.following ? FOLLOW_DOT_R * 2 + 6 : 0)
+        const badged = badgeCorners.some(([bx, by]) => Math.abs(bx - x1) < 4 && Math.abs(by - y1) < 4)
+        const lx = x1 + (badged ? KEY_BADGE_W + CHIP_GAP : 0)
+        // Above the box, unless that is off the top of the frame.
+        const ly = y1 - CHIP_H - CHIP_GAP >= 0 ? y1 - CHIP_H - CHIP_GAP : y1 + CHIP_GAP
+        ctx.fillStyle = b.loud ? boxColour : paper
+        ctx.strokeStyle = b.loud ? 'rgba(255,255,255,0.9)' : alpha(ink, 0.35)
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.roundRect(lx, ly, w, CHIP_H, 2)
+        ctx.fill()
+        ctx.stroke()
+        ctx.fillStyle = b.loud ? '#fff' : boxColour
+        ctx.textBaseline = 'middle'
+        ctx.fillText(b.label, lx + 6, ly + CHIP_H / 2)
+        ctx.textBaseline = 'alphabetic'
+        if (b.following) {
+          ctx.fillStyle = css('--sig-catch')
+          ctx.beginPath()
+          ctx.arc(lx + w - 6 - FOLLOW_DOT_R, ly + CHIP_H / 2, FOLLOW_DOT_R, 0, Math.PI * 2)
+          ctx.fill()
+        }
       }
       if (b.active) {
         ctx.fillStyle = boxColour

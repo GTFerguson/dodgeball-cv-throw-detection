@@ -38,7 +38,7 @@ air. Open throws are highlighted in the list so none is forgotten.
 
 | Field | Captured by | Notes |
 |---|---|---|
-| `release_frame` | `T` (or `F`) at the current frame | the anchor for the temporal tolerance |
+| `release_frame` | `T` (or `F`) at the current frame; `T` with an event selected moves its release there | the anchor for the temporal tolerance |
 | `start_frame`, `end_frame` | `S`, `E` — optional | wind-up onset, resolution |
 | `thrower` | player key or drag | box + frame, see below |
 | `team` | inferred from the court half of the thrower box; override key | fixed camera, sides do not change within a half |
@@ -91,6 +91,10 @@ never writes them: a track the annotator had edited would not be a track worth c
 against. It does take a verdict on each — `Shift+A` accepts one into the label file as a
 live-play start, `Shift+R` records it as wrong — and a start the detector missed is still marked
 by hand with `L`. Shipped; the design is in [[set-start#In the labelling tool]].
+
+Proposed throws follow the same pattern ([[throw-candidates#In the labelling tool]]): rings on
+the `MODEL` track, `⇧A` / `⇧R` on the nearest one, `>` / `<` to walk the unreviewed ones, and
+an accepted proposal becomes an ordinary event that records where it came from.
 
 ## Design
 
@@ -178,6 +182,14 @@ pass its own file. Label files are committed, footage and pose runs are not.
    Overlay wires are coloured by team, `src/overlay.py` holds the pipeline's copy~~
 7. Labelling guide (`docs/labeling-guide.md`) — the rule handed to a second annotator
 8. Second-pass agreement report script
+9. ~~Proposed throws on the `MODEL` track with accept / reject, `>` `<` to walk the unreviewed
+   ones, `source` and `proposed_frame` on accepted events~~ — `src/lib/candidates.ts`;
+   design in [[throw-candidates#In the labelling tool]]
+10. ~~One event stream in place of three panels: `Labels` / `Model` source toggles, set starts
+    and proposals as cards, playhead-following emphasis, cards naming who threw and who was
+    hit from the roster, the selected card opening into the editor~~ — `src/lib/stream.ts`,
+    `src/lib/roster.ts`, `src/components/Stream.tsx`, `src/components/EventEditor.tsx`;
+    design in [[design-system#Event stream]]
 
 ## Resolved
 
@@ -213,6 +225,17 @@ falling back to the box's bottom centre — never the box centre, which drifts u
 and not the box bottom alone, which for a player lying prone at the centre line is metres from
 where they are and lands them in the wrong half. Keys are recomputed per frame and carry no identity, so two players
 crossing swap keys; the label stores the box, not the key, so nothing downstream notices.
+
+**Who gets a key is the roster's call.** Geometry decides only when there is no roster file.
+With one, `playerSlots` takes an eligibility predicate — `RosterIndex.isPlayerInPlay(frame,
+index)`: the detection's track is a `player` and the frame is inside one of its `in_play`
+intervals — in place of the held-on-court test. The two tests spend the same boundary slack
+and hold window, so this is not a widening; it removes the people the geometry cannot tell
+from players. At 0:21 on the clip the geometry gave `Q` to a queued player a metre outside
+the far touchline and `4` to an official on the near paint, so the two far players on the
+right and Chalmers ran past the key rows. Team still comes from where the feet stand, because
+the roster's side is a per-track majority and a key is placed on one frame. Keys remain a
+placement aid and carry no identity — see [[roster#Queries]].
 
 **Team is `near` / `far`.** The fixed end-on camera makes the court half directly observable
 and it does not change within a half, so no jersey model or roster is needed to name a side.

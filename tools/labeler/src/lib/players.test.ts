@@ -170,6 +170,19 @@ describe('player keys', () => {
     expect(slots[0].key).toBe('1')
   })
 
+  it('takes the roster\'s word over the geometry when it is given', () => {
+    // Index 1 stands on the paint but is not in play - an official, or the
+    // queue on a crowded sideline; index 2 is a metre outside the line but the
+    // roster holds them. Keys follow the roster and still run left to right.
+    const detections = [playerAt(7, 4), playerAt(2, 4), playerAt(-1, 7), playerAt(1, 14)]
+    const inPlay = new Set([0, 2, 3])
+    const slots = playerSlots(detections, court, [], (i) => inPlay.has(i))
+    expect(slots.map((s) => s.index).sort()).toEqual([0, 2, 3])
+    expect(slotForKey(slots, '1')!.index).toBe(2)
+    expect(slotForKey(slots, '2')!.index).toBe(0)
+    expect(slotForKey(slots, 'q')!.index).toBe(3)
+  })
+
   it('drops someone standing just off the touchline', () => {
     // The case the margin band used to admit: a metre outside the sideline,
     // which is where the eliminated queue and the officials stand.

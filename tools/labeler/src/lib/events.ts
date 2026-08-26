@@ -39,6 +39,17 @@ export function openRelease(state: EventState, id: string, frame: number): Event
   return { events: [...state.events, event], selectedId: id }
 }
 
+/**
+ * Move the selected event's release to a frame. The peak the proposal found is
+ * the whip, not the release, and an accepted proposal keeps its `proposed_frame`,
+ * so the correction stays measurable. Nothing selected means nothing to move.
+ */
+export function moveRelease(state: EventState, frame: number): EventState | null {
+  const target = selectedEvent(state)
+  if (!target) return null
+  return updateEvent(state, target.id, { release_frame: frame })
+}
+
 /** A fake is a wind-up with no release: it is born closed and never resolves. */
 export function openFake(state: EventState, id: string, frame: number): EventState {
   const event = newEvent(id, frame, 'fake')
@@ -109,6 +120,23 @@ export function markPass(
     kind: 'pass',
     outcome: null,
     end_frame: endFrame ?? target.end_frame,
+  })
+}
+
+/**
+ * Record that the selected event was a wind-up with no release. A fake is
+ * terminal and reached nobody, so an outcome or a target already recorded could
+ * only have described a ball that was never thrown: both are cleared. Nothing
+ * selected is the one refusal.
+ */
+export function markFake(state: EventState): EventState | null {
+  const target = selectedEvent(state)
+  if (!target) return null
+  return resolve(state, target, {
+    status: 'closed',
+    kind: 'fake',
+    outcome: null,
+    target: null,
   })
 }
 

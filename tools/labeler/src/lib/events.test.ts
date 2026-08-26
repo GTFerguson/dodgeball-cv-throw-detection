@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   closeThrow, cycleOpen, emptyState, isLive, kindAfterOutcome, markLiveEnd, markLiveStart,
-  markPass, openEvents, openFake, openRelease, selectedEvent, setIndexAt,
+  markFake, markPass, moveRelease, openEvents, openFake, openRelease, selectedEvent, setIndexAt,
 } from './events'
 
 const open3 = () => {
@@ -23,6 +23,21 @@ describe('opening', () => {
 
   it('selects the most recently opened throw', () => {
     expect(selectedEvent(open3())?.id).toBe('c')
+  })
+
+  it('moves the selected release to a frame without opening a second event', () => {
+    const s = moveRelease(open3(), 112)
+    expect(s?.events).toHaveLength(3)
+    expect(selectedEvent(s!)).toMatchObject({ id: 'c', release_frame: 112 })
+  })
+
+  it('moves a fake too: its release frame is the anchor the tolerance is measured from', () => {
+    const s = moveRelease(openFake(emptyState, 'f', 50), 47)
+    expect(selectedEvent(s!)).toMatchObject({ id: 'f', kind: 'fake', release_frame: 47 })
+  })
+
+  it('has nothing to move with no selection, so the caller opens a release instead', () => {
+    expect(moveRelease(emptyState, 112)).toBeNull()
   })
 
   it('opens a fake closed, because it has no resolution to wait for', () => {
@@ -76,6 +91,21 @@ describe('destination', () => {
 
   it('refuses a pass with nothing selected', () => {
     expect(markPass(emptyState)).toBeNull()
+  })
+
+  it('turns the selected release into a fake, closed with nothing thrown', () => {
+    const s = markFake(openRelease(emptyState, 'a', 10))!
+    expect(s.events[0]).toMatchObject({ kind: 'fake', status: 'closed', outcome: null, target: null })
+    expect(openEvents(s)).toEqual([])
+  })
+
+  it('drops the outcome and target when a throw turns out to have been a fake', () => {
+    const thrown = closeThrow(openRelease(emptyState, 'a', 10), 'hit')!
+    expect(markFake(thrown)!.events[0]).toMatchObject({ kind: 'fake', outcome: null, target: null })
+  })
+
+  it('refuses a fake with nothing selected', () => {
+    expect(markFake(emptyState)).toBeNull()
   })
 })
 

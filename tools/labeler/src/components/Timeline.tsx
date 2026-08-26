@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import type { LivePlayInterval, SetReview, SetTimelineFile, ThrowEvent } from '../types'
+import type {
+  CandidateFile, CandidateReview, CandidateVerdict, LivePlayInterval, SetReview,
+  SetTimelineFile, ThrowEvent,
+} from '../types'
 import { formatSeconds } from '../lib/frames'
+import { proposalSummary, verdictFor as proposalVerdict } from '../lib/candidates'
 import { detectedLivePlay, detectionSummary, setMarks, type SetMark } from '../lib/sets'
 import { SIGNAL_VAR, signalOf, type Signal } from './ui'
 
@@ -9,6 +13,8 @@ interface Props {
   livePlay: LivePlayInterval[]
   sets: SetTimelineFile | null
   reviews: SetReview[]
+  candidates: CandidateFile | null
+  candidateReviews: CandidateReview[]
   frame: number
   totalFrames: number
   fps: number
@@ -41,7 +47,8 @@ const RIGHT = 12
  * version encoded the same data more elegantly and nobody could read it.
  */
 export function Timeline({
-  events, livePlay, sets, reviews, frame, totalFrames, fps, selectedId, onSeek, onSelect,
+  events, livePlay, sets, reviews, candidates, candidateReviews, frame, totalFrames, fps,
+  selectedId, onSeek, onSelect,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(900)
@@ -60,6 +67,7 @@ export function Timeline({
   const mid = TRACK_Y + TRACK_H / 2
   const marks = setMarks(sets, reviews)
   const detectedLive = detectedLivePlay(sets)
+  const proposals = candidates?.candidates ?? []
 
   const seekFromEvent = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -158,11 +166,25 @@ export function Timeline({
             <SetFlag x={x(m.frame)} mark={m} />
           </g>
         ))}
-        {!marks.length && (
+        {proposals.map((c) => {
+          const verdict = proposalVerdict(candidateReviews, c)
+          return (
+            <g
+              key={`${c.frame}-${c.track_id}`}
+              onClick={(ev) => { ev.stopPropagation(); onSeek(c.frame) }}
+              className="cursor-pointer"
+            >
+              <title>{`proposed throw at frame ${c.frame} · ${c.team ?? 'side unknown'} · score ${
+                c.score.toFixed(0)} — ${verdict ?? 'not yet reviewed'}`}</title>
+              <Proposal cx={x(c.frame)} cy={MODEL_Y + TRACK_H / 2} verdict={verdict} />
+            </g>
+          )
+        })}
+        {!marks.length && !proposals.length && (
           <text
             x={(x(0) + x(totalFrames)) / 2} y={MODEL_Y + TRACK_H / 2 + 1}
             fill="var(--ink-faint)" fontSize="10" textAnchor="middle" dominantBaseline="middle"
-          >{detectionSummary(sets)}</text>
+          >{detectionSummary(sets)} · {proposalSummary(candidates, candidateReviews)}</text>
         )}
 
         {events.map((e) => {
@@ -229,6 +251,16 @@ export function Timeline({
           </svg>
           rejected
         </span>
+        <span className="w-px h-3 bg-rule" aria-hidden="true" />
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+          <svg width="12" height="12" aria-hidden="true"><Proposal cx={6} cy={6} verdict={null} /></svg>
+          proposed throw
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+          <svg width="12" height="12" aria-hidden="true"><Proposal cx={6} cy={6} verdict="accepted" /></svg>
+          accepted — the throw it became is above
+        </span>
+        <span className="text-[11px] text-ink-faint">{proposalSummary(candidates, candidateReviews)}</span>
       </div>
     </div>
   )
@@ -265,6 +297,32 @@ function SetFlag({ x, mark }: { x: number; mark: SetMark }) {
           x1={x - 2.5} y1={MODEL_Y + 8} x2={x + 8} y2={MODEL_Y + 1}
           stroke={colour} strokeWidth={1.3}
         />
+      )}
+    </g>
+  )
+}
+
+/**
+ * A proposed throw is a ring on the model track: the outcome scale's "no fill,
+ * no ball crossed", in the model's own colour, because a proposal claims a
+ * motion and nothing about a ball. Accepting fills and underscores it - the
+ * throw it became is the dot directly above, and the horizontal gap between the
+ * two is the correction. Rejecting drops it to the faint tone and strikes it:
+ * still the detector's claim, no longer worth ink.
+ */
+function Proposal({ cx, cy, verdict }: { cx: number; cy: number; verdict: CandidateVerdict | null }) {
+  const colour = verdict === 'rejected' ? 'var(--ink-faint)' : 'var(--sig-model)'
+  const r = 3.4
+  return (
+    <g>
+      {verdict === 'accepted'
+        ? <circle cx={cx} cy={cy} r={r} fill={colour} />
+        : <circle cx={cx} cy={cy} r={r} fill="var(--surface)" stroke={colour} strokeWidth={1.5} />}
+      {verdict === 'accepted' && (
+        <line x1={cx - 4} y1={cy + r + 4} x2={cx + 4} y2={cy + r + 4} stroke={colour} strokeWidth={2} />
+      )}
+      {verdict === 'rejected' && (
+        <line x1={cx - 4.5} y1={cy + 4.5} x2={cx + 4.5} y2={cy - 4.5} stroke={colour} strokeWidth={1.3} />
       )}
     </g>
   )

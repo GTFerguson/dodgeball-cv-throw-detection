@@ -56,15 +56,27 @@ export function heldPositions(
   return out
 }
 
+/**
+ * `eligible`, when given, replaces the geometric on-court test: it says whether
+ * the detection at an index is a player in play, and the roster is the source.
+ * Geometry alone admits whoever stands within the boundary slack, which on a
+ * crowded sideline hands keys to the eliminated queue and leaves players in
+ * play past the end of the key row. The roster decided in play once over the
+ * whole track, with the same slack and hold window, so it is the same test
+ * with the people who are not players removed. Team still comes from where
+ * the feet are, because the roster's side is a per-track majority and a
+ * key is placed on one frame.
+ */
 export function playerSlots(
   detections: PoseDetection[], court: CourtConfig | null, nearby: Point[] = [],
+  eligible?: (index: number) => boolean,
 ): PlayerSlot[] {
   const onCourt: PlayerSlot[] = []
   detections.forEach((det, index) => {
     const [x1, y1, x2, y2] = det.box
     const box = makeBox(x1, y1, x2, y2)
     const foot = footPoint(det)
-    if (!heldOnCourt(foot, court, nearby)) return
+    if (eligible ? !eligible(index) : !heldOnCourt(foot, court, nearby)) return
     const team = teamAtPoint(foot, court)
     if (team == null) return
     onCourt.push({ key: null, team, box, foot, detection: det, index })

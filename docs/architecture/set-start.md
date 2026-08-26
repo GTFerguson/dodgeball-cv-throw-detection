@@ -159,9 +159,11 @@ stem - because dropping it would imply the detector found nothing there when wha
 balls laid out and no whistle to go with them.
 
 `data/sets/` itself is served read-only - a track the annotator could edit is not a track worth
-comparing labels against. What the annotator does instead is **judge** it, from the panel above
-the label panel or with `Shift+A` / `Shift+R` at any frame inside a detected window. Pressing a
-verdict that is already given takes it back.
+comparing labels against. What the annotator does instead is **judge** it: each detected start
+is a row in the event stream beside the frame, with its evidence (whistle prominence, break
+frame, ball layout) in the row, and `Shift+A` / `Shift+R` act on the selected row or, with
+nothing selected, on the detected window the playhead is inside. Pressing a verdict that is
+already given takes it back.
 
 #### A verdict is a record, not a filter
 

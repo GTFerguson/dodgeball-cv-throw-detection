@@ -62,10 +62,11 @@ describe('player keys take the keyboard while a box is pending', () => {
 })
 
 describe('arrow keys', () => {
-  it('seek when no box is selected', () => {
-    expect(press('ArrowLeft')).toEqual({ type: 'seek', seconds: -1 })
-    expect(press('ArrowRight', idle, { shiftKey: true })).toEqual({ type: 'seek', seconds: 5 })
-    expect(press('ArrowUp')).toBeNull()
+  it('step a frame when no box is selected, five shifted', () => {
+    expect(press('ArrowLeft')).toEqual({ type: 'step', frames: -1 })
+    expect(press('ArrowRight', idle, { shiftKey: true })).toEqual({ type: 'step', frames: 5 })
+    expect(press('ArrowUp')).toEqual({ type: 'walk', dir: -1 })
+    expect(press('ArrowDown')).toEqual({ type: 'walk', dir: 1 })
   })
 
   it('nudge the selected box a pixel at a time', () => {
@@ -88,3 +89,21 @@ describe('modifiers', () => {
     expect(press('m')).toEqual({ type: 'outcome', outcome: 'miss' })
   })
 })
+
+describe('detection keys', () => {
+  it('gives one shifted pair of verdict keys to every claim the model makes', () => {
+    expect(press('A', idle, { shiftKey: true })).toEqual({ type: 'judge', verdict: 'accepted' })
+    expect(press('R', idle, { shiftKey: true })).toEqual({ type: 'judge', verdict: 'rejected' })
+  })
+
+  it('marks the selected event a fake on shifted F, leaving F to open one', () => {
+    expect(press('F', idle, { shiftKey: true })).toEqual({ type: 'markFake' })
+    expect(press('f')).toEqual({ type: 'openFake' })
+  })
+
+  it('walks proposals on the shifted step keys', () => {
+    expect(press('>', idle, { shiftKey: true })).toEqual({ type: 'walk', dir: 1 })
+    expect(press('<', idle, { shiftKey: true })).toEqual({ type: 'walk', dir: -1 })
+  })
+})
+

@@ -1,6 +1,7 @@
 import { isUsableCourt } from './court'
 import type {
-  CourtConfig, LabelFile, PoseChunk, PoseManifest, SetTimelineFile, VideoInfo,
+  CandidateFile, CourtConfig, LabelFile, NamesFile, PoseChunk, PoseManifest, RosterFile,
+  SetTimelineFile, VideoInfo,
 } from '../types'
 
 export function videoStem(videoName: string): string {
@@ -34,23 +35,37 @@ export async function listFootage(): Promise<VideoInfo[]> {
 
 export async function loadLabels(key: string): Promise<LabelFile | null> {
   const raw = await getJson<LabelFile>(`/api/labels/${encodeURIComponent(key)}`)
-  return raw && upgrade(raw)
+  return raw && upgradeLabels(raw)
 }
 
-// A file written before set starts could be reviewed is read as what it was:
-// every start placed by hand with no detector behind it, and no detection
-// judged either way. Filling the new fields on load rather than at every read
-// site keeps the rest of the tool from having to know two shapes.
-function upgrade(file: LabelFile): LabelFile {
+// A file written before set starts or throws could be reviewed is read as what
+// it was: every start and every event placed by hand with no detector behind
+// it, and no detection judged either way. Filling the new fields on load rather
+// than at every read site keeps the rest of the tool from having to know two
+// shapes.
+//
+// Candidate reviews once named their proposal by the tracker's id. A review
+// with no box cannot be matched to anything the tool can see, so it is dropped
+// here rather than carried as a verdict on nothing; the files that had such
+// reviews were rewritten with boxes when the id was retired.
+export function upgradeLabels(file: LabelFile): LabelFile {
   return {
     ...file,
     schema_version: LABEL_SCHEMA_VERSION,
+    events: (file.events ?? []).map((e) => ({
+      ...e,
+      source: e.source ?? 'manual',
+      proposed_frame: e.proposed_frame ?? null,
+    })),
     live_play: (file.live_play ?? []).map((iv) => ({
       ...iv,
       start_source: iv.start_source ?? 'manual',
       detected_start_frame: iv.detected_start_frame ?? null,
     })),
     set_reviews: file.set_reviews ?? [],
+    candidate_reviews: (file.candidate_reviews ?? [])
+      .filter((r) => r.box != null)
+      .map((r) => ({ ...r, note: r.note ?? '' })),
   }
 }
 
@@ -88,7 +103,27 @@ export async function loadSets(stem: string): Promise<SetTimelineFile | null> {
 }
 
 
-export const LABEL_SCHEMA_VERSION = 3
+// Throw candidates come from the detection step too. Absent means nothing was
+// proposed, which the tool says rather than treats as an error: labelling from
+// nothing is slower, not wrong.
+export async function loadCandidates(stem: string): Promise<CandidateFile | null> {
+  const raw = await getJson<CandidateFile>(`/api/candidates/${encodeURIComponent(stem)}`)
+  return raw && Array.isArray(raw.candidates) ? raw : null
+}
+
+// Who is who comes from the identity pass; names beside it are hand-authored.
+// Either may be absent, in which case rows say less rather than fail.
+export async function loadRoster(stem: string): Promise<RosterFile | null> {
+  const raw = await getJson<RosterFile>(`/api/roster/${encodeURIComponent(stem)}`)
+  return raw && Array.isArray(raw.tracks) ? raw : null
+}
+
+export async function loadNames(stem: string): Promise<NamesFile | null> {
+  const raw = await getJson<NamesFile>(`/api/roster/${encodeURIComponent(stem)}/names`)
+  return raw && typeof raw.near === 'object' ? raw : null
+}
+
+export const LABEL_SCHEMA_VERSION = 5
 
 export function newLabelFile(info: VideoInfo, annotator: string): LabelFile {
   const now = new Date().toISOString()
@@ -104,5 +139,6 @@ export function newLabelFile(info: VideoInfo, annotator: string): LabelFile {
     events: [],
     live_play: [],
     set_reviews: [],
+    candidate_reviews: [],
   }
 }

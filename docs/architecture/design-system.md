@@ -252,9 +252,10 @@ band of vertical space in a layout that has none to spare.
 The signature. The same clip drawn twice: `YOU` (labels) above, `MODEL` (predictions) below,
 sharing one time axis so comparison is vertical.
 
-`MODEL` currently carries set starts and nothing else — throw prediction has not been built. The
-track is drawn **empty with a caption naming the script that fills it**, never hidden: an absent
-track reads as "nothing to compare", an empty one as "not built yet", and only the second is true.
+`MODEL` carries set starts and proposed throws — the pipeline's throw *prediction* has not been
+built, and a proposal is a weaker claim than a prediction. An empty track is drawn **with a
+caption naming the scripts that fill it**, never hidden: an absent track reads as "nothing to
+compare", an empty one as "not built yet", and only the second is true.
 
 - One dot per throw at its **release frame**, coloured by outcome.
 - A **set start is a pennant, not a dot**. It is a moment rather than a throw, and putting it on
@@ -270,6 +271,27 @@ track reads as "nothing to compare", an empty one as "not built yet", and only t
   hiding it would make a run look cleaner after review than it was.
 - `fake` is a ring, `pass` a grey ring, `unresolved` a dashed ring, in-flight a filled dot
   with a pulsing halo. A fill means the ball crossed.
+- On the frame, **the proposal being looked at is loud**: a soft `--sig-model` fill, a white
+  casing under a heavy stroke, and `proposed` on a chip — it has to be found on a frame full of
+  skeletons before it can be judged. Other unjudged proposals in the same second draw thin and
+  dashed with only their frame, so a coordinated attack's other throws are present without
+  competing; judged ones stay off the frame unless their card is selected, when they draw loud
+  like any other — a rejection the annotator clicked to reconsider has to be visible. A selected
+  proposal is loud only within tolerance of its own frame; further away nothing is loud, because
+  a player who throws several times in a row would otherwise wear the older throw's box on the
+  newer throw's frame while the keys still classified the older card. The box
+  **follows the player** from frame to frame through the roster's track, rather than sitting where
+  they were at the proposed frame. **Every box on the frame follows the same rule**: on the
+  frame it was placed, where it was placed, and editable; on any other frame, where the roster
+  says that player is now, not editable — a label is a box at its frame, and it is edited only
+  there. Every box's chip carries the frame it belongs to, `thrower @595`, the number its card
+  leads with; a followed box adds a green dot to the chip rather than a word. Where the follow
+  cannot be made the stored box is drawn with its frame and no dot.
+- A **proposed throw is a ring in `--sig-model`** — no fill, because a proposal claims a motion
+  and nothing about a ball. Accepted: filled and underscored, with the throw it became directly
+  above on `YOU`; the horizontal gap is the correction. Rejected: struck and dropped to
+  `--ink-faint`. On the frame, a proposal's box is drawn in `--sig-model` and labelled
+  `proposed`, never editable — the event it becomes is the thing to edit.
 - A model dot with nothing above it fired where there is no throw; a **✕ on the model track**
   is a throw the model missed. The two failure modes get two distinct marks — never one.
 - The shaded band is live play. Past the playhead, the label track is **hatched and captioned
@@ -277,20 +299,55 @@ track reads as "nothing to compare", an empty one as "not built yet", and only t
   would overstate what exists.
 - **Always shipped with a legend.** No exceptions.
 
-### Event panel
+### Event stream
 
-One panel, one **source switch** (`Labels` / `Model` / `Compare`). Not tabs. The list is always
-the same thing — events at frames — and only its source changes. Feature tabs would import
-structure the tool does not need.
+One list. Labels and the model's claims are both events at frames, so they share it, switched on
+and off as **two source toggles** (`Labels`, `Model`) rather than chosen as views. There is no
+"compare" mode: both on *is* the comparison. An accepted proposal and the throw it became are the
+same moment and collapse into one row; everything else is single-sided — a label with nothing
+beside it is a miss, a model row with nothing beside it is unreviewed or rejected. Set starts sit
+in the same stream as rows of their own kind.
 
-Sections, top to bottom: source switch, comparison stats (in `Compare` only), **In flight**
-pinned above the list, then the event list, then the save state. The list flexes to fill so
-the panel matches the frame's height and no dead column appears beside it.
+The list **follows the playhead**: every row within a second of the frame on screen is lit in
+proportion to how close it is, so a coordinated attack lights two or three rows together, and
+the nearest is kept in view. **Selection is separate from emphasis.** The selected row is the one
+the keys edit and moves only when the annotator moves it — stepping frames to find a release
+must not change what `H` lands on. `>` / `<` walk the visible list, selecting as they go.
+
+**The card is where an event gets its kind, outcome and target.** The selected card opens into
+the editor — frames, thrower and target with who they are, team, kind, outcome, referee signal,
+flags, note — and nothing about an event is edited anywhere else. Cards sit with air between
+them on a recessed ground, so each is one thing. A verdict is a **glyph, not a word**: `✓`
+accepted in ink, `✕` rejected faint, a hollow `--sig-model` ring for unreviewed — the same ring
+the timeline draws for the claim — with the word in the tooltip only. Accept / Reject are real
+buttons on every card that can take them.
+
+**A proposal is classified from its card.** Selected, a proposal offers `it was fake / pass` and
+`throw hit / catch / block / miss / unresolved`; choosing one accepts the proposal and labels it in
+one move, because "accept, then say what it was" is a step nobody should have to take. The same
+keys do it from the keyboard. A note field on the card lets a rejection carry its reason.
+
+**Choices wear their colour.** A button that means an outcome or a kind takes that signal's
+tone — soft until chosen, full once it is — so what you press and what you get read as one
+thing. Accept and Reject wear the catch green and the hit red: colour is semantic, and here the
+semantics are exactly good and bad.
+
+**Emphasis is lift, not colour.** A card near the playhead grows (up to 5%), its border darkens
+towards ink, and it casts a shadow, all in proportion to closeness; the nearest is scrolled to
+centre. `↑` `↓` (and `>` `<`) walk the cards, selecting as they go; the arrow keys nudge a box
+only while one is being placed.
+
+Sections, top to bottom: the source toggles and filters, then the stream, then the save state.
+The list flexes to fill so the panel matches the frame's height.
 
 ### Event row
 
-Frame index (mono) · thrower → target with flag glyphs · outcome pill or match delta. Selection
-is a heavy ink border on the left edge plus a recessed fill — never a colour.
+Frame index (mono) · side · **who threw → who it reached** · flag glyphs · outcome pill, and on
+a model row the verdict tag. Who is `key #number Name`, as much of it as is known: the key is
+whatever would snap the box on the frame on screen, the number is the roster's, the name is
+hand-authored beside the roster. The left edge names the source — ink for a label, `--sig-model`
+for an unjudged claim, faint for a rejected one. Selection is an inset ink ring plus the recessed
+fill — never a colour.
 
 Flag glyphs are terse and consistent: `!` uncertain, `◌` not visible, `§` referee signal seen.
 

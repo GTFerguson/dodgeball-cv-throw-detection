@@ -15,6 +15,8 @@ const LABELS_DIR = path.join(DATA_DIR, 'labels')
 const POSE_DIR = path.join(DATA_DIR, 'pose')
 const COURT_DIR = path.join(DATA_DIR, 'court')
 const SETS_DIR = path.join(DATA_DIR, 'sets')
+const CANDIDATES_DIR = path.join(DATA_DIR, 'candidates')
+const ROSTER_DIR = path.join(DATA_DIR, 'roster')
 const VIDEO_EXT = /\.(mp4|webm|mkv|mov)$/i
 
 export { DATA_DIR }
@@ -133,6 +135,21 @@ export function labelApi(): Plugin {
         // track it is compared against would be one the annotator had edited.
         if (seg[1] === 'sets' && seg.length === 3 && req.method === 'GET') {
           return sendFile(res, resolveWithin(SETS_DIR, `${seg[2]}.json`))
+        }
+
+        // Read-only for the same reason: proposals are the model's claim, and a
+        // verdict on them lives in the label file, never in the proposals.
+        if (seg[1] === 'candidates' && seg.length === 3 && req.method === 'GET') {
+          return sendFile(res, resolveWithin(CANDIDATES_DIR, `${seg[2]}.json`))
+        }
+
+        // The roster names who is who; the names file beside it is hand-authored
+        // and the only source of a player's name. Both read-only here.
+        if (seg[1] === 'roster' && seg.length === 3 && req.method === 'GET') {
+          return sendFile(res, resolveWithin(ROSTER_DIR, `${seg[2]}.json`))
+        }
+        if (seg[1] === 'roster' && seg.length === 4 && seg[3] === 'names' && req.method === 'GET') {
+          return sendFile(res, resolveWithin(ROSTER_DIR, `${seg[2]}.names.json`))
         }
 
         if (seg[1] === 'pose' && seg.length === 3 && req.method === 'GET') {

@@ -12,7 +12,6 @@ export type ToggleField = 'release_visible' | 'outcome_visible' | 'uncertain'
 export type Command =
   | { type: 'playPause' }
   | { type: 'step'; frames: number }
-  | { type: 'seek'; seconds: number }
   | { type: 'seekEdge'; edge: 'start' | 'end' }
   | { type: 'speed'; dir: 1 | -1 }
   | { type: 'mute' }
@@ -20,6 +19,7 @@ export type Command =
   | { type: 'openRelease' }
   | { type: 'openFake' }
   | { type: 'markPass' }
+  | { type: 'markFake' }
   | { type: 'outcome'; outcome: Outcome }
   | { type: 'snapPlayer'; playerKey: string }
   | { type: 'cycleOpen'; dir: 1 | -1 }
@@ -28,7 +28,13 @@ export type Command =
   // with either of them.
   | { type: 'windupStart' }
   | { type: 'resolutionEnd' }
-  | { type: 'judgeSet'; verdict: SetVerdict }
+  // One pair of verdict keys for every claim the model makes. Which claim is
+  // resolved by where the playhead is: a proposed throw within a few frames,
+  // otherwise the detected set window the frame falls in.
+  | { type: 'judge'; verdict: SetVerdict }
+  // Walk the event stream: the next or previous card in view becomes the
+  // selected one and the playhead goes to it.
+  | { type: 'walk'; dir: 1 | -1 }
   | { type: 'cyclePlacement' }
   | { type: 'toggle'; field: ToggleField }
   | { type: 'cycleTeam' }
@@ -51,7 +57,8 @@ export interface KeyEventLike {
 export interface KeyContext {
   /** Set while a player key would fill a box. */
   placing: PlacementTarget | null
-  /** Set when a box is selected, which gives the arrow keys to nudging. */
+  /** Set while a placed box is being adjusted, which gives the arrow keys to
+   *  nudging; otherwise up and down walk the stream and left and right seek. */
   boxFocused: boolean
 }
 
@@ -67,6 +74,7 @@ const PLAYER_KEYS = new Set([...NEAR_KEYS, ...FAR_KEYS])
 // and the large one is still small enough to land inside a far-court player.
 const NUDGE_SMALL = 1
 const NUDGE_LARGE = 10
+const ARROW_STEP_LARGE = 5
 
 export function resolveKey(e: KeyEventLike, ctx: KeyContext): Command | null {
   if (e.ctrlKey || e.metaKey) {
@@ -88,8 +96,10 @@ export function resolveKey(e: KeyEventLike, ctx: KeyContext): Command | null {
       const step = e.shiftKey ? NUDGE_LARGE : NUDGE_SMALL
       return { type: 'nudge', dx: ux * step, dy: uy * step }
     }
-    if (uy !== 0) return null
-    return { type: 'seek', seconds: ux * (e.shiftKey ? 5 : 1) }
+    if (uy !== 0) return { type: 'walk', dir: uy === 1 ? 1 : -1 }
+    // A frame at a time: the release is a one-frame decision, and a second is
+    // 25 of them. Shifted is the reach for finding the moment, not naming it.
+    return { type: 'step', frames: ux * (e.shiftKey ? ARROW_STEP_LARGE : 1) }
   }
 
   // A pending placement takes the whole keyboard: the player rows are unshifted
@@ -113,8 +123,14 @@ export function resolveKey(e: KeyEventLike, ctx: KeyContext): Command | null {
     case 'M': return { type: 'mute' }
     // Shifted, because a verdict on a detection is a rarer act than any of the
     // labelling keys and must not be one keypress away from a mistyped outcome.
-    case 'A': return { type: 'judgeSet', verdict: 'accepted' }
-    case 'R': return { type: 'judgeSet', verdict: 'rejected' }
+    // F opens a new fake at the frame; shifted, it says the selected event -
+    // most often one just accepted from a proposal - was a fake all along.
+    case 'F': return { type: 'markFake' }
+    case 'A': return { type: 'judge', verdict: 'accepted' }
+    case 'R': return { type: 'judge', verdict: 'rejected' }
+    // The shifted step keys walk the stream too, as the unshifted ones walk frames.
+    case '>': return { type: 'walk', dir: 1 }
+    case '<': return { type: 'walk', dir: -1 }
   }
 
   if (lower in OUTCOME_KEYS && !e.shiftKey) {

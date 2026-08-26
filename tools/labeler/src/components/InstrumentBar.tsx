@@ -23,9 +23,9 @@ export const SPEEDS = [0.25, 0.5, 1, 1.5, 2]
 // leave the keys long enough to go looking.
 const KEYS: [string, string[]][] = [
   ['event', ['T release', 'F fake', 'P pass', 'H C B M U outcome', 'Tab cycle open', 'S E start/end']],
-  ['place', ['1–6 near', 'Q–Y far', 'G thrower/target', 'drag corner · body · empty', '← ↑ → ↓ nudge']],
+  ['place', ['1–6 near', 'Q–Y far', 'G thrower/target', 'drag corner · body · empty', '←↑→↓ nudge while placing']],
   ['flags', ['D team', 'V release seen', 'O outcome seen', 'X referee', 'A uncertain', 'N note']],
-  ['clip', ['L K live play', '⇧A ⇧R judge set start', 'Del delete', 'Ctrl+Z restore', 'Esc cancel']],
+  ['clip', ['L K live play', '⇧A ⇧R judge detection', '↑ ↓ > < walk cards', 'Del delete', 'Ctrl+Z restore', 'Esc cancel']],
   ['view', ['wheel zoom', 'ctrl+drag pan', 'shift magnify', '0 reset']],
 ]
 

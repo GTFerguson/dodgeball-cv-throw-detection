@@ -66,10 +66,21 @@ export interface PlacedBox {
 
 export type TeamSource = 'inferred' | 'override'
 
+// Where an event came from. One accepted from a proposal is anchored to the
+// detector that proposed it, and that has to survive into the file for the same
+// reason a live-play start's source does: a bias that is recorded can be
+// reported, and one that is not is indistinguishable from no bias at all.
+export type EventSource = 'manual' | 'model'
+
 export interface ThrowEvent {
   id: string
   status: EventStatus
   kind: EventKind | null
+  source: EventSource
+  /** The frame the detector proposed, kept unchanged when the annotator moves
+   *  the release, so the correction made is measurable afterwards. Null for an
+   *  event the detector never proposed. */
+  proposed_frame: number | null
   release_frame: number
   start_frame: number | null
   end_frame: number | null
@@ -127,6 +138,98 @@ export interface SetReview {
   reviewed: string
 }
 
+// A throwing motion as scripts/detect_candidates.py proposed it: a frame and a
+// thrower, nothing more. Release, destination and outcome are the annotator's.
+export interface Candidate {
+  frame: number
+  track_id: number
+  participant: string
+  team: Team | null
+  score: number
+  detection_index: number
+  box: [number, number, number, number]
+}
+
+export interface CandidateFile {
+  schema_version: number
+  video: string
+  clip_sha256: string
+  pose_run: string
+  fps: number
+  thresholds: Record<string, number>
+  candidates: Candidate[]
+}
+
+// The annotator's judgement on one proposed throw. Kept for a rejection as much
+// as for an acceptance, for the reason a set review is; and named by the frame
+// and the box the detector proposed rather than by a position in its output, so
+// a re-run that proposes differently leaves the verdict stale rather than moved.
+// The box and not the track: a track id is the tracker's, renumbered by every
+// re-run, where the player was where they were.
+export type CandidateVerdict = 'accepted' | 'rejected'
+
+export interface CandidateReview {
+  id: string
+  frame: number
+  /** The proposed thrower's box on that frame, as the proposal carried it. */
+  box: Box
+  /** Null is a proposal with a note but no verdict yet - still unreviewed. */
+  verdict: CandidateVerdict | null
+  /** The event an acceptance created or agreed with. Null otherwise. */
+  event_id: string | null
+  /** Why it was rejected, or the nuance a verdict cannot carry - written for
+   *  whoever reads the file next, so a judgement is more than one bit. */
+  note: string
+  reviewed: string
+}
+
+// Who is who, as scripts/identify_players.py decided it: every tracker span
+// with a role and a side, and the person each span belongs to. The tool reads
+// it to say who a box is; it never writes identity into a label.
+export type RosterRole = 'player' | 'official' | 'unknown'
+
+export interface RosterTrack {
+  id: number
+  participant: string
+  role: RosterRole
+  team: Team | null
+  number: number | null
+  start_frame: number
+  end_frame: number
+  /** Inclusive frame intervals where the player counted as in play: on the
+   *  paint, or within the hold window of having been. */
+  in_play: [number, number][]
+  /** (frame, index into the pose run's detections on that frame). */
+  detections: [number, number][]
+}
+
+export interface RosterParticipant {
+  id: string
+  role: RosterRole
+  team: Team | null
+  number: number | null
+  track_ids: number[]
+}
+
+export interface RosterFile {
+  schema_version: number
+  video: string
+  clip_sha256: string
+  pose_run: string
+  participants: RosterParticipant[]
+  tracks: RosterTrack[]
+}
+
+// Names are hand-authored beside the roster: the reader reads digits, and a
+// name is read by eye off the jersey. Keyed by side then number.
+export interface NamesFile {
+  schema_version: number
+  video: string
+  source: string
+  near: Record<string, string>
+  far: Record<string, string>
+}
+
 // A set start as scripts/detect_set_start.py found it. The three statuses are
 // kept apart rather than collapsed to a boolean because they mean different
 // things to an annotator: a confirmed start is a frame to check, a layout with
@@ -175,7 +278,7 @@ export interface VideoInfo {
 }
 
 export interface LabelFile {
-  schema_version: 3
+  schema_version: 5
   video: string
   fps: number
   width: number
@@ -186,6 +289,7 @@ export interface LabelFile {
   events: ThrowEvent[]
   live_play: LivePlayInterval[]
   set_reviews: SetReview[]
+  candidate_reviews: CandidateReview[]
 }
 
 // The court as a camera calibration: a homography between source pixels and the
@@ -248,6 +352,8 @@ export function newEvent(
     // ball outcome to wait for.
     status: kind != null && TERMINAL_KINDS.includes(kind) ? 'closed' : 'open',
     kind,
+    source: 'manual',
+    proposed_frame: null,
     release_frame,
     start_frame: null,
     end_frame: null,

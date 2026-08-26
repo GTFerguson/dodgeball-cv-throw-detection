@@ -1,17 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
-  Box, CourtConfig, DetectedSet, LabelFile, PoseManifest, RefSignal, SetTimelineFile, SetVerdict,
-  Team, ThrowEvent, VideoInfo,
+  Box, Candidate, CandidateFile, CandidateVerdict, CourtConfig, DetectedSet, LabelFile,
+  NamesFile, PoseManifest, RefSignal, RosterFile, SetTimelineFile, SetVerdict, Team, ThrowEvent,
+  VideoInfo,
 } from './types'
 import { REF_SIGNALS, TARGETED_OUTCOMES } from './types'
 import { clampFrame, frameToSeekTime } from './lib/frames'
 import {
-  closeThrow, cycleOpen, deleteEvent, displayOrder, markLiveEnd, markLiveStart, markPass,
-  openFake, openRelease, restoreEvent, selectedEvent, updateEvent, type EventState,
+  closeThrow, cycleOpen, deleteEvent, displayOrder, markFake, markLiveEnd, markLiveStart,
+  markPass, moveRelease, openFake, openRelease, restoreEvent, selectedEvent, updateEvent, type EventState,
 } from './lib/events'
 import {
   detectionAt, toggleVerdict, verdictFor, type ReviewState,
 } from './lib/review'
+import { judgeCandidate, noteCandidate, reviewFor as proposalReviewFor, proposalsToDraw, toCandidateState } from './lib/candidates'
+import { RosterIndex } from './lib/roster'
+import {
+  buildRows, judgeable, nearestRow, nextRow, proximity, visibleRows, type KindFilter,
+  type Sources, type StateFilter, type StreamRow,
+} from './lib/stream'
 import { drawnBox, nudgeBox, snapToDetection, withBox } from './lib/boxes'
 import { inferTeam, IN_PLAY_HOLD_FRAMES } from './lib/court'
 import { heldPositions, playerSlots, slotForKey } from './lib/players'
@@ -19,16 +26,14 @@ import { livePlayBadge } from './lib/sets'
 import { PoseCache } from './lib/pose'
 import { resolveKey, type Command, type PlacementTarget } from './lib/keys'
 import {
-  labelKey, listFootage, listPoseRuns, loadCourt, loadLabels, loadPoseChunk, loadSets,
-  newLabelFile, saveLabels, videoStem,
+  labelKey, listFootage, listPoseRuns, loadCandidates, loadCourt, loadLabels, loadNames,
+  loadPoseChunk, loadRoster, loadSets, newLabelFile, saveLabels, videoStem,
 } from './lib/storage'
 import { ALL_LAYERS, Stage, type Layers, type OverlayBox, type StageHandle } from './components/Stage'
 import { SIGNAL_VAR as SIGNAL_CSS, signalOf } from './components/ui'
 import { InstrumentBar, SPEEDS } from './components/InstrumentBar'
 import { Timeline } from './components/Timeline'
-import { EventList } from './components/EventList'
-import { EventPanel } from './components/EventPanel'
-import { SetPanel } from './components/SetPanel'
+import { Stream, type RowWho } from './components/Stream'
 
 const AUTOSAVE_MS = 800
 
@@ -124,6 +129,14 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
 
   const [court, setCourt] = useState<CourtConfig | null>(null)
   const [sets, setSets] = useState<SetTimelineFile | null>(null)
+  const [candidates, setCandidates] = useState<CandidateFile | null>(null)
+  const [roster, setRoster] = useState<RosterFile | null>(null)
+  const [names, setNames] = useState<NamesFile | null>(null)
+  // The row the keys act on, as distinct from the row nearest the playhead.
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
+  const [sources, setSources] = useState<Sources>({ labels: true, model: true })
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all')
+  const [stateFilter, setStateFilter] = useState<StateFilter>('all')
   const [layers, setLayers] = useState<Layers>(ALL_LAYERS)
 
   const [runs, setRuns] = useState<PoseManifest[]>([])
@@ -134,6 +147,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   const events = useMemo(() => file?.events ?? [], [file])
   const livePlay = useMemo(() => file?.live_play ?? [], [file])
   const reviews = useMemo(() => file?.set_reviews ?? [], [file])
+  const candidateReviews = useMemo(() => file?.candidate_reviews ?? [], [file])
   const state: EventState = useMemo(() => ({ events, selectedId }), [events, selectedId])
   // A dot in the model's colour is what separates "the detector places you in a
   // set" from "your labels do", which the old single-state badge could not say.
@@ -156,6 +170,12 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   useEffect(() => { loadCourt(stem).then(setCourt).catch(() => setCourt(null)) }, [stem])
 
   useEffect(() => { loadSets(stem).then(setSets).catch(() => setSets(null)) }, [stem])
+
+  useEffect(() => {
+    loadCandidates(stem).then(setCandidates).catch(() => setCandidates(null))
+    loadRoster(stem).then(setRoster).catch(() => setRoster(null))
+    loadNames(stem).then(setNames).catch(() => setNames(null))
+  }, [stem])
 
   useEffect(() => {
     listPoseRuns(stem).then((r) => {
@@ -181,6 +201,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   const apply = useCallback((next: EventState) => {
     setFile((f) => (f ? { ...f, events: next.events } : f))
     setSelectedId(next.selectedId)
+    setSelectedRowId(next.selectedId ? `e-${next.selectedId}` : null)
     setSaveState('dirty')
   }, [])
 
@@ -246,8 +267,15 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     return heldPositions(frames, court)
   }, [frame, court, poseVersion])
 
+  // With a roster, who is a player in play is its call and not the geometry's;
+  // without one, the geometry stands in.
+  const rosterIndex = useMemo(() => new RosterIndex(roster, names), [roster, names])
   const players = useMemo(
-    () => playerSlots(detections, court, nearby), [detections, court, nearby],
+    () => playerSlots(
+      detections, court, nearby,
+      rosterIndex.empty ? undefined : (i) => rosterIndex.isPlayerInPlay(frame, i),
+    ),
+    [detections, court, nearby, rosterIndex, frame],
   )
   const offCourt = useMemo(() => {
     if (!court) return detections
@@ -274,12 +302,6 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     seekFrame(Math.round(v.currentTime * fps - 0.5) + n)
   }, [fps, seekFrame])
 
-  const seekSeconds = useCallback((dt: number) => {
-    const v = video()
-    if (!v) return
-    v.currentTime = Math.max(0, Math.min(v.currentTime + dt, v.duration || 0))
-  }, [])
-
   const playPause = useCallback(() => {
     const v = video()
     if (!v) return
@@ -294,6 +316,95 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   }, [])
 
   useEffect(() => { const v = video(); if (v) v.muted = muted }, [muted])
+
+  // A verdict on a proposal writes the review and, on acceptance, the event it
+  // opened - saved together, because a review pointing at an event that was
+  // never written is a broken file.
+  const judgeProposal = useCallback((c: Candidate, verdict: CandidateVerdict) => {
+    const result = judgeCandidate(
+      toCandidateState(state, candidateReviews), c, verdict,
+      { review: newId(), event: newId() }, new Date().toISOString(), manifest,
+    )
+    if (!result.ok) return flash(result.reason)
+    setFile((f) => (f ? { ...f, events: result.state.events, candidate_reviews: result.state.reviews } : f))
+    setSelectedId(result.state.selectedId)
+    setSelectedRowId(result.state.selectedId ? `e-${result.state.selectedId}` : `p-${c.frame}-${c.track_id}`)
+    setSaveState('dirty')
+    if (verdict === 'accepted' && result.state.selectedId) {
+      // The thrower is placed; what the annotator does next is decide the outcome.
+      setFocus('thrower')
+      setArmed(false)
+    }
+    flash(result.message)
+  }, [state, candidateReviews, manifest, flash])
+
+  // A proposal that is selected takes a classification directly: the outcome
+  // or kind key accepts it and applies in one move, because "accept, then say
+  // what it was" is a step the annotator should never have to take.
+  const classifyProposal = useCallback((c: Candidate, then: (s: EventState) => EventState | null) => {
+    const accepted = judgeCandidate(
+      toCandidateState(state, candidateReviews), c, 'accepted',
+      { review: newId(), event: newId() }, new Date().toISOString(), manifest,
+    )
+    if (!accepted.ok) return flash(accepted.reason)
+    const opened: EventState = { events: accepted.state.events, selectedId: accepted.state.selectedId }
+    const next = then(opened) ?? opened
+    setFile((f) => (f ? { ...f, events: next.events, candidate_reviews: accepted.state.reviews } : f))
+    setSelectedId(next.selectedId)
+    setSelectedRowId(next.selectedId ? `e-${next.selectedId}` : null)
+    setSaveState('dirty')
+    return true
+  }, [state, candidateReviews, manifest, flash])
+
+  // ── the stream ───────────────────────────────────────────────────────────
+
+  const rows = useMemo(
+    () => buildRows(events, candidates, candidateReviews, sets, reviews, livePlay),
+    [events, candidates, candidateReviews, sets, reviews, livePlay],
+  )
+  const visible = useMemo(
+    () => visibleRows(rows, sources, kindFilter, stateFilter),
+    [rows, sources, kindFilter, stateFilter],
+  )
+  const nearest = useMemo(() => nearestRow(visible, frame), [visible, frame])
+  const selectedRow = useMemo(
+    () => rows.find((r) => r.id === selectedRowId) ?? null, [rows, selectedRowId],
+  )
+
+  const selectRow = useCallback((row: StreamRow) => {
+    setSelectedRowId(row.id)
+    setSelectedId(row.event?.id ?? null)
+    seekFrame(row.frame)
+  }, [seekFrame])
+
+  const walk = useCallback((dir: 1 | -1) => {
+    const next = nextRow(visible, frame, dir)
+    if (!next) return flash('nothing in the list')
+    selectRow(next)
+  }, [visible, frame, selectRow, flash])
+
+  // Who a row's boxes are, looked up rather than stored: the roster names the
+  // track behind the detection a box was snapped from, and the player key is
+  // whatever would snap it on the frame on screen.
+  const whoOf = useCallback((row: StreamRow): RowWho => {
+    void poseVersion
+    const cache = cacheRef.current
+    const slotsFor = (f: number) => (f === frame ? players : [])
+    if (row.proposal && !row.event) {
+      const c = row.proposal
+      const [x1, y1, x2, y2] = c.box
+      return {
+        thrower: rosterIndex.whoByIndex(c.frame, c.detection_index, slotsFor(c.frame), { x1, y1, x2, y2 }),
+        target: null,
+      }
+    }
+    const e = row.event
+    if (!e) return { thrower: null, target: null }
+    const lookup = (placed: ThrowEvent['thrower']) => placed
+      ? rosterIndex.whoByBox(placed.frame, placed.box, cache?.detections(placed.frame) ?? null, slotsFor(placed.frame))
+      : null
+    return { thrower: lookup(e.thrower), target: lookup(e.target) }
+  }, [rosterIndex, players, frame, poseVersion])
 
   // ── boxes ────────────────────────────────────────────────────────────────
 
@@ -329,10 +440,19 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   // ── commands ─────────────────────────────────────────────────────────────
 
   const run = useCallback((cmd: Command) => {
+    const fakeSelection = () => {
+      if (!selected && selectedRow?.proposal) {
+        return classifyProposal(selectedRow.proposal, markFake) && flash('fake')
+      }
+      const next = markFake(state)
+      if (!next) return flash('no event selected')
+      apply(next)
+      setArmed(false)
+      return flash('fake')
+    }
     switch (cmd.type) {
       case 'playPause': return playPause()
       case 'step': return step(cmd.frames)
-      case 'seek': return seekSeconds(cmd.seconds)
       case 'seekEdge': return seekFrame(cmd.edge === 'start' ? 0 : totalFrames - 1)
       case 'speed': {
         const i = SPEEDS.indexOf(speed)
@@ -342,25 +462,51 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       case 'resetView': return stageRef.current?.resetView()
 
       case 'openRelease': {
+        // The card names `T` beside the release frame, as `S` and `E` sit beside
+        // theirs, so with a card selected `T` sets that frame. A new release
+        // opens only when nothing is selected.
+        const moved = moveRelease(state, frame)
+        if (moved) {
+          apply(moved)
+          return flash(`release moved to ${frame}`)
+        }
         apply(openRelease(state, newId(), frame))
         setFocus('thrower')
         setArmed(true)
         return flash(`release opened at ${frame}`)
       }
       case 'openFake': {
+        // With a card selected, `f` is about that card, the way the outcome
+        // keys are. A new fake opens only when there is nothing to mark, so a
+        // key pressed over a selected throw cannot leave it behind and start a
+        // second, empty event at the playhead.
+        if (selected || selectedRow?.proposal) return fakeSelection()
         apply(openFake(state, newId(), frame))
         setFocus('thrower')
         setArmed(true)
         return flash(`fake at ${frame}`)
       }
       case 'markPass': {
+        if (!selected && selectedRow?.proposal) {
+          return classifyProposal(selectedRow.proposal, (s) => markPass(s, frame)) && flash('pass')
+        }
         const next = markPass(state, frame)
         // A fake released no ball, so it has no destination to record.
         if (!next) return flash('no event selected, or the selection is a fake')
         apply(next)
         return flash('pass')
       }
+      case 'markFake':
+        return fakeSelection()
       case 'outcome': {
+        if (!selected && selectedRow?.proposal) {
+          const done = classifyProposal(selectedRow.proposal, (s) => closeThrow(s, cmd.outcome, frame))
+          if (!done) return
+          const wantsTarget = TARGETED_OUTCOMES.includes(cmd.outcome)
+          setFocus(wantsTarget ? 'target' : 'thrower')
+          setArmed(wantsTarget)
+          return flash(cmd.outcome)
+        }
         const next = closeThrow(state, cmd.outcome, frame)
         if (!next) return flash('no open throw selected')
         apply(next)
@@ -391,11 +537,18 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       }
       case 'windupStart': return patchSelected({ start_frame: frame })
       case 'resolutionEnd': return patchSelected({ end_frame: frame })
-      case 'judgeSet': {
-        const set = detectionAt(sets, frame)
-        if (!set) return flash('no detected set start at this frame')
-        return judge(set, cmd.verdict)
+      case 'judge': {
+        // The selected row if it is the model's claim; otherwise the nearest
+        // row in view, provided it is close enough to be what you are looking at.
+        const row = judgeable(selectedRow) ? selectedRow
+          : judgeable(nearest) && nearest && (nearest.set || Math.abs(nearest.frame - frame) <= 6) ? nearest
+          : null
+        if (!row) return flash('no detection selected to judge')
+        if (row.proposal) return judgeProposal(row.proposal, cmd.verdict)
+        if (row.set) return judge(row.set, cmd.verdict)
+        return
       }
+      case 'walk': return walk(cmd.dir)
       case 'toggle': return selected && patchSelected({ [cmd.field]: !selected[cmd.field] })
       case 'cycleTeam': {
         if (!selected) return
@@ -441,13 +594,15 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       }
       case 'cancel': {
         if (armed) return setArmed(false)
-        return setSelectedId(null)
+        setSelectedId(null)
+        return setSelectedRowId(null)
       }
     }
   }, [
-    playPause, step, seekSeconds, seekFrame, changeSpeed, apply, patchSelected, placeBox,
+    playPause, step, seekFrame, changeSpeed, apply, patchSelected, placeBox,
     editActiveBox, setLive, judge, flash, state, selected, players, focus, frame, manifest,
-    court, livePlay, sets, lastDeleted, speed, totalFrames, armed, info.width, info.height,
+    court, livePlay, judgeProposal, classifyProposal, walk, selectedRow, nearest, lastDeleted, speed,
+    totalFrames, armed, info.width, info.height,
   ])
 
   useEffect(() => {
@@ -456,7 +611,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
       const cmd = resolveKey(e, {
         placing: armed ? focus : null,
-        boxFocused: selected?.[focus] != null,
+        boxFocused: armed && selected?.[focus] != null,
       })
       if (!cmd) return
       e.preventDefault()
@@ -468,21 +623,50 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
 
   // ── overlay ──────────────────────────────────────────────────────────────
 
+  // Every box on the frame is drawn by one rule: on the frame it was placed,
+  // where it was placed; on any other frame, where the roster says that player
+  // is now, falling back to the stored box when the follow cannot be made. The
+  // label is never touched - a box is edited only on its own frame.
   const overlayBoxes: OverlayBox[] = useMemo(() => {
-    if (!selected) return []
+    void poseVersion
+    const cache = cacheRef.current
+    const now = cache?.detections(frame) ?? null
     const out: OverlayBox[] = []
+
+    // One proposal is the one being looked at - the selected card's, or the
+    // nearest with nothing selected - and it alone is drawn loud and labelled
+    // `proposed`. Others in the same second stay visible but quiet, so a
+    // coordinated attack's other throws are there without competing for the eye.
+    const looking = selectedRow?.proposal && !selectedRow.event ? selectedRow.proposal : null
+    for (const { candidate: c, loud } of proposalsToDraw(candidates, candidateReviews, frame, looking)) {
+      const [x1, y1, x2, y2] = c.box
+      const box = rosterIndex.boxOfTrack(c.track_id, frame, now) ?? { x1, y1, x2, y2 }
+      out.push({
+        box,
+        label: loud ? `proposed @${c.frame}` : `@${c.frame}`,
+        color: 'var(--sig-model)',
+        active: false,
+        loud,
+      })
+    }
+
+    if (!selected) return out
     for (const which of ['thrower', 'target'] as PlacementTarget[]) {
       const placed = selected[which]
       if (!placed) continue
+      const own = placed.frame === frame
+      const followed = own ? placed.box
+        : rosterIndex.follow(placed.frame, placed.box, cache?.detections(placed.frame) ?? null, frame, now)
       out.push({
-        box: placed.box,
-        label: `${which}${placed.frame === frame ? '' : ` @${placed.frame}`}`,
+        box: followed ?? placed.box,
+        label: `${which} @${placed.frame}`,
+        following: !own && followed != null,
         color: SIGNAL_CSS[signalOf(selected)],
-        active: which === focus,
+        active: which === focus && own,
       })
     }
     return out
-  }, [selected, focus, frame])
+  }, [selected, selectedRow, focus, frame, candidates, candidateReviews, rosterIndex, poseVersion])
 
   const saveLabel: Record<SaveState, string> = {
     clean: '', dirty: 'unsaved', saving: 'saving…', saved: 'saved', error: 'save failed',
@@ -598,6 +782,8 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
             livePlay={livePlay}
             sets={sets}
             reviews={reviews}
+            candidates={candidates}
+            candidateReviews={candidateReviews}
             frame={frame}
             totalFrames={totalFrames}
             fps={fps}
@@ -622,27 +808,50 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
         </main>
 
         <aside className="flex flex-col min-h-0 bg-surface border border-rule rounded-md shadow-panel overflow-hidden">
-          <SetPanel
-            timeline={sets}
-            reviews={reviews}
-            livePlay={livePlay}
+          <Stream
+            rows={visible}
+            total={rows.length}
+            sources={sources}
+            onSources={setSources}
+            kind={kindFilter}
+            onKind={setKindFilter}
+            state={stateFilter}
+            onState={setStateFilter}
+            selectedRowId={selectedRowId}
+            nearestRowId={nearest?.id ?? null}
+            proximity={(row) => proximity(row, frame)}
             fps={fps}
-            onJudge={judge}
-            onSeek={seekFrame}
-          />
-          <EventPanel
-            event={selected}
-            frame={frame}
-            focus={focus}
-            armed={armed}
-            noteRef={noteRef}
-            onChange={patchSelected}
-            onFocus={(f) => { setFocus(f); setArmed(true) }}
-          />
-          <EventList
-            events={displayOrder(events)}
-            selectedId={selectedId}
-            onSelect={(e) => { setSelectedId(e.id); seekFrame(e.release_frame) }}
+            whoOf={whoOf}
+            noteOf={(row) => (row.proposal ? proposalReviewFor(candidateReviews, row.proposal)?.note ?? '' : '')}
+            editing={{
+              frame, focus, armed, noteRef,
+              onChange: patchSelected,
+              onFocus: (f) => { setFocus(f); setArmed(true) },
+            }}
+            onSelect={selectRow}
+            onJudge={(row, verdict) => {
+              if (row.proposal) judgeProposal(row.proposal, verdict)
+              else if (row.set) judge(row.set, verdict)
+            }}
+            onClassify={(row, what) => {
+              if (!row.proposal) return
+              if (what === 'fake') classifyProposal(row.proposal, markFake) && flash('fake')
+              else if (what === 'pass') classifyProposal(row.proposal, (s) => markPass(s, frame)) && flash('pass')
+              else {
+                const done = classifyProposal(row.proposal, (s) => closeThrow(s, what, frame))
+                if (!done) return
+                const wantsTarget = TARGETED_OUTCOMES.includes(what)
+                setFocus(wantsTarget ? 'target' : 'thrower')
+                setArmed(wantsTarget)
+                flash(what)
+              }
+            }}
+            onNote={(row, note) => {
+              if (!row.proposal) return
+              const reviews = noteCandidate(candidateReviews, row.proposal, note, newId(), new Date().toISOString())
+              setFile((f) => (f ? { ...f, candidate_reviews: reviews } : f))
+              setSaveState('dirty')
+            }}
             onDelete={(e) => { apply(deleteEvent(state, e.id)); setLastDeleted(e) }}
           />
           <div className="flex-none px-3 py-2 border-t border-rule text-[11px] text-ink-faint truncate"
