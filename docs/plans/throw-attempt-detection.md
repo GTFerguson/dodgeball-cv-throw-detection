@@ -115,9 +115,16 @@ until then a live-play interval runs from one detected start to the next.
 - **Many balls.** Six near-identical balls in play. Global ball identity is deliberately *not*
   attempted — see signal strategy.
 
-## Event definition (draft — to be frozen before labelling)
+## Event definition (fixed 2026-08-26, after the clip was labelled)
 
 **Throw attempt.** A player propels a ball toward the opposing side with a throwing motion.
+
+The rules recognise nothing before release: a throw "must leave a player's hand" and the ball
+is live "once the player is no longer in contact with the ball" (WDBF 2024, 15.2). A fake is a
+coaching term, not a rule term, so what counts as one is this project's to define. A
+**candidate** is any throwing motion by a player in play, with or without a ball: a wind-up
+made with an empty hand is still a move meant to draw the opponent, and it is the same
+motion to the stage that looks for motions. See [[wdbf-rules]].
 
 Every candidate resolves to exactly one `kind` — `fake`, `pass` or `throw` — so the three are
 mutually exclusive by construction rather than by convention. `fake` and `pass` are terminal.
@@ -127,6 +134,7 @@ than a fourth class, so it can be reported separately instead of defaulting into
 | Field | Rule |
 |---|---|
 | `kind` | `fake` (no release), `pass` (released, ball stays on the thrower's own side), `throw` (released, ball crosses to the opposing side) |
+| `ball_in_hand` | on a `fake`: whether there was a ball to release. A fake with no ball is an event at the candidate level and is reported apart, since a stage that looks for the ball has nothing to find. Two on the evaluation clip |
 | `start` | First frame of the wind-up: throwing arm moves behind the shoulder line with a ball in hand |
 | `release` | First frame the ball is no longer in contact with the hand |
 | `end` | Outcome resolution: the first contact that settles the ball — an opponent, a catch, a block, the floor or the far boundary. A pass ends the same way on its own side: the receiver's catch, or the floor if it is not caught |
@@ -141,13 +149,17 @@ the closest thing to external truth on ambiguous hits), plus `uncertain` and a n
 
 **Live-play intervals** are one per set (opening rush → set end). Throws outside them do not
 count, and the metric is computed per set. The start is detected rather than labelled
-([[set-start]]); the end still is not, so an interval currently runs to the next start.
+([[set-start]]); the end is the last elimination — "a set is won when a team has eliminated
+all players of the opposing team" (WDBF 2024, 10.2.1) — which the harness takes from the
+last labelled hit and the pipeline will take from the outcome resolver.
 
 **Classified by destination, not intent.** A live ball that reaches an opponent eliminates them
 whatever the thrower meant by it, so an errant pass that crosses and connects *is* a throw with
 a hit. This is fortunate rather than merely convenient: destination is observable and intent
 never is, so the rule the annotator applies and the rule the model applies can be the same one.
-(To confirm against the WDBF ruleset before the definition is frozen.)
+Confirmed against the ruleset: "passing throws and plays are not deemed invalid throws, if the
+ball does not cross into the opponent team's fair territory" (WDBF 2024, 16.2) — a pass is a
+throw that did not cross, by destination.
 
 **Not a candidate at all:** underarm rolls to retrieve balls; hand-offs where the ball is
 passed without a throwing motion; anything after the play is dead (whistle).
@@ -314,8 +326,6 @@ label-uncertainty case, not a model failure.
   meaningful, or do we need a second match?
 - How often do teams actually pass? Unmeasured, and it sets both the labelling cost and how
   much the metric's denominator depends on getting pass rejection right.
-- Does the WDBF ruleset treat a ball as live regardless of the thrower's intent, as assumed by
-  classifying on destination?
 
 ## Work log
 
@@ -493,3 +503,8 @@ label-uncertainty case, not a model failure.
   is already gone by it. Candidate P 72% R 98% F1 83%; release 78% on matched (fakes 19/25,
   releases 27/34); every pass called a throw as scoped. Absence of the ball was rejected as
   the release test: occlusion and a second ball in the other hand both fake it.
+- 2026-08-26 — the definition fixed against the WDBF 2024 rules ([[wdbf-rules]]): the rules
+  define a throw from release and say nothing of fakes, so a candidate is any throwing motion,
+  ball or not; `ball_in_hand` on a fake records which, and the two empty-handed fakes on the
+  clip (1448, 3490) carry it. Pass-by-destination is 16.2; set end is 10.2.1. The tool has no key
+  for the flag yet — it was set by hand and the tool carries fields it does not know.

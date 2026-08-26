@@ -22,10 +22,11 @@ CLIP = "wdbf2014_final_h2_set2"
 
 
 def truth(frame: int, kind: str = "throw", box=(100.0, 100.0, 200.0, 300.0), team="near",
-          outcome=None, end=None, boxes=None) -> TruthEvent:
+          outcome=None, end=None, boxes=None, ball_in_hand=None) -> TruthEvent:
     return TruthEvent(id=f"t{frame}", kind=kind, release_frame=frame, end_frame=end, box=box,
                       box_frame=frame, team=team, outcome=outcome, uncertain=False,
-                      source="manual", proposed_frame=None, track_boxes=boxes or {})
+                      source="manual", proposed_frame=None, ball_in_hand=ball_in_hand,
+                      track_boxes=boxes or {})
 
 
 def pred(frame: int, box=(100.0, 100.0, 200.0, 300.0), **claims) -> Prediction:
@@ -108,6 +109,15 @@ class Levels(unittest.TestCase):
         self.assertEqual(self.truth.set_intervals(), [(0, 210)])
         r = evaluate(self.truth, [pred(150), pred(500)])
         self.assertEqual((r.candidate["fp_in_play"], r.candidate["fp_after_set_end"]), (1, 1))
+
+    def test_a_fake_with_no_ball_counts_and_is_reported_apart(self):
+        t = TruthSet(video="x", fps=25.0, live_play=[(0, None)], events=[
+            truth(100, kind="fake", ball_in_hand=False), truth(200, kind="fake", ball_in_hand=True)])
+        r = evaluate(t, [pred(200)])
+        self.assertEqual(r.candidate["fn"], 1)
+        self.assertEqual((r.candidate["no_ball_fakes"], r.candidate["no_ball_fakes_found"]), (1, 0))
+        r = evaluate(t, [pred(100), pred(200)])
+        self.assertEqual(r.candidate["no_ball_fakes_found"], 1)
 
     def test_efficiency_counts_hits_over_throws_per_team(self):
         eff = efficiency(self.truth.events)

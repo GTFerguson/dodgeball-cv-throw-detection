@@ -18,7 +18,11 @@ frames (``TruthSet.anchored``), never to name a match.
 
 Fakes are events. A wind-up that released nothing is a candidate the model
 should find and then classify as no release, so it counts at the candidate
-level and is the negative class at the release level.
+level and is the negative class at the release level. A fake made with no
+ball in the hand at all is still a throwing motion meant to draw the
+opponent, so it is an event too; it is reported apart, because a stage that
+looks for the ball cannot find one and that is a different failure from
+missing a wind-up.
 """
 
 from __future__ import annotations
@@ -75,6 +79,8 @@ class TruthEvent:
     uncertain: bool
     source: str
     proposed_frame: int | None
+    # On a fake: whether a ball was in the hand. None where the label does not say.
+    ball_in_hand: bool | None = None
     # The thrower's box on each frame near the release, from the roster track
     # that holds the labelled box; empty until `TruthSet.anchored` fills it.
     track_boxes: dict[int, Box] = field(default_factory=dict, compare=False)
@@ -127,7 +133,8 @@ class TruthSet:
                 end_frame=e.get("end_frame"), box=_box(e["thrower"]["box"]),
                 box_frame=int(e["thrower"]["frame"]), team=e.get("team"),
                 outcome=e.get("outcome"), uncertain=bool(e.get("uncertain")),
-                source=e.get("source", "manual"), proposed_frame=e.get("proposed_frame")))
+                source=e.get("source", "manual"), proposed_frame=e.get("proposed_frame"),
+                ball_in_hand=e.get("ball_in_hand")))
         events.sort(key=lambda t: t.release_frame)
         live = [(int(iv["start_frame"]), iv.get("end_frame")) for iv in data.get("live_play", [])]
         return cls(video=data["video"], fps=float(data["fps"]), events=events, live_play=live)
@@ -186,7 +193,7 @@ class TruthSet:
                 id=t.id, kind=t.kind, release_frame=t.release_frame, end_frame=t.end_frame,
                 box=t.box, box_frame=t.box_frame, team=t.team, outcome=t.outcome,
                 uncertain=t.uncertain, source=t.source, proposed_frame=t.proposed_frame,
-                track_boxes=boxes))
+                ball_in_hand=t.ball_in_hand, track_boxes=boxes))
         return TruthSet(video=self.video, fps=self.fps, events=events, live_play=self.live_play)
 
 
@@ -298,6 +305,10 @@ def evaluate(truth: TruthSet, predictions: list[Prediction],
     candidate["precision_in_play"] = (
         len(m.matches) / (len(m.matches) + candidate["fp_in_play"])
         if m.matches or candidate["fp_in_play"] else 0.0)
+    no_ball = [t for t in truth.events if t.ball_in_hand is False]
+    candidate["no_ball_fakes"] = len(no_ball)
+    candidate["no_ball_fakes_found"] = sum(
+        1 for mm in m.matches if mm.truth.ball_in_hand is False)
 
     deltas = [mm.delta for mm in m.matches]
     boundary = {
@@ -352,7 +363,9 @@ def format_report(r: Report) -> str:
     lines = [
         f"candidate: P {_pct(c['precision'])} R {_pct(c['recall'])} F1 {_pct(c['f1'])} "
         f"(tp {c['tp']}, fp {c['fp']} of which {c['fp_after_set_end']} after set end, "
-        f"fn {c['fn']}); in play P {_pct(c['precision_in_play'])}",
+        f"fn {c['fn']}); in play P {_pct(c['precision_in_play'])}"
+        + (f"; fakes with no ball {c['no_ball_fakes_found']}/{c['no_ball_fakes']} found"
+           if c["no_ball_fakes"] else ""),
         f"release frame: MAE {r.boundary['release_mae']:.1f}, bias "
         f"{r.boundary['release_bias']:+.1f}, {r.boundary['within_2']}/{r.boundary['n']} "
         f"within 2 frames",
@@ -380,6 +393,7 @@ def report_json(r: Report) -> dict:
         "candidate": r.candidate, "boundary": r.boundary, "team": r.team,
         "release": r.release, "kind": r.kind, "outcome": r.outcome,
         "efficiency": r.efficiency,
-        "missed": [{"kind": t.kind, "release_frame": t.release_frame} for t in r.matching.missed],
+        "missed": [{"kind": t.kind, "release_frame": t.release_frame,
+                    "ball_in_hand": t.ball_in_hand} for t in r.matching.missed],
         "spurious": [{"frame": p.frame} for p in r.matching.spurious],
     }
