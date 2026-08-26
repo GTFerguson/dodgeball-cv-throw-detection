@@ -103,12 +103,25 @@ def ball_mask(frame_bgr: np.ndarray) -> np.ndarray:
     return cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
 
 
-def blobs_in(mask: np.ndarray) -> list[tuple[float, float, int, int, int]]:
-    """Every component as (cx, cy, width, height, area)."""
-    count, _, stats, centroids = cv2.connectedComponentsWithStats(mask)
+def blobs_in(mask: np.ndarray) -> tuple[list[tuple[float, float, int, int, int]], np.ndarray]:
+    """Every component as (cx, cy, width, height, area), and the label image."""
+    count, labels, stats, centroids = cv2.connectedComponentsWithStats(mask)
     return [(float(centroids[i][0]), float(centroids[i][1]),
              int(stats[i, cv2.CC_STAT_WIDTH]), int(stats[i, cv2.CC_STAT_HEIGHT]),
-             int(stats[i, cv2.CC_STAT_AREA])) for i in range(1, count)]
+             int(stats[i, cv2.CC_STAT_AREA])) for i in range(1, count)], labels
+
+
+def ball_sized(components, labels: np.ndarray, scale: float) -> np.ndarray:
+    """The mask with only ball-sized components left in it.
+
+    Colour alone leaves skin, socks and the odd edge of a sleeve in the mask;
+    none of those is the size of a ball. Counting the disc on this rather than
+    on the raw mask makes "ball in hand" a claim about shape as well as hue.
+    """
+    keep = np.zeros(len(components) + 1, bool)
+    for i, (_, _, w, h, _) in enumerate(components, start=1):
+        keep[i] = BLOB_DIAMETER_NORM[0] <= max(w, h) / scale <= BLOB_DIAMETER_NORM[1]
+    return keep[labels].astype(np.uint8) * 255
 
 
 def disc_count(mask: np.ndarray, x: float, y: float, radius: float) -> int:
@@ -122,12 +135,12 @@ def disc_count(mask: np.ndarray, x: float, y: float, radius: float) -> int:
     return int(np.count_nonzero(mask[y0:y1, x0:x1][inside]))
 
 
-def wrist_frame(mask: np.ndarray, components, wrist: tuple[float, float] | None,
-                seen: bool, scale: float) -> WristFrame:
+def wrist_frame(mask: np.ndarray, components, labels: np.ndarray,
+                wrist: tuple[float, float] | None, seen: bool, scale: float) -> WristFrame:
     if wrist is None:
         return WristFrame(None, False, 0.0, ())
     x, y = wrist
-    count = disc_count(mask, x, y, DISC_RADIUS_NORM * scale)
+    count = disc_count(ball_sized(components, labels, scale), x, y, DISC_RADIUS_NORM * scale)
     near = []
     for cx, cy, w, h, area in components:
         diameter = max(w, h) / scale
@@ -174,7 +187,7 @@ def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pos
             if index not in wanted:
                 continue
             mask = ball_mask(frame)
-            components = blobs_in(mask)
+            components, labels = blobs_in(mask)
             for ti, offset in wanted[index]:
                 trace = traces[ti]
                 det_index = lookup[ti].get(index)
@@ -186,7 +199,7 @@ def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pos
                     if seen:
                         last_wrist[(ti, name)] = (float(p[0]), float(p[1]))
                     wrist = last_wrist.get((ti, name))
-                    row[name] = wrist_frame(mask, components, wrist, seen, trace.scale)
+                    row[name] = wrist_frame(mask, components, labels, wrist, seen, trace.scale)
                 trace.frames[offset] = row
             if progress and index % 500 == 0:
                 progress(index)

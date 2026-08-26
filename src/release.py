@@ -51,11 +51,12 @@ RUSH_S = 2.0
 # the disc may or may not catch, and a release before the peak has already
 # emptied the hand.
 BALL_BEFORE_WINDOW = (-12, -3)
-# Mean orange inside the wrist disc over that window, in units of the squared
-# perspective scale. Set low on purpose: on the evaluation clip's 105 reviewed
-# proposals it keeps every event the tolerance can match and drops half the
-# rejections; raising it to 0.00005 trades eight events for no precision.
-BALL_BEFORE_MIN = 0.00001
+# Mean ball-sized orange inside the wrist disc over that window, in units of
+# the squared perspective scale. Set low on purpose: on the evaluation clip's
+# 105 reviewed proposals it keeps every event with a ball that the tolerance
+# can match and drops half the rejections; raising it to 0.00003 loses five
+# events for no precision.
+BALL_BEFORE_MIN = 0.00002
 
 # A blob within this of the wrist keypoint is in the hand.
 HAND_NORM = 0.08

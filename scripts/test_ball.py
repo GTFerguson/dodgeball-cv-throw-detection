@@ -71,7 +71,7 @@ class Blobs(unittest.TestCase):
         img = canvas()
         paint(img, (220, 150), 8, BALL_HSV)
         m = ball_mask(img)
-        wf = wrist_frame(m, blobs_in(m), (200.0, 150.0), True, scale=500.0)
+        wf = wrist_frame(m, *blobs_in(m), (200.0, 150.0), True, scale=500.0)
         self.assertEqual(len(wf.blobs), 1)
         self.assertAlmostEqual(wf.blobs[0].distance_norm(200.0, 150.0, 500.0), 0.04, places=2)
         self.assertGreater(wf.disc, 0.0)
@@ -82,14 +82,24 @@ class Blobs(unittest.TestCase):
         cv2.rectangle(img, (0, 250), (399, 299),
                       tuple(int(v) for v in cv2.cvtColor(np.uint8([[BALL_HSV]]), cv2.COLOR_HSV2BGR)[0][0]), -1)
         m = ball_mask(img)
-        wf = wrist_frame(m, blobs_in(m), (200.0, 150.0), True, scale=500.0)
+        wf = wrist_frame(m, *blobs_in(m), (200.0, 150.0), True, scale=500.0)
         self.assertEqual([b.diameter_norm for b in wf.blobs
                           if not BLOB_DIAMETER_NORM[0] <= b.diameter_norm <= BLOB_DIAMETER_NORM[1]], [])
         self.assertEqual(len(wf.blobs), 0)
 
+    def test_the_disc_counts_only_ball_sized_orange(self):
+        # A speck of skin colour at the wrist is not a ball in hand; a ball is.
+        img = canvas()
+        paint(img, (200, 150), 1, BALL_HSV)
+        m = ball_mask(img)
+        self.assertEqual(wrist_frame(m, *blobs_in(m), (200.0, 150.0), True, 500.0).disc, 0.0)
+        paint(img, (200, 150), 8, BALL_HSV)
+        m = ball_mask(img)
+        self.assertGreater(wrist_frame(m, *blobs_in(m), (200.0, 150.0), True, 500.0).disc, 0.0)
+
     def test_an_unseen_wrist_records_nothing(self):
         m = ball_mask(canvas())
-        wf = wrist_frame(m, blobs_in(m), None, False, scale=500.0)
+        wf = wrist_frame(m, *blobs_in(m), None, False, scale=500.0)
         self.assertIsNone(wf.wrist)
         self.assertEqual(wf.disc, 0.0)
         self.assertEqual(DISC_RADIUS_NORM * 500.0, 25.0)

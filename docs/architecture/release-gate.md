@@ -47,9 +47,9 @@ half of it between them, and a decoder seek costs more than a decode — and
 for every proposal and every frame from `TRACE_BEFORE` before its peak to
 `TRACE_AFTER` after, records at each wrist:
 
-- the orange inside a disc of `DISC_RADIUS_NORM` on the wrist keypoint,
-  divided by the squared perspective scale so a near and a far ball count
-  the same;
+- the ball-sized orange inside a disc of `DISC_RADIUS_NORM` on the wrist
+  keypoint, divided by the squared perspective scale so a near and a far
+  ball count the same;
 - every ball-sized orange blob within `BLOB_REACH_NORM` of the wrist, with
   its centroid and normalised diameter.
 
@@ -66,10 +66,16 @@ throws. Measured on the clip, ball pixels sit at hue 6–14 and the jersey at
 fifth of a percent of the jersey. Set start keeps its own range: its balls
 lie on the floor in a band no sleeve crosses.
 
-**The blob filter is loose at the top.** A ball on the floor spans
-0.020–0.036 of the scale; in flight it blurs into a streak several times
-longer. `BLOB_DIAMETER_NORM` runs to four times the flight ball so the
-streak is still a blob the chain can link to.
+**Shape as well as hue.** Colour alone leaves skin, socks and the odd edge
+of a sleeve in the mask, and none of those is the size of a ball. The disc
+counts only pixels belonging to a component within `BLOB_DIAMETER_NORM`,
+and the blob lists are filtered the same way, so a jersey — many times a
+ball's size — is out twice over. The filter is loose at the top: a ball on
+the floor spans 0.020–0.036 of the scale, in flight it blurs into a streak
+several times longer, and the range runs to four times the flight ball so
+the streak is still a blob the chain can link to. It was the shape test,
+not the hue, that finally dropped the two empty-handed fakes: with hue
+alone, skin residue at the wrist kept them above the floor.
 
 ## Gate one: is this an event
 
@@ -90,13 +96,19 @@ apart.
 whip the ball is a streak the disc may or may not catch, and a release
 before the peak has already emptied the hand. The floor is set low on
 purpose. Swept through the harness on the clip's 105 reviewed proposals, it
-keeps every event the tolerance can match for precision 72%; raising it five
-times buys no precision and loses eight events, and a missed candidate is
-the one error nothing downstream repairs.
+keeps every event with a ball that the tolerance can match for precision
+74%; raising it by half buys no precision and loses five events, and a
+missed candidate is the one error nothing downstream repairs.
+
+A fake made with no ball in the hand is an event by the definition — a
+throwing motion meant to draw the opponent — and this gate drops it, by
+construction: there is no ball to find. The label carries `ball_in_hand` on
+every fake so the harness reports those apart ([[evaluation]]); two on the
+clip, both dropped.
 
 What the rule cannot cut is a ball held by a body doing something else:
 hunkering down with a ball, blocking with it, raising a catch for the
-referee, dodging with one in hand. Those are the twenty-three false
+referee, dodging with one in hand. Those are the twenty false
 positives that remain, and they are the same class as a fake at the metric —
 a ball that never crossed.
 
@@ -156,14 +168,15 @@ On the evaluation clip, against the truth set, at the plan's tolerance of
 
 | Level | Before this stage | With it |
 |---|---|---|
-| Candidate | P 56% R 98% F1 72% | **P 72% R 98% F1 83%** |
-| Release, on matched events | not claimed | **78%** — fakes right 19 of 25, releases right 27 of 34 |
-| Kind, on matched events | not claimed | 71% — every pass is called a throw, by design |
+| Candidate | P 56% R 98% F1 72% | **P 74% R 95% F1 83%** |
+| Release, on matched events | not claimed | **79%** — fakes right 18 of 23, releases right 27 of 34 |
+| Kind, on matched events | not claimed | 72% — every pass is called a throw, by design |
 
-The one candidate miss is a throw whose peak landed twelve frames after the
-labelled release; the annotator's own note calls that one late.
+The three candidate misses: a throw whose peak landed twelve frames after
+the labelled release (the annotator's own note calls that one late), and
+the two fakes made with no ball, dropped by gate one as described above.
 
-The release errors are readable. Six fakes called released are chains that
+The release errors are readable. Five fakes called released are chains that
 begin six to eight frames before the peak and end before it — a ball
 arriving into the hand, or another ball crossing the wrist's neighbourhood
 — and one is the annotator's *ambiguous* case where a fake turns into a dive.

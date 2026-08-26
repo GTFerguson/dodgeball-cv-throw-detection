@@ -500,9 +500,12 @@ label-uncertainty case, not a model failure.
   than most throws — and a hue floor of 9 (ball 6–14, jersey 4–10) cleared it. Gate one: the
   rush, then a ball in the hand before the peak; gate two: a chain of blobs seen leaving the
   hand, seeded up to eight frames before the peak because the peak is the whip and the ball
-  is already gone by it. Candidate P 72% R 98% F1 83%; release 78% on matched (fakes 19/25,
-  releases 27/34); every pass called a throw as scoped. Absence of the ball was rejected as
-  the release test: occlusion and a second ball in the other hand both fake it.
+  is already gone by it. The disc counts only ball-sized components, so "ball in hand" is a
+  claim about shape as well as hue - it was shape, not hue, that finally cleared skin residue
+  at the wrist. Candidate P 74% R 95% F1 83% (the misses: one late peak, two empty-handed
+  fakes by design); release 79% on matched (fakes 18/23, releases 27/34); every pass called a
+  throw as scoped. Absence of the ball was rejected as the release test: occlusion and a second
+  ball in the other hand both fake it.
 - 2026-08-26 — the definition fixed against the WDBF 2024 rules ([[wdbf-rules]]): the rules
   define a throw from release and say nothing of fakes, so a candidate is any throwing motion,
   ball or not; `ball_in_hand` on a fake records which, and the two empty-handed fakes on the
