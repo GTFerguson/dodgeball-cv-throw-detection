@@ -364,3 +364,9 @@ label-uncertainty case, not a model failure.
   centre-line band gives two windows in the clip; the whistle gated by them is the one start
   among sixteen whistle events; the break for the balls confirms it 0.92 s later. Clip start
   detected at frame 433 (17.32 s). Audio enters the pipeline here for the first time.
+- 2026-08-26 — identity checked against the full clip and found wanting: 29 names, 11
+  wrong (dropped digits, referees, scrum merges) and one live-play swap the vote could not
+  see because it only read a track's tallest crops. Graduated to [[player-identity]]: readings
+  carry frames, crops are read across a track's whole life, a switch of number cuts the track
+  (54 at 2881, the frame the swap completed), officials fall out via in-play gating, and
+  three tracker-side preventions were measured and rejected. 12 names, all right by eye.
