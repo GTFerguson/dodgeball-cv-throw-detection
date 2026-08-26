@@ -50,11 +50,14 @@ def trace(ball_path: dict[int, tuple[float, float] | None] | None = None,
     return t
 
 
-def flight(start: int, step: float, frames: int = 8) -> dict:
-    """The ball leaving the wrist rightwards at `step` px a frame from offset `start`."""
+def flight(start: int, step: float, frames: int = 8, missing: int | None = None) -> dict:
+    """The ball leaving the wrist rightwards at `step` px a frame from offset `start`;
+    unseen on offset `missing` if given."""
     path = {o: WRIST for o in range(-8, start)}
     for k in range(frames + 1):
         path[start + k] = (WRIST[0] + step * k, WRIST[1])
+    if missing is not None:
+        path[missing] = None
     return path
 
 
@@ -78,7 +81,37 @@ class Departure(unittest.TestCase):
     def test_a_release_before_the_peak_is_still_found(self):
         d = departure(trace(flight(start=-6, step=0.15 * SCALE)))
         self.assertTrue(d.released, d)
-        self.assertEqual(d.seed_offset, -6)
+        self.assertLessEqual(d.seed_offset, -6)
+
+    def test_a_frame_the_ball_is_not_seen_on_is_bridged(self):
+        # The whip drops the ball from the mask for a frame; the chain steps over it.
+        d = departure(trace(flight(start=0, step=0.1 * SCALE, missing=1)))
+        self.assertTrue(d.released, d)
+        d = departure(trace(flight(start=0, step=0.1 * SCALE, missing=1)))
+        self.assertGreaterEqual(d.links, 2)
+
+    def test_two_missing_frames_break_the_chain(self):
+        path = flight(start=0, step=0.1 * SCALE, missing=1)
+        path[2] = None
+        self.assertFalse(departure(trace(path)).released)
+
+    def test_a_step_longer_than_a_throw_is_not_taken(self):
+        # Half the scale in a frame is beyond any throw, even read as two
+        # frames across a bridged gap.
+        d = departure(trace(flight(start=0, step=0.5 * SCALE)))
+        self.assertFalse(d.released, d)
+
+    def test_a_chain_through_standing_orange_is_not_a_release(self):
+        # A ball on the floor and a sock lie along a line from the hand; each
+        # was there the frame before, so neither is the ball leaving.
+        t = trace({o: WRIST for o in range(-8, 12)})
+        floor = (WRIST[0] + 0.12 * SCALE, WRIST[1])
+        sock = (WRIST[0] + 0.26 * SCALE, WRIST[1])
+        for o in range(-8, 12):
+            r = t.frames[o]["R"]
+            t.frames[o]["R"] = WristFrame(r.wrist, True, r.disc, r.blobs + (
+                Blob(floor[0], floor[1], 0.03, 200), Blob(sock[0], sock[1], 0.015, 60)))
+        self.assertFalse(departure(t).released)
 
     def test_a_ball_kept_in_the_hand_is_not(self):
         path = {o: WRIST for o in range(-8, 12)}

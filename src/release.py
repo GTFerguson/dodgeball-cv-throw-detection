@@ -17,9 +17,12 @@ looks like, and a second ball held in the other hand keeps the disc lit
 through a genuine release. So the claim is made on seeing the ball *leave*:
 a blob at the hand, then a chain of blobs stepping away from it frame by
 frame, each step continuing the last one's direction, reaching a distance no
-hand could carry it in the time. The first step may be long - a hard throw
-covers half the perspective scale in one frame - and later steps must follow
-the chain's own velocity.
+hand could carry it in the time. The chain may bridge one frame in which the
+ball is not seen - at the whip it is a desaturated streak the mask can
+drop - and no link may land on a blob that was already there the frame
+before, because a ball in flight is never where it was: that one test is
+what stops a chain hopping between socks, a ball on the floor and the
+other hand's ball.
 
 Everything that is not a fake is called a throw here. A pass is a throw to
 one's own side and its separation needs the ball's direction in court
@@ -65,9 +68,20 @@ HAND_NORM = 0.08
 # the follow-through, not the release) and rarely more than three after.
 SEED_WINDOW = (-8, 3)
 # The first step of a chain has no velocity to predict from. A hard throw
-# moves the ball nearly half the perspective scale in a frame; a ball that
-# has not moved a fiftieth of it is still in the hand.
-FIRST_STEP_NORM = (0.02, 0.45)
+# moves the ball a fifth of the perspective scale in a frame at most on the
+# clip; a ball that has not moved a fiftieth of it is still in the hand.
+# A looser cap (0.45) let chains hop to other balls: two thirds of fakes
+# then had a chain leaving the hand.
+FIRST_STEP_NORM = (0.02, 0.20)
+# A step may skip this many frames when no blob continues the chain: at the
+# whip the ball is a streak the mask drops for a frame. Over a skipped frame
+# the predicted position and the tolerances scale with the frames covered.
+LINK_GAP_FRAMES = 1
+# A blob within this many of its own diameters of a blob on the previous
+# frame is standing still and is not the ball leaving. Costs the slowest
+# far-court balls, which move under a diameter a frame; buys every fake
+# whose chain ran through stationary orange.
+STATIC_TOLERANCE_DIAMETERS = 1.0
 # Later steps land within a fixed slack plus a fraction of the last step's
 # length of where the last velocity predicts, turning no more than MAX_TURN.
 LINK_SLACK_NORM = 0.06
@@ -118,41 +132,57 @@ def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, flo
     scale = trace.scale
     out: list[list[tuple[float, float]]] = []
 
-    def step(path, pos, vel, offset):
+    def options(pos, vel, offset, covered):
+        """Blobs on `offset` that continue the chain over `covered` frames."""
         wf: WristFrame | None = trace.at(offset, wrist)
-        options = []
-        if wf is not None:
-            for blob in wf.blobs:
-                mv = (blob.x - pos[0], blob.y - pos[1])
-                length = math.hypot(*mv)
-                if vel is None:
-                    if not FIRST_STEP_NORM[0] <= length / scale <= FIRST_STEP_NORM[1]:
-                        continue
-                else:
-                    px, py = pos[0] + vel[0], pos[1] + vel[1]
-                    radius = LINK_SLACK_NORM * scale + LINK_VELOCITY_FRACTION * math.hypot(*vel)
-                    if math.hypot(blob.x - px, blob.y - py) > radius:
-                        continue
-                    cos = (mv[0] * vel[0] + mv[1] * vel[1]) / (length * math.hypot(*vel) + 1e-9)
-                    if math.degrees(math.acos(max(-1.0, min(1.0, cos)))) > MAX_TURN_DEG:
-                        continue
-                options.append(((blob.x, blob.y), mv))
-        if not options or len(path) > CHAIN_MAX_LINKS:
+        previous: WristFrame | None = trace.at(offset - 1, wrist)
+        found = []
+        if wf is None:
+            return found
+        for blob in wf.blobs:
+            if previous is not None and any(
+                    math.hypot(q.x - blob.x, q.y - blob.y) / scale
+                    <= STATIC_TOLERANCE_DIAMETERS * blob.diameter_norm for q in previous.blobs):
+                continue
+            mv = (blob.x - pos[0], blob.y - pos[1])
+            length = math.hypot(*mv)
+            if vel is None:
+                if not FIRST_STEP_NORM[0] * covered <= length / scale <= FIRST_STEP_NORM[1] * covered:
+                    continue
+            else:
+                px, py = pos[0] + vel[0] * covered, pos[1] + vel[1] * covered
+                radius = covered * (LINK_SLACK_NORM * scale + LINK_VELOCITY_FRACTION * math.hypot(*vel))
+                if math.hypot(blob.x - px, blob.y - py) > radius:
+                    continue
+                cos = (mv[0] * vel[0] + mv[1] * vel[1]) / (length * math.hypot(*vel) + 1e-9)
+                if math.degrees(math.acos(max(-1.0, min(1.0, cos)))) > MAX_TURN_DEG:
+                    continue
+            found.append(((blob.x, blob.y), (mv[0] / covered, mv[1] / covered), offset))
+        return found
+
+    def step(path, pos, vel, offset, gaps):
+        found = options(pos, vel, offset, 1)
+        if not found and gaps < LINK_GAP_FRAMES:
+            found = options(pos, vel, offset + 1, 2)
+            gaps += 1
+        if not found or len(path) > CHAIN_MAX_LINKS:
             out.append(path)
             return
-        for p, mv in options[:BRANCH]:
-            step(path + [p], p, mv, offset + 1)
+        for p, v, at in found[:BRANCH]:
+            step(path + [p], p, v, at + 1, gaps)
 
-    step([origin], origin, None, seed_offset + 1)
+    step([origin], origin, None, seed_offset + 1, 0)
     return out
 
 
 def departure(trace: Trace) -> Departure:
-    """The longest, then farthest, monotone chain leaving either wrist.
+    """The farthest monotone chain of at least CHAIN_MIN_LINKS leaving either wrist.
 
-    Both wrists are tried: a player holding two balls throws with one hand
-    while the disc on the other stays lit, and the pose's faster wrist at
-    the peak is not reliably the throwing one.
+    Farthest, not longest: a chain that follows the ball still in the hand
+    can run the whole window without going anywhere, and it must not beat
+    a three-link chain that leaves. Both wrists are tried: a player holding
+    two balls throws with one hand while the disc on the other stays lit,
+    and the pose's faster wrist at the peak is not reliably the throwing one.
     """
     best = NO_DEPARTURE
     for wrist in ("L", "R"):
@@ -167,13 +197,13 @@ def departure(trace: Trace) -> Departure:
             origin = (at_hand[0].x, at_hand[0].y)
             for chain in _chains(trace, wrist, seed_offset, origin):
                 links = len(chain) - 1
-                if links < 1:
+                if links < CHAIN_MIN_LINKS:
                     continue
                 dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p in chain]
                 if any(b <= a for a, b in zip(dists, dists[1:])):
                     continue
                 far = dists[-1] / trace.scale
-                if (links, far) > (best.links, best.distance):
+                if (far, links) > (best.distance, best.links):
                     best = Departure(wrist, round(far, 4), links, seed_offset)
     return best
 
@@ -267,6 +297,8 @@ def thresholds() -> dict:
         "rush_s": RUSH_S, "ball_before_window": list(BALL_BEFORE_WINDOW),
         "ball_before_min": BALL_BEFORE_MIN, "hand_norm": HAND_NORM,
         "seed_window": list(SEED_WINDOW), "first_step_norm": list(FIRST_STEP_NORM),
+        "link_gap_frames": LINK_GAP_FRAMES,
+        "static_tolerance_diameters": STATIC_TOLERANCE_DIAMETERS,
         "link_slack_norm": LINK_SLACK_NORM, "link_velocity_fraction": LINK_VELOCITY_FRACTION,
         "max_turn_deg": MAX_TURN_DEG, "depart_min_norm": DEPART_MIN_NORM,
         "chain_min_links": CHAIN_MIN_LINKS,

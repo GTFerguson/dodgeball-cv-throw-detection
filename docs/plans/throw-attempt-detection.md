@@ -511,3 +511,13 @@ label-uncertainty case, not a model failure.
   ball or not; `ball_in_hand` on a fake records which, and the two empty-handed fakes on the
   clip (1448, 3490) carry it. Pass-by-destination is 16.2; set end is 10.2.1. The tool has no key
   for the flag yet — it was set by hand and the tool carries fields it does not know.
+- 2026-08-26 — error analysis on the release gate, then the chain made to follow one ball
+  ([[release-gate]]). Preferring the farthest chain over the longest showed the fault: two
+  thirds of fakes had *some* chain leaving the hand, through socks, floor balls and the other
+  hand's ball. Three constraints fix it - no link onto a blob that was there the frame before
+  (a ball in flight never is), a first step capped at a throw's fifth of the scale, and one
+  bridgeable frame for the whip where the mask drops the streak. Release 79% → 84% (fakes
+  22/23, releases 26/34); the residual is far balls the mask never sees at the hand, a
+  fragmented ball, a hand-over, a wrong-track label and the end-of-set double throw. Still
+  open from the analysis: held-ball non-throws at gate one (blocking, hunkering, pickups -
+  ~10 false positives) and one motion proposed twice (5).

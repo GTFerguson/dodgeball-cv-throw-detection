@@ -124,20 +124,40 @@ So the claim is made on *seeing the ball leave*. From a blob at the hand —
 within `HAND_NORM` of the wrist on any offset in `SEED_WINDOW` — chains of
 blobs are followed frame by frame. The first step may be anything from
 `FIRST_STEP_NORM` short to long, because there is no velocity yet to predict
-from and a hard throw covers half the scale in a frame. Every later step
-must land within `LINK_SLACK_NORM` plus `LINK_VELOCITY_FRACTION` of the last
-step of where the last velocity predicts, and turn less than `MAX_TURN_DEG`.
-The distance from the origin must grow at every step. Search is depth-first
-over the nearest `BRANCH` blobs at each link, to `CHAIN_MAX_LINKS`.
+from. Every later step must land within `LINK_SLACK_NORM` plus
+`LINK_VELOCITY_FRACTION` of the last step of where the last velocity
+predicts, and turn less than `MAX_TURN_DEG`. The distance from the origin
+must grow at every step. Search is depth-first over the nearest `BRANCH`
+blobs at each link, to `CHAIN_MAX_LINKS`.
 
-Both wrists are tried and the longest chain, then the farthest, wins. The
-pose's faster wrist at the peak is not reliably the throwing hand, and a
-player holding two balls throws with one while the other stays lit.
+Three constraints make the chain *one ball* rather than any orange:
 
-The chain is a release when it reaches `DEPART_MIN_NORM` with at least
-`CHAIN_MIN_LINKS` links: a hand cannot carry a ball a quarter of the scale
-in two frames, and a ball in flight does it in one. Accuracy on the clip is
-flat from 0.20 to 0.25 and falls either side.
+- **A ball in flight is never where it was.** No link may land on a blob
+  that had a blob within `STATIC_TOLERANCE_DIAMETERS` of it on the previous
+  frame. Without this, two thirds of the clip's fakes had a chain leaving
+  the hand — through a sock, a ball on the floor beside the player and the
+  other hand's ball, which happened to line up. With it, one fake in
+  twenty-three does. It costs the slowest far-court balls, which move under
+  a diameter a frame.
+- **The first step is a throw's, not half the frame.** `FIRST_STEP_NORM`
+  tops out at a fifth of the scale, the most a hard throw covers in a frame
+  here. The 0.45 it started at was a workaround for the next point, and it
+  was what let chains hop to other balls.
+- **One frame may be missing.** At the whip the ball is a desaturated
+  streak the mask drops, and the pose wrist lags the hand by a hand's
+  length exactly then. A step may bridge `LINK_GAP_FRAMES` frames with no
+  blob, with the prediction and the tolerances scaled by the frames covered.
+
+Both wrists are tried and the *farthest* chain with at least
+`CHAIN_MIN_LINKS` links wins — not the longest: a chain that follows the
+ball still in the hand runs the whole window without going anywhere, and it
+was beating three-link chains that left. The pose's faster wrist at the
+peak is not reliably the throwing hand, and a player holding two balls
+throws with one while the other stays lit.
+
+The chain is a release when it reaches `DEPART_MIN_NORM`: a hand cannot
+carry a ball a quarter of the scale in two frames, and a ball in flight does
+it in one.
 
 **Why the seed window opens eight frames early.** The candidate's frame is
 the wrist-speed peak, and the contact sheets show that peak is the whip or
@@ -169,21 +189,25 @@ On the evaluation clip, against the truth set, at the plan's tolerance of
 | Level | Before this stage | With it |
 |---|---|---|
 | Candidate | P 56% R 98% F1 72% | **P 74% R 95% F1 83%** |
-| Release, on matched events | not claimed | **79%** — fakes right 18 of 23, releases right 27 of 34 |
-| Kind, on matched events | not claimed | 72% — every pass is called a throw, by design |
+| Release, on matched events | not claimed | **84%** — fakes right 22 of 23, releases right 26 of 34 |
+| Kind, on matched events | not claimed | 75% — every pass is called a throw, by design |
 
 The three candidate misses: a throw whose peak landed twelve frames after
 the labelled release (the annotator's own note calls that one late), and
 the two fakes made with no ball, dropped by gate one as described above.
 
-The release errors are readable. Five fakes called released are chains that
-begin six to eight frames before the peak and end before it — a ball
-arriving into the hand, or another ball crossing the wrist's neighbourhood
-— and one is the annotator's *ambiguous* case where a fake turns into a dive.
-Seven releases called fakes are a ball that leaves through the far side of
-the body from the camera, or a far-court throw whose streak the mask loses
-in the first frame. Neither family has a fix at one camera and 25 fps; both
-are reported as what they are rather than tuned away.
+The release errors are readable. The one fake called released is a ball
+that splits into two components in the fingers at the whip, one of which
+seeds a chain while the ball stays in the hand. Of the eight releases
+called fakes: two far-court throws the mask never sees at the hand at all,
+and one whose ball moves under a diameter a frame; one a hair under the
+distance floor; a hand-over the annotator was unsure was a pass; a throw
+noted *hard to see*; one whose labelled box sits on a second detection of
+the thrower, so the match went to the empty track; and the two near
+throws released together at the set's end. None of these is a threshold
+away; they are reported as what they are rather than tuned away. Before
+the chain was made to follow one ball the score was 79%, and it had been
+reached partly by chains that hopped to the right answer by luck.
 
 ## Configuration
 

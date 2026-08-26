@@ -18,8 +18,10 @@
   ],
   "first_step_norm": [
    0.02,
-   0.45
+   0.2
   ],
+  "link_gap_frames": 1,
+  "static_tolerance_diameters": 1.0,
   "link_slack_norm": 0.06,
   "link_velocity_fraction": 0.6,
   "max_turn_deg": 50.0,
@@ -43,10 +45,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.5966,
-    "depart": 0.4141,
-    "links": 8,
-    "seed_offset": 2,
-    "wrist": "L"
+    "depart": 0.4055,
+    "links": 6,
+    "seed_offset": 3,
+    "wrist": "R"
    }
   },
   {
@@ -60,15 +62,15 @@
     1450.6,
     539.8
    ],
-   "released": false,
-   "kind": "fake",
+   "released": true,
+   "kind": "throw",
    "dropped": null,
    "evidence": {
     "ball_before": 0.1957,
-    "depart": 0.1356,
+    "depart": 0.2825,
     "links": 6,
-    "seed_offset": -3,
-    "wrist": "L"
+    "seed_offset": 3,
+    "wrist": "R"
    }
   },
   {
@@ -87,10 +89,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2933,
-    "depart": 0.2324,
-    "links": 8,
-    "seed_offset": -4,
-    "wrist": "L"
+    "depart": 0.2139,
+    "links": 2,
+    "seed_offset": 2,
+    "wrist": "R"
    }
   },
   {
@@ -109,9 +111,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1325,
-    "depart": 0.6951,
-    "links": 8,
-    "seed_offset": -7,
+    "depart": 0.7041,
+    "links": 6,
+    "seed_offset": -6,
     "wrist": "R"
    }
   },
@@ -126,15 +128,15 @@
     1276.7,
     345.4
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.2715,
-    "depart": 0.9487,
+    "depart": 0.1381,
     "links": 3,
     "seed_offset": 1,
-    "wrist": "R"
+    "wrist": "L"
    }
   },
   {
@@ -153,10 +155,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.36,
-    "depart": 0.2062,
-    "links": 1,
-    "seed_offset": -8,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -175,8 +177,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1166,
-    "depart": 0.6236,
-    "links": 6,
+    "depart": 0.6586,
+    "links": 7,
     "seed_offset": -1,
     "wrist": "L"
    }
@@ -197,9 +199,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0933,
-    "depart": 0.4397,
+    "depart": 0.4676,
     "links": 8,
-    "seed_offset": 0,
+    "seed_offset": -1,
     "wrist": "L"
    }
   },
@@ -219,10 +221,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0681,
-    "depart": 0.2975,
-    "links": 8,
-    "seed_offset": -3,
-    "wrist": "L"
+    "depart": 0.36,
+    "links": 4,
+    "seed_offset": 2,
+    "wrist": "R"
    }
   },
   {
@@ -236,14 +238,14 @@
     999.1,
     887.6
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.1652,
-    "depart": 0.7527,
-    "links": 2,
-    "seed_offset": -8,
+    "depart": 0.1449,
+    "links": 3,
+    "seed_offset": -7,
     "wrist": "R"
    }
   },
@@ -258,14 +260,14 @@
     964.3,
     840.3
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.025,
-    "depart": 0.5038,
-    "links": 7,
-    "seed_offset": -1,
+    "depart": 0.1563,
+    "links": 6,
+    "seed_offset": -4,
     "wrist": "R"
    }
   },
@@ -285,8 +287,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0414,
-    "depart": 0.1571,
-    "links": 4,
+    "depart": 0.1287,
+    "links": 2,
     "seed_offset": 2,
     "wrist": "L"
    }
@@ -373,8 +375,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0847,
-    "depart": 0.1317,
-    "links": 6,
+    "depart": 0.1136,
+    "links": 3,
     "seed_offset": -4,
     "wrist": "R"
    }
@@ -395,10 +397,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1166,
-    "depart": 0.1487,
-    "links": 1,
-    "seed_offset": -3,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -412,15 +414,15 @@
     1146.1,
     278.0
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.3084,
-    "depart": 0.7491,
-    "links": 2,
-    "seed_offset": -5,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -439,9 +441,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.4004,
-    "depart": 0.0891,
-    "links": 5,
-    "seed_offset": -5,
+    "depart": 0.1196,
+    "links": 4,
+    "seed_offset": -8,
     "wrist": "R"
    }
   },
@@ -478,15 +480,15 @@
     1684.9,
     916.5
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.0935,
-    "depart": 0.5915,
-    "links": 7,
-    "seed_offset": 1,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -505,10 +507,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.022,
-    "depart": 0.0429,
-    "links": 2,
-    "seed_offset": 1,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -527,10 +529,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3479,
-    "depart": 0.1282,
-    "links": 6,
+    "depart": 0.1267,
+    "links": 4,
     "seed_offset": -3,
-    "wrist": "L"
+    "wrist": "R"
    }
   },
   {
@@ -549,8 +551,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1935,
-    "depart": 0.7318,
-    "links": 8,
+    "depart": 0.7288,
+    "links": 7,
     "seed_offset": -7,
     "wrist": "R"
    }
@@ -571,9 +573,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2559,
-    "depart": 0.5997,
-    "links": 3,
-    "seed_offset": -8,
+    "depart": 0.8083,
+    "links": 8,
+    "seed_offset": -1,
     "wrist": "L"
    }
   },
@@ -615,9 +617,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3809,
-    "depart": 0.3353,
+    "depart": 0.3549,
     "links": 8,
-    "seed_offset": -6,
+    "seed_offset": -7,
     "wrist": "R"
    }
   },
@@ -637,9 +639,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3363,
-    "depart": 0.1155,
-    "links": 4,
-    "seed_offset": -5,
+    "depart": 0.1268,
+    "links": 3,
+    "seed_offset": -6,
     "wrist": "R"
    }
   },
@@ -659,9 +661,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0254,
-    "depart": 0.0873,
+    "depart": 0.1332,
     "links": 3,
-    "seed_offset": -2,
+    "seed_offset": -4,
     "wrist": "R"
    }
   },
@@ -676,15 +678,15 @@
     1272.9,
     600.4
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.3549,
-    "depart": 0.8024,
-    "links": 4,
-    "seed_offset": -6,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -703,9 +705,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.5144,
-    "depart": 0.5254,
-    "links": 6,
-    "seed_offset": -4,
+    "depart": 0.6819,
+    "links": 7,
+    "seed_offset": -6,
     "wrist": "R"
    }
   },
@@ -726,7 +728,7 @@
    "evidence": {
     "ball_before": 0.4276,
     "depart": 0.2887,
-    "links": 7,
+    "links": 6,
     "seed_offset": 1,
     "wrist": "R"
    }
@@ -769,9 +771,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0967,
-    "depart": 0.5138,
-    "links": 5,
-    "seed_offset": -2,
+    "depart": 0.4749,
+    "links": 2,
+    "seed_offset": 1,
     "wrist": "R"
    }
   },
@@ -813,9 +815,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0766,
-    "depart": 0.1141,
-    "links": 6,
-    "seed_offset": 0,
+    "depart": 0.1014,
+    "links": 2,
+    "seed_offset": -2,
     "wrist": "R"
    }
   },
@@ -835,10 +837,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1191,
-    "depart": 0.1469,
-    "links": 8,
-    "seed_offset": 2,
-    "wrist": "R"
+    "depart": 0.1163,
+    "links": 4,
+    "seed_offset": -6,
+    "wrist": "L"
    }
   },
   {
@@ -852,15 +854,15 @@
     859.6,
     311.1
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.1212,
-    "depart": 0.7955,
-    "links": 2,
-    "seed_offset": 3,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -879,10 +881,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0619,
-    "depart": 0.0956,
-    "links": 8,
-    "seed_offset": 0,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -901,9 +903,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1686,
-    "depart": 0.1871,
-    "links": 5,
-    "seed_offset": 2,
+    "depart": 0.1826,
+    "links": 4,
+    "seed_offset": 1,
     "wrist": "R"
    }
   },
@@ -923,9 +925,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3002,
-    "depart": 0.1365,
-    "links": 8,
-    "seed_offset": 3,
+    "depart": 0.1047,
+    "links": 3,
+    "seed_offset": 2,
     "wrist": "L"
    }
   },
@@ -945,10 +947,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.203,
-    "depart": 0.1022,
-    "links": 8,
-    "seed_offset": 3,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -989,8 +991,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2483,
-    "depart": 0.608,
-    "links": 3,
+    "depart": 0.5896,
+    "links": 2,
     "seed_offset": -8,
     "wrist": "L"
    }
@@ -1006,14 +1008,14 @@
     1636.0,
     888.4
    ],
-   "released": false,
-   "kind": "fake",
+   "released": true,
+   "kind": "throw",
    "dropped": null,
    "evidence": {
     "ball_before": 0.437,
-    "depart": 0.1949,
-    "links": 5,
-    "seed_offset": -4,
+    "depart": 0.6265,
+    "links": 2,
+    "seed_offset": -6,
     "wrist": "R"
    }
   },
@@ -1033,10 +1035,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2835,
-    "depart": 0.4955,
-    "links": 8,
-    "seed_offset": 1,
-    "wrist": "L"
+    "depart": 0.3937,
+    "links": 2,
+    "seed_offset": -7,
+    "wrist": "R"
    }
   },
   {
@@ -1072,15 +1074,15 @@
     1049.4,
     402.9
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.0223,
-    "depart": 0.9005,
-    "links": 2,
-    "seed_offset": -8,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1094,14 +1096,14 @@
     1583.4,
     961.3
    ],
-   "released": false,
-   "kind": "fake",
+   "released": true,
+   "kind": "throw",
    "dropped": null,
    "evidence": {
     "ball_before": 0.2009,
-    "depart": 0.1066,
-    "links": 6,
-    "seed_offset": -5,
+    "depart": 0.352,
+    "links": 2,
+    "seed_offset": -2,
     "wrist": "L"
    }
   },
@@ -1121,9 +1123,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2659,
-    "depart": 0.1474,
-    "links": 8,
-    "seed_offset": -8,
+    "depart": 0.0584,
+    "links": 2,
+    "seed_offset": 3,
     "wrist": "L"
    }
   },
@@ -1143,10 +1145,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1732,
-    "depart": 0.0747,
-    "links": 7,
-    "seed_offset": -2,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1165,10 +1167,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.4303,
-    "depart": 0.4365,
-    "links": 1,
-    "seed_offset": 3,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1187,10 +1189,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1704,
-    "depart": 0.1267,
-    "links": 6,
-    "seed_offset": -5,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1209,8 +1211,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2837,
-    "depart": 0.1108,
-    "links": 4,
+    "depart": 0.0924,
+    "links": 3,
     "seed_offset": 0,
     "wrist": "R"
    }
@@ -1231,10 +1233,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.1179,
-    "depart": 0.8409,
+    "depart": 0.2711,
     "links": 5,
-    "seed_offset": 0,
-    "wrist": "L"
+    "seed_offset": 3,
+    "wrist": "R"
    }
   },
   {
@@ -1248,15 +1250,15 @@
     1104.7,
     275.8
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.4047,
-    "depart": 0.3496,
-    "links": 8,
-    "seed_offset": 3,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1275,10 +1277,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3088,
-    "depart": 0.1104,
-    "links": 2,
-    "seed_offset": 2,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1297,10 +1299,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3752,
-    "depart": 0.2334,
-    "links": 1,
-    "seed_offset": -2,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1385,10 +1387,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3303,
-    "depart": 0.2816,
+    "depart": 0.2862,
     "links": 8,
-    "seed_offset": -1,
-    "wrist": "L"
+    "seed_offset": -2,
+    "wrist": "R"
    }
   },
   {
@@ -1407,8 +1409,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0606,
-    "depart": 0.1851,
-    "links": 7,
+    "depart": 0.1565,
+    "links": 3,
     "seed_offset": -5,
     "wrist": "R"
    }
@@ -1430,7 +1432,7 @@
    "evidence": {
     "ball_before": 0.3556,
     "depart": 0.0645,
-    "links": 3,
+    "links": 2,
     "seed_offset": -2,
     "wrist": "R"
    }
@@ -1446,15 +1448,15 @@
     593.1,
     565.8
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.0235,
-    "depart": 0.266,
-    "links": 8,
+    "depart": 0.2238,
+    "links": 5,
     "seed_offset": 3,
-    "wrist": "R"
+    "wrist": "L"
    }
   },
   {
@@ -1473,7 +1475,7 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2577,
-    "depart": 0.2819,
+    "depart": 0.3075,
     "links": 8,
     "seed_offset": 1,
     "wrist": "R"
@@ -1495,8 +1497,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2867,
-    "depart": 0.155,
-    "links": 8,
+    "depart": 0.0652,
+    "links": 2,
     "seed_offset": -8,
     "wrist": "L"
    }
@@ -1517,9 +1519,9 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.0273,
-    "depart": 0.3804,
+    "depart": 0.5253,
     "links": 8,
-    "seed_offset": -2,
+    "seed_offset": 1,
     "wrist": "L"
    }
   },
@@ -1534,15 +1536,15 @@
     385.9,
     975.3
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.2397,
-    "depart": 0.5569,
-    "links": 4,
-    "seed_offset": -7,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1556,14 +1558,14 @@
     1148.3,
     374.9
    ],
-   "released": false,
-   "kind": "fake",
+   "released": true,
+   "kind": "throw",
    "dropped": null,
    "evidence": {
     "ball_before": 0.5943,
-    "depart": 0.0828,
-    "links": 8,
-    "seed_offset": -8,
+    "depart": 0.3524,
+    "links": 5,
+    "seed_offset": -2,
     "wrist": "R"
    }
   },
@@ -1583,10 +1585,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.5942,
-    "depart": 0.1416,
-    "links": 7,
-    "seed_offset": -7,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1606,7 +1608,7 @@
    "evidence": {
     "ball_before": 0.1272,
     "depart": 0.4796,
-    "links": 6,
+    "links": 2,
     "seed_offset": -2,
     "wrist": "R"
    }
@@ -1627,8 +1629,8 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.2618,
-    "depart": 0.6083,
-    "links": 6,
+    "depart": 0.6456,
+    "links": 2,
     "seed_offset": 3,
     "wrist": "R"
    }
@@ -1649,10 +1651,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.3931,
-    "depart": 0.1093,
-    "links": 6,
-    "seed_offset": -5,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1671,10 +1673,10 @@
    "dropped": null,
    "evidence": {
     "ball_before": 0.5377,
-    "depart": 0.1786,
-    "links": 8,
-    "seed_offset": -1,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1688,15 +1690,15 @@
     1503.3,
     557.6
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.3555,
-    "depart": 0.6307,
-    "links": 3,
-    "seed_offset": -7,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -1710,15 +1712,15 @@
     1078.0,
     673.4
    ],
-   "released": true,
-   "kind": "throw",
+   "released": false,
+   "kind": "fake",
    "dropped": null,
    "evidence": {
     "ball_before": 0.0219,
-    "depart": 0.5003,
-    "links": 2,
-    "seed_offset": -8,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   }
  ],
@@ -1783,8 +1785,8 @@
    "dropped": "rush",
    "evidence": {
     "ball_before": 0.1187,
-    "depart": 0.2026,
-    "links": 8,
+    "depart": 0.3861,
+    "links": 2,
     "seed_offset": -8,
     "wrist": "R"
    }
@@ -1893,10 +1895,10 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0,
-    "depart": 0.3294,
-    "links": 8,
-    "seed_offset": -8,
-    "wrist": "L"
+    "depart": 0.4685,
+    "links": 3,
+    "seed_offset": 0,
+    "wrist": "R"
    }
   },
   {
@@ -1959,10 +1961,10 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.009,
-    "depart": 0.4084,
-    "links": 1,
-    "seed_offset": -5,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -2047,10 +2049,10 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0017,
-    "depart": 0.4308,
-    "links": 1,
-    "seed_offset": -3,
-    "wrist": "R"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -2091,10 +2093,10 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0003,
-    "depart": 0.0973,
-    "links": 4,
-    "seed_offset": 1,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -2157,8 +2159,8 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.007,
-    "depart": 0.7039,
-    "links": 4,
+    "depart": 0.0968,
+    "links": 2,
     "seed_offset": -4,
     "wrist": "R"
    }
@@ -2245,8 +2247,8 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0198,
-    "depart": 0.1949,
-    "links": 5,
+    "depart": 0.1935,
+    "links": 3,
     "seed_offset": -6,
     "wrist": "R"
    }
@@ -2267,10 +2269,10 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0,
-    "depart": 0.6056,
-    "links": 2,
-    "seed_offset": 3,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   },
   {
@@ -2311,8 +2313,8 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0155,
-    "depart": 0.1545,
-    "links": 4,
+    "depart": 0.5371,
+    "links": 2,
     "seed_offset": -2,
     "wrist": "L"
    }
@@ -2333,10 +2335,10 @@
    "dropped": "no ball in hand",
    "evidence": {
     "ball_before": 0.0096,
-    "depart": 0.6838,
-    "links": 4,
-    "seed_offset": -4,
-    "wrist": "L"
+    "depart": 0.0,
+    "links": 0,
+    "seed_offset": null,
+    "wrist": null
    }
   }
  ]
