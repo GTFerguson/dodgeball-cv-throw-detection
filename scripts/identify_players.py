@@ -11,7 +11,9 @@ the near one, and a track that spans a set contains both, so the number never ha
 to be read where it is hard.
 
 Writes ``data/players/<stem>.json`` and, with --sheet, a contact sheet of the
-crops behind each confirmed number so the result can be checked by eye.
+crops behind each confirmed number - and of every long track the vote declined to
+name, in time order, so a reader that keeps dropping a digit can be told by eye
+from a tracker that stitched two players together.
 """
 
 from __future__ import annotations
@@ -29,12 +31,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.court import Court  # noqa: E402
-from src.jersey import (CROPS_PER_TRACK, JerseyReader, Reading,  # noqa: E402
-                        confirm, largest_crops, torso_crop)
+from src.jersey import (Crop, JerseyReader, Reading, confirm,  # noqa: E402
+                        in_time_order, needs_review, shortlist, switch,
+                        torso_crop, unobstructed)
 from src.pose import PoseRun  # noqa: E402
-from src.tracking import track as track_players  # noqa: E402
+from src.tracking import cut_frame, held_in_play, track as track_players  # noqa: E402
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 3
 
 # A track shorter than this is a detection artefact rather than a player, and
 # naming one spends an identity on noise.
@@ -75,15 +78,20 @@ def main() -> int:
         print(f"cannot open {video}", file=sys.stderr)
         return 1
 
-    # One sequential pass to collect crops. Seeking per track would decode the
-    # same frames many times over.
+    # Only frames where the player is in play are worth a crop. Tracking admits
+    # the margin band, which is where the officials stand and the eliminated wait,
+    # and a referee's stripes read as a digit as readily as a jersey does. Nothing
+    # off court needs a name: attribution only ever asks about players in play.
+    in_play: dict[int, int] = {}
     wanted: dict[int, list] = defaultdict(list)
     for t in tracks:
-        for i, f in enumerate(t.frames):
-            if i % SAMPLE_EVERY == 0:
+        playing = held_in_play(court, t)
+        in_play[t.id] = sum(playing)
+        for i, (f, on) in enumerate(zip(t.frames, playing)):
+            if on and i % SAMPLE_EVERY == 0:
                 wanted[f].append(t)
 
-    crops: dict[int, list[np.ndarray]] = defaultdict(list)
+    crops: dict[int, list[Crop]] = defaultdict(list)
     cap.set(cv2.CAP_PROP_POS_FRAMES, args.start)
     for f in range(args.start, end):
         ok, image = cap.read()
@@ -91,30 +99,63 @@ def main() -> int:
             break
         for t in wanted.get(f, ()):
             det = t.at(f)
-            if det is None:
+            if det is None or not unobstructed(det, frames[f]):
                 continue
             crop = torso_crop(image, det)
             if crop is not None:
-                crops[t.id].append(crop)
+                crops[t.id].append(Crop(frame=f, image=crop))
     cap.release()
 
     with_crops = sum(1 for t in tracks if crops.get(t.id))
     print(f"{with_crops}/{len(tracks)} tracks have a crop tall enough to read")
 
     reader = JerseyReader(gpu=not args.cpu)
-    numbers: dict[int, int] = {}
     evidence: dict[int, list[Reading]] = {}
-    shortlists: dict[int, list[np.ndarray]] = {}
+    shortlists: dict[int, list[Crop]] = {}
     for t in tracks:
-        shortlist = largest_crops(crops.get(t.id, []), CROPS_PER_TRACK)
-        if not shortlist:
+        picked = shortlist(crops.get(t.id, []))
+        if not picked:
             continue
-        shortlists[t.id] = shortlist
+        shortlists[t.id] = picked
         readings: list[Reading] = []
-        for crop in shortlist:
+        for crop in picked:
             readings.extend(reader.read(crop))
         evidence[t.id] = readings
-        got = confirm(readings)
+
+    # A track whose readings name one player and then another changed player
+    # while the tracker was not looking. It is cut where the change is, and each
+    # half is named on its own readings. A half can switch again, so cut until
+    # nothing does.
+    splits: dict[int, tuple[int, int]] = {}
+    next_id = max(t.id for t in tracks) + 1
+    queue = list(tracks)
+    tracks = []
+    while queue:
+        t = queue.pop(0)
+        found = switch(evidence.get(t.id, []))
+        if found is None:
+            tracks.append(t)
+            continue
+        a, b, last_a, first_b = found
+        at = cut_frame(t, last_a, first_b)
+        head, tail = t.split(at, next_id)
+        print(f"track {t.id} reads #{a} then #{b}: cut at {at} -> {head.id}, {tail.id}")
+        # The head keeps the id, so take both halves before either is stored.
+        whole_readings, whole_crops = evidence[t.id], shortlists[t.id]
+        evidence[head.id] = [r for r in whole_readings if r.frame < at]
+        evidence[tail.id] = [r for r in whole_readings if r.frame >= at]
+        shortlists[head.id] = [c for c in whole_crops if c.frame < at]
+        shortlists[tail.id] = [c for c in whole_crops if c.frame >= at]
+        in_play[head.id] = sum(held_in_play(court, head)) if head.frames else 0
+        in_play[tail.id] = sum(held_in_play(court, tail)) if tail.frames else 0
+        splits[tail.id] = (t.id, at)
+        next_id += 1
+        queue[:0] = [head, tail]
+    tracks.sort(key=lambda t: (t.start, t.id))
+
+    numbers: dict[int, int] = {}
+    for t in tracks:
+        got = confirm(evidence.get(t.id, []))
         if got is not None:
             numbers[t.id] = got
 
@@ -143,53 +184,76 @@ def main() -> int:
             "start_frame": t.start,
             "end_frame": t.end,
             "frames": len(t.frames),
+            "in_play_frames": in_play[t.id],
+            "split_from": list(splits[t.id]) if t.id in splits else None,
             "number": numbers.get(t.id),
             "readings": [
-                {"number": r.number, "confidence": r.confidence}
-                for r in evidence.get(t.id, [])
+                {"number": r.number, "confidence": r.confidence, "frame": r.frame}
+                for r in sorted(evidence.get(t.id, []), key=lambda r: r.frame)
             ],
         } for t in tracks],
     }, indent=1))
     print(f"\nwrote {out.relative_to(REPO_ROOT)}")
 
+    review = [t for t in tracks
+              if needs_review(numbers.get(t.id), in_play[t.id], span)]
+    print(f"{len(review)} long tracks left unnamed: "
+          + ", ".join(str(t.id) for t in review))
+
     if args.sheet:
-        write_sheet(args.sheet, tracks, numbers, evidence, shortlists)
+        write_sheet(args.sheet, tracks, numbers, evidence, shortlists, review)
         print(f"wrote {args.sheet}")
     return 0
 
 
-def write_sheet(path: Path, tracks, numbers, evidence, shortlists) -> None:
-    """Each confirmed number beside the crops that confirmed it."""
+def write_sheet(path: Path, tracks, numbers, evidence, shortlists, review) -> None:
+    """Each named track beside the crops that named it, then the unnamed long ones.
+
+    Crops run left to right in frame order and each carries what the reader made
+    of it, so a track whose readings switch part-way - one player then another -
+    looks different from one the reader misreads throughout.
+    """
     cell = 96
+    caption = 16
     rows = []
     for t in tracks:
-        if t.id not in numbers:
+        if t.id not in numbers and t not in review:
             continue
-        counts = Counter(r.number for r in evidence.get(t.id, []))
-        rows.append((t, numbers[t.id], counts, shortlists.get(t.id, [])[:5]))
-    rows.sort(key=lambda r: r[1])
+        by_frame: dict[int, list[int]] = defaultdict(list)
+        for r in evidence.get(t.id, []):
+            by_frame[r.frame].append(r.number)
+        rows.append((t, numbers.get(t.id), by_frame,
+                     in_time_order(shortlists.get(t.id, []))))
+    # Named tracks first, by number; the questions after, longest first.
+    rows.sort(key=lambda r: (r[1] is None, r[1] or 0, -len(r[0].frames)))
     if not rows:
         return
-    width = max(sum(int(c.shape[1] * cell / c.shape[0]) + 6 for c in r[3])
+    width = max(sum(int(c.image.shape[1] * cell / c.height) + 6 for c in r[3])
                 for r in rows) + 210
-    sheet = np.full(((cell + 14) * len(rows) + 10, max(width, 400), 3), 250, np.uint8)
+    row_h = cell + caption + 14
+    sheet = np.full((row_h * len(rows) + 10, max(width, 400), 3), 250, np.uint8)
     y = 6
-    for t, number, counts, shortlist in rows:
-        cv2.putText(sheet, f"#{number}", (8, y + 34), cv2.FONT_HERSHEY_SIMPLEX,
+    for t, number, by_frame, shortlist in rows:
+        label = f"#{number}" if number is not None else "?"
+        cv2.putText(sheet, label, (8, y + 34), cv2.FONT_HERSHEY_SIMPLEX,
                     0.9, (20, 20, 20), 2)
-        cv2.putText(sheet, f"track {t.id}", (8, y + 56), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.38, (90, 90, 90), 1)
+        cv2.putText(sheet, f"track {t.id}  {t.start}-{t.end}", (8, y + 56),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (90, 90, 90), 1)
+        counts = Counter(n for ns in by_frame.values() for n in ns)
         cv2.putText(sheet, dict(counts).__repr__()[:22], (8, y + 74),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.34, (90, 90, 90), 1)
         x = 120
         for crop in shortlist:
-            up = cv2.resize(crop, (int(crop.shape[1] * cell / crop.shape[0]), cell),
+            up = cv2.resize(crop.image, (int(crop.image.shape[1] * cell / crop.height), cell),
                             interpolation=cv2.INTER_AREA)
             if x + up.shape[1] >= sheet.shape[1]:
                 break
             sheet[y:y + cell, x:x + up.shape[1]] = up
+            seen = ",".join(str(n) for n in by_frame.get(crop.frame, [])) or "-"
+            cv2.putText(sheet, f"f{crop.frame} {seen}", (x, y + cell + 12),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.32, (60, 60, 60), 1)
             x += up.shape[1] + 6
-        y += cell + 14
+        y += row_h
     cv2.imwrite(str(path), sheet)
 
 

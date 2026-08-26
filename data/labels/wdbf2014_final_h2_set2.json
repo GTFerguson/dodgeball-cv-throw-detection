@@ -1,0 +1,31 @@
+{
+  "schema_version": 3,
+  "video": "wdbf2014_final_h2_set2.mp4",
+  "fps": 25,
+  "width": 1920,
+  "height": 1080,
+  "annotator": "default",
+  "created": "2026-08-25T19:53:20.550Z",
+  "updated": "2026-08-25T19:53:26.699Z",
+  "events": [],
+  "live_play": [
+    {
+      "id": "vss83h4q",
+      "start_frame": 433,
+      "end_frame": null,
+      "start_source": "model",
+      "detected_start_frame": 433
+    }
+  ],
+  "set_reviews": [
+    {
+      "id": "buz8je00",
+      "armed_start_frame": 135,
+      "armed_end_frame": 490,
+      "detected_frame": 433,
+      "verdict": "accepted",
+      "interval_id": "vss83h4q",
+      "reviewed": "2026-08-25T19:53:25.885Z"
+    }
+  ]
+}

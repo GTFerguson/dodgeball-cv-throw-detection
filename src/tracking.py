@@ -69,6 +69,29 @@ class Track:
         except ValueError:
             return None
 
+    def split(self, frame: int, new_id: int) -> tuple["Track", "Track"]:
+        """This track up to `frame` (exclusive), and from it on under a new id."""
+        i = next((k for k, f in enumerate(self.frames) if f >= frame), len(self.frames))
+        head = Track(id=self.id, frames=self.frames[:i], points=self.points[:i],
+                     detections=self.detections[:i])
+        tail = Track(id=new_id, frames=self.frames[i:], points=self.points[i:],
+                     detections=self.detections[i:])
+        return head, tail
+
+
+def cut_frame(track: Track, after: int, before: int) -> int:
+    """Where to split a track known to change player somewhere in (after, before].
+
+    The change happened while the player was hidden, so the widest gap in the
+    track's detections inside the window is the best estimate of when; a track
+    with no gap there is cut at the first frame the new player was read.
+    """
+    best_gap, best_frame = 1, before
+    for a, b in zip(track.frames, track.frames[1:]):
+        if a >= after and b <= before and b - a > best_gap:
+            best_gap, best_frame = b - a, b
+    return best_frame
+
 
 class _Detections:
     """The results-shaped view ByteTrack expects, over plain pose-run boxes."""
