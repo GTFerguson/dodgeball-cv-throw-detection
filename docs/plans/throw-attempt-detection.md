@@ -1,8 +1,8 @@
 ---
 title: Dodgeball Throw-Attempt Detection — Plan
 created: 2026-08-25
-updated: 2026-08-26
-status: every level of the cascade shipped; evaluation, stress and write-up next
+updated: 2026-08-27
+status: cascade, ablation and error budget shipped; stress runs and write-up in progress
 tags: [plan, dodgeball, event-detection, temporal]
 ---
 
@@ -91,8 +91,9 @@ confirms it. Shipped and graduated to [[set-start]]; on the evaluation clip the
 set starts at frame 433 (17.32 s, 6:17.3 of the half) and the clip's second ball
 layout is correctly reported as having no whistle before the clip ends.
 
-Set **end** (the last elimination) is deferred until the outcome resolver exists;
-until then a live-play interval runs from one detected start to the next.
+Set **end** shipped and graduated to [[set-end]]: the floor reads it (one side
+down to one, then the court fills) at frame 4660 on the clip, the truth's own
+end, and the hit is traced back to the last throw at that side in the window.
 
 ### Why this is hard
 
@@ -216,7 +217,9 @@ flowchart LR
     E --> M[Throw efficiency]
 ```
 
-## Signal strategy (to expand in the design doc)
+## Signal strategy
+
+Expanded, with the measured negatives that reshaped it, in [design.pdf](../design.pdf) §3.
 
 | Signal | Gives | Fails when | Role |
 |---|---|---|---|
@@ -303,15 +306,16 @@ label-uncertainty case, not a model failure.
 | Kind | pass vs throw accuracy on released candidates; fakes reported separately | on matched events |
 | Outcome | accuracy + confusion matrix over 5 classes | on matched throws |
 | Metric | abs error in throw efficiency vs ground truth, per team | — |
-| Stress | F1 under 3 conditions: 480p downscale, heavy CRF compression, 50% frame drop (and/or blur) | same tolerance |
-| Ablation | pose-only wind-up detector vs pose + release gate (fake rejection) vs + destination test (pass rejection) | same tolerance |
+| Stress | F1 under 3 conditions: 480p downscale, heavy CRF compression, 50% frame drop (and/or blur) | same tolerance — `scripts/stress.py`, [[evaluation#Stress conditions]] |
+| Ablation | pose-only wind-up detector vs pose + release gate (fake rejection) vs + destination test (pass rejection) | same tolerance — `scripts/ablate.py`, [[evaluation#Ablation]] |
+| Error budget | efficiency error by source; model (paired bootstrap) against labels (uncertain flags) and sampling | `scripts/error_budget.py`, [[evaluation#Error budget]] |
 
 ## Time budget (target 10 h)
 
 | Phase | Hours | Output |
 |---|---|---|
 | Footage sourcing + feasibility check (pose at broadcast scale) | 1.0 | chosen match, 30 s pose sanity clip |
-| Design doc + diagram | 2.0 | `docs/design.md` |
+| Design doc + diagram | 2.0 | `docs/design.tex` → `docs/design.pdf` |
 | Labelling (≥3 min, double-label subset) | 1.5 | `data/labels/` + guide |
 | Pipeline build | 3.0 | runnable `run.py` producing timeline + metric |
 | Evaluation, stress, ablation, error analysis | 1.5 | `output/` reports, tables |
@@ -564,3 +568,39 @@ label-uncertainty case, not a model failure.
   (`eliminated: false`, WDBF 19.1) - and confirmed the sequence 2681/2701/2725 as two outs and
   two returns. The plan's original occupancy-first design stands for outcome, for a reason it
   did not have: the contact is unobservable, not merely noisy.
+- 2026-08-27 — evaluation extras shipped and graduated to [[evaluation]]: detection by
+  kind (throw F1 75% after the roster regen — kind accuracy on matched events hid the
+  throws claimed on nothing), the ablation (throw F1 43% pose-only → 69% with the release
+  gate → 75% with the destination test; the gate costs 18 points of throw recall for 33
+  of precision), and
+  the error budget (near 33% v 27% truth is right for the wrong reasons — five spurious
+  throws and three invented hits cancel; the clip's own sampling interval, 11–52% on
+  fifteen throws, is wider than the model's error band). Stress conditions built as
+  derived stems with pixel-reading stages rerun and court, set starts and labels carried
+  over; runs in progress. `scripts/test_release.py` no longer pins the proposal count.
+  README written as the submission's write-up.
+- 2026-08-27 — stress run on three conditions (480p, CRF 40, half rate) and read: 480p
+  breaks the ball at the wrists and fragments identity; CRF 40 breaks pose itself; half
+  rate loses the wind-up detector. Every window rewritten as a duration and the wrist
+  speed as per-second (`src/timing.py`; identical at 25 fps, pinned by test) — which did
+  not recover the half-rate loss: the whip is under-sampled, and `MIN_SCORE` is a
+  property of the rate. Both rows kept. Graduated to [[pipeline]] and [[evaluation]].
+- 2026-08-27 — productionised: `scripts/run.py` front door, `config/venue.toml` for the
+  ball, court and kit assumptions (ball and court wired; roster's kit vocabulary and
+  players-a-side declared, not yet wired). Set-up split (`scripts/tactics.py`): solo v
+  coordinated v fake-led efficiency per set and team; pilot on the labelled set is bins
+  of two and four; the whole second half is running through the pipeline unlabelled to
+  see whether the pattern holds over three sets. Graduated to [[pipeline]].
+- 2026-08-27 — clean-up: one clip hash (`src/hashing`), one prediction loader, the stress
+  runner drives `run.py`'s stages, no script defaults to the evaluation clip, the roster's
+  kit vocabulary comes from the venue file, `pyproject.toml` + `Makefile`. Left until the
+  identity work commits: a single import style across `src/` (the bare-import `setstart`
+  is why every script carries a `sys.path` prologue) and the tracking layer's frame-count
+  holds.
+- 2026-08-27 — the whole second half through `run.py`: 8 set starts, 7 set ends by floor,
+  773 proposals → 240 throws, 12 min after pose. The labelled set scored from the half
+  matches the clip run (near 28% v 27% truth). Across the half USA 40% v Canada 18%, far
+  ahead in every set. Coordination scored per attack (Gary: "a combined effort, the stat
+  doesn't make sense otherwise"): coordinated attacks convert at the solo rate on the
+  half (40% v 42% far, 18% v 21% near, on 5 and 11 attacks). Fake-led: no signal. Identity pass OOM'd at 27 GB and
+  now keeps only the shortlist's crops (`CropKeeper`). Graduated to [[pipeline]].
