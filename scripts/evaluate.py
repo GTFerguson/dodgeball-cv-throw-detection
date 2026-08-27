@@ -29,13 +29,6 @@ from src.release import TIMELINE_ROOT  # noqa: E402
 from src.roster import Roster  # noqa: E402
 
 
-def load_predictions(path: Path) -> list[Prediction]:
-    data = json.loads(path.read_text())
-    return [Prediction(frame=int(e["frame"]), box=tuple(e["box"]), team=e.get("team"),
-                       released=e.get("released"), kind=e.get("kind"),
-                       outcome=e.get("outcome")) for e in data["events"]]
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("video", help="clip stem")
@@ -58,7 +51,7 @@ def main() -> int:
         source = "candidates"
     else:
         path = args.predictions or TIMELINE_ROOT / f"{stem}.json"
-        predictions = load_predictions(path)
+        predictions = Prediction.load_timeline(path)
         source = str(path.relative_to(REPO_ROOT) if path.is_absolute() and path.is_relative_to(REPO_ROOT) else path)
     report = evaluate(truth, predictions, args.tolerance, args.min_iou)
     print(f"{stem}: {len(predictions)} predictions ({source}) against "

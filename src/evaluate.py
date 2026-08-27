@@ -119,6 +119,14 @@ class Prediction:
     def from_candidate(cls, c) -> "Prediction":
         return cls(frame=c.frame, box=tuple(c.box), team=c.team)
 
+    @classmethod
+    def load_timeline(cls, path: str | Path) -> list["Prediction"]:
+        """Every event a timeline file claims, as the harness scores it."""
+        data = json.loads(Path(path).read_text())
+        return [cls(frame=int(e["frame"]), box=tuple(e["box"]), team=e.get("team"),
+                    released=e.get("released"), kind=e.get("kind"), outcome=e.get("outcome"))
+                for e in data["events"]]
+
 
 @dataclass
 class TruthSet:
@@ -270,6 +278,23 @@ def confusion(pairs: list[tuple[str, str]], labels: tuple[str, ...]) -> dict:
     return {"n": n, "accuracy": right / n if n else 0.0, "table": table}
 
 
+def detection_by_kind(truth: list[TruthEvent], predictions: list[Prediction],
+                      m: Matching) -> dict[str, dict]:
+    """P/R/F1 of each kind as a detector of that kind.
+
+    A prediction is a positive for its claimed kind; it is a true positive
+    only where it matched a truth event of the same kind. A throw claimed on
+    a fake is a false positive for throws and a false negative for fakes.
+    """
+    out = {}
+    for kind in KINDS:
+        tp = sum(1 for mm in m.matches if mm.truth.kind == kind and mm.prediction.kind == kind)
+        claimed = sum(1 for p in predictions if p.kind == kind)
+        actual = sum(1 for t in truth if t.kind == kind)
+        out[kind] = prf(tp, claimed - tp, actual - tp)
+    return out
+
+
 def efficiency(events: list[TruthEvent | Prediction]) -> dict[str, dict]:
     """Team throw efficiency: eliminations over throws, per team.
 
@@ -297,6 +322,10 @@ class Report:
     release: dict | None
     kind: dict | None
     outcome: dict | None
+    # Per kind, the prediction of that kind as the positive class: what the
+    # cascade is for is finding throws, and kind accuracy on matched events
+    # hides the throws claimed on a fake or a proposal that matched nothing.
+    detection: dict | None
     efficiency: dict
     matching: Matching = field(repr=False)
 
@@ -345,13 +374,14 @@ def evaluate(truth: TruthSet, predictions: list[Prediction],
                  if mm.truth.kind == "throw" and mm.truth.outcome in OUTCOMES
                  and mm.prediction.outcome is not None]
     outcome = confusion(out_pairs, OUTCOMES) if out_pairs else None
+    detection = detection_by_kind(truth.events, predictions, m) if kind_pairs else None
 
     eff = {"truth": efficiency(truth.events)}
     if any(p.outcome is not None for p in predictions):
         eff["predicted"] = efficiency([p for p in predictions if truth.in_play(p.frame)])
 
     return Report(candidate=candidate, boundary=boundary, team=team, release=release,
-                  kind=kind, outcome=outcome, efficiency=eff, matching=m)
+                  kind=kind, outcome=outcome, detection=detection, efficiency=eff, matching=m)
 
 
 def _pct(x: float) -> str:
@@ -388,6 +418,10 @@ def format_report(r: Report) -> str:
             lines.extend(_confusion_lines(name, conf, labels))
         else:
             lines.append(f"{name}: not claimed")
+    if r.detection:
+        lines.append("detection by kind: " + "; ".join(
+            f"{k} P {_pct(d['precision'])} R {_pct(d['recall'])} F1 {_pct(d['f1'])}"
+            for k, d in r.detection.items()))
     for who, rows in r.efficiency.items():
         lines.append(f"efficiency ({who}): " + ", ".join(
             f"{team} {row['eliminations']}/{row['throws']} = {_pct(row['efficiency'])}"
@@ -402,8 +436,8 @@ def report_json(r: Report) -> dict:
     return {
         "candidate": r.candidate, "boundary": r.boundary, "team": r.team,
         "release": r.release, "kind": r.kind, "outcome": r.outcome,
-        "efficiency": r.efficiency,
+        "detection": r.detection, "efficiency": r.efficiency,
         "missed": [{"kind": t.kind, "release_frame": t.release_frame,
                     "ball_in_hand": t.ball_in_hand} for t in r.matching.missed],
-        "spurious": [{"frame": p.frame} for p in r.matching.spurious],
+        "spurious": [{"frame": p.frame, "kind": p.kind} for p in r.matching.spurious],
     }

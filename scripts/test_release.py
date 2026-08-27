@@ -18,7 +18,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from src.ball import Blob, Trace, WristFrame  # noqa: E402
-from src.candidates import Candidate  # noqa: E402
+from src.candidates import Candidate, CandidateSet  # noqa: E402
 from src.release import (BALL_BEFORE_MIN, DEPART_MIN_NORM, PASS_MIN_ANGLE_DEG, RUSH_S,  # noqa: E402
                          TIMELINE_ROOT, WINDUP_MIN_HEIGHT, ball_before, decide, departure,
                          wound_up_with_ball)
@@ -34,16 +34,19 @@ def candidate(frame: int = 1000) -> Candidate:
 
 
 def trace(ball_path: dict[int, tuple[float, float] | None] | None = None,
-          held: float = 0.001, frame: int = 1000, height=None) -> Trace:
+          held: float = 0.001, frame: int = 1000, height=None,
+          faint: set[int] = frozenset()) -> Trace:
     """A trace where the right wrist holds `held` orange before the peak and
     the ball, if a path is given, sits at those positions by offset. The
     right wrist's height along the torso is `height` - a number for every
     frame, or a dict by offset - and defaults to a wind-up past the shoulder."""
     t = Trace(candidate(frame), SCALE)
     for offset in range(-12, 17):
-        blobs = ()
+        blobs, dim = (), ()
         pos = (ball_path or {}).get(offset)
-        if pos is not None:
+        if pos is not None and offset in faint:
+            dim = (Blob(pos[0], pos[1], 0.03, 200, faint=True),)
+        elif pos is not None:
             blobs = (Blob(pos[0], pos[1], 0.03, 200),)
         disc = held if offset < 0 else 0.0
         if isinstance(height, dict):
@@ -52,7 +55,7 @@ def trace(ball_path: dict[int, tuple[float, float] | None] | None = None,
             h = height if height is not None else (0.4 if -8 <= offset <= -3 else -0.5)
         t.frames[offset] = {
             "L": WristFrame((800.0, 500.0), True, 0.0, (), -0.8),
-            "R": WristFrame(WRIST, True, disc, blobs, h),
+            "R": WristFrame(WRIST, True, disc, blobs, h, dim),
         }
     return t
 
@@ -97,6 +100,36 @@ class Departure(unittest.TestCase):
         self.assertTrue(d.released, d)
         d = departure(trace(flight(start=0, step=0.1 * SCALE, missing=1)))
         self.assertGreaterEqual(d.links, 2)
+
+    def test_a_streak_the_strict_mask_loses_carries_the_chain(self):
+        # The final throw on the evaluation clip: the ball is in the hand at
+        # frame 4650, a blurred streak the strict mask cannot see on 4651 and
+        # 4652, and a ball again from 4653. Two unseen frames broke the chain;
+        # the faint mask sees the streak and the chain runs through it.
+        path = flight(start=0, step=0.1 * SCALE)
+        self.assertFalse(departure(trace({**path, 1: None, 2: None})).released)
+        d = departure(trace(path, faint={1, 2}))
+        self.assertTrue(d.released, d)
+        self.assertGreaterEqual(d.links, 3)
+
+    def test_a_faint_blob_does_not_stop_the_chain_bridging_to_the_ball(self):
+        # The ball is unseen for a frame, and a dull patch off the flight line
+        # is faintly visible on that frame. The chain must still bridge the
+        # frame to the ball rather than stop at the patch.
+        t = trace(flight(start=0, step=0.1 * SCALE, missing=1))
+        r = t.frames[1]["R"]
+        decoy = Blob(WRIST[0], WRIST[1] + 0.1 * SCALE, 0.03, 200, faint=True)
+        t.frames[1]["R"] = WristFrame(r.wrist, True, r.disc, r.blobs, r.height, (decoy,))
+        d = departure(t)
+        self.assertTrue(d.released, d)
+        self.assertEqual(d.path[1][1], WRIST[1])
+
+    def test_a_faint_blob_at_the_hand_does_not_seed_a_chain(self):
+        # Only the strict mask says a ball was in the hand: dull orange there
+        # is a sleeve or the floor, and a chain from it would be a fake released.
+        path = flight(start=0, step=0.1 * SCALE)
+        held = {o for o in path if o <= 0}
+        self.assertFalse(departure(trace(path, faint=held)).released)
 
     def test_two_missing_frames_break_the_chain(self):
         path = flight(start=0, step=0.1 * SCALE, missing=1)
@@ -274,7 +307,8 @@ class OnTheClip(unittest.TestCase):
         self.data = json.loads((TIMELINE_ROOT / f"{CLIP}.json").read_text())
 
     def test_every_proposal_is_accounted_for(self):
-        self.assertEqual(len(self.data["events"]) + len(self.data["dropped"]), 105)
+        proposals = len(CandidateSet.for_video(CLIP).candidates)
+        self.assertEqual(len(self.data["events"]) + len(self.data["dropped"]), proposals)
 
     def test_nothing_is_kept_inside_the_rush(self):
         first = min(e["frame"] for e in self.data["events"])

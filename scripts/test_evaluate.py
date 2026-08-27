@@ -104,6 +104,15 @@ class Levels(unittest.TestCase):
         self.assertEqual(r.outcome["n"], 1)
         self.assertEqual(r.outcome["accuracy"], 1.0)
 
+    def test_a_throw_claimed_on_a_fake_is_a_false_throw_and_a_missed_fake(self):
+        r = evaluate(self.truth, [pred(100, kind="throw"), pred(200, kind="throw"),
+                                  pred(300, kind="pass"), pred(500, kind="throw")])
+        throw = r.detection["throw"]
+        self.assertEqual((throw["tp"], throw["fp"], throw["fn"]), (1, 2, 1))
+        self.assertEqual(r.detection["fake"], {"tp": 0, "fp": 0, "fn": 1, "precision": 0.0,
+                                               "recall": 0.0, "f1": 0.0})
+        self.assertEqual(r.detection["pass"]["f1"], 1.0)
+
     def test_spurious_predictions_after_the_last_hit_are_reported_apart(self):
         # No labelled end: the set ends at the last hit's outcome, 210.
         self.assertEqual(self.truth.set_intervals(), [(0, 210)])
