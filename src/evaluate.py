@@ -46,7 +46,9 @@ KINDS = ("fake", "pass", "throw")
 OUTCOMES = ("hit", "catch", "block", "miss")
 # A throw that eliminates someone. A catch eliminates the thrower; it is still
 # an elimination the throw caused, but the metric counts what the throw won
-# for its team, and a catch loses a player.
+# for its team, and a catch loses a player. A hit on a player already out
+# (WDBF 19.1: only a live player can be put out) carries `eliminated: false`
+# and wins nothing.
 ELIMINATING = ("hit",)
 
 Box = tuple[float, float, float, float]
@@ -81,6 +83,13 @@ class TruthEvent:
     proposed_frame: int | None
     # On a fake: whether a ball was in the hand. None where the label does not say.
     ball_in_hand: bool | None = None
+    # On a hit: False where the player struck was already out, so nobody was
+    # eliminated. None where the label does not say, which counts as an out.
+    eliminated: bool | None = None
+
+    @property
+    def wins_elimination(self) -> bool:
+        return self.outcome in ELIMINATING and self.eliminated is not False
     # The thrower's box on each frame near the release, from the roster track
     # that holds the labelled box; empty until `TruthSet.anchored` fills it.
     track_boxes: dict[int, Box] = field(default_factory=dict, compare=False)
@@ -134,7 +143,7 @@ class TruthSet:
                 box_frame=int(e["thrower"]["frame"]), team=e.get("team"),
                 outcome=e.get("outcome"), uncertain=bool(e.get("uncertain")),
                 source=e.get("source", "manual"), proposed_frame=e.get("proposed_frame"),
-                ball_in_hand=e.get("ball_in_hand")))
+                ball_in_hand=e.get("ball_in_hand"), eliminated=e.get("eliminated")))
         events.sort(key=lambda t: t.release_frame)
         live = [(int(iv["start_frame"]), iv.get("end_frame")) for iv in data.get("live_play", [])]
         return cls(video=data["video"], fps=float(data["fps"]), events=events, live_play=live)
@@ -154,7 +163,7 @@ class TruthSet:
         for start, end in self.live_play:
             if end is None:
                 hits = [t.end_frame or t.release_frame for t in self.events
-                        if t.outcome == "hit" and t.release_frame >= start]
+                        if t.wins_elimination and t.release_frame >= start]
                 end = max(hits) if hits else None
             out.append((start, end))
         return out
@@ -193,7 +202,7 @@ class TruthSet:
                 id=t.id, kind=t.kind, release_frame=t.release_frame, end_frame=t.end_frame,
                 box=t.box, box_frame=t.box_frame, team=t.team, outcome=t.outcome,
                 uncertain=t.uncertain, source=t.source, proposed_frame=t.proposed_frame,
-                ball_in_hand=t.ball_in_hand, track_boxes=boxes))
+                ball_in_hand=t.ball_in_hand, eliminated=t.eliminated, track_boxes=boxes))
         return TruthSet(video=self.video, fps=self.fps, events=events, live_play=self.live_play)
 
 
@@ -273,7 +282,8 @@ def efficiency(events: list[TruthEvent | Prediction]) -> dict[str, dict]:
             continue
         row = out.setdefault(e.team, {"throws": 0, "eliminations": 0})
         row["throws"] += 1
-        row["eliminations"] += int(e.outcome in ELIMINATING)
+        won = e.wins_elimination if isinstance(e, TruthEvent) else e.outcome in ELIMINATING
+        row["eliminations"] += int(won)
     for row in out.values():
         row["efficiency"] = row["eliminations"] / row["throws"] if row["throws"] else 0.0
     return out

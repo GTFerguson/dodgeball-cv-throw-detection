@@ -22,11 +22,11 @@ CLIP = "wdbf2014_final_h2_set2"
 
 
 def truth(frame: int, kind: str = "throw", box=(100.0, 100.0, 200.0, 300.0), team="near",
-          outcome=None, end=None, boxes=None, ball_in_hand=None) -> TruthEvent:
+          outcome=None, end=None, boxes=None, ball_in_hand=None, eliminated=None) -> TruthEvent:
     return TruthEvent(id=f"t{frame}", kind=kind, release_frame=frame, end_frame=end, box=box,
                       box_frame=frame, team=team, outcome=outcome, uncertain=False,
                       source="manual", proposed_frame=None, ball_in_hand=ball_in_hand,
-                      track_boxes=boxes or {})
+                      eliminated=eliminated, track_boxes=boxes or {})
 
 
 def pred(frame: int, box=(100.0, 100.0, 200.0, 300.0), **claims) -> Prediction:
@@ -118,6 +118,12 @@ class Levels(unittest.TestCase):
         self.assertEqual((r.candidate["no_ball_fakes"], r.candidate["no_ball_fakes_found"]), (1, 0))
         r = evaluate(t, [pred(100), pred(200)])
         self.assertEqual(r.candidate["no_ball_fakes_found"], 1)
+
+    def test_a_hit_on_a_player_already_out_wins_nothing(self):
+        events = [truth(200, outcome="hit", end=210), truth(300, outcome="hit", end=310, eliminated=False)]
+        self.assertEqual(efficiency(events)["near"], {"throws": 2, "eliminations": 1, "efficiency": 0.5})
+        t = TruthSet(video="x", fps=25.0, live_play=[(0, None)], events=events)
+        self.assertEqual(t.set_intervals(), [(0, 210)])
 
     def test_efficiency_counts_hits_over_throws_per_team(self):
         eff = efficiency(self.truth.events)

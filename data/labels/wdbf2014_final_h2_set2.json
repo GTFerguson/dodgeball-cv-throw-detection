@@ -6,7 +6,7 @@
  "height": 1080,
  "annotator": "default",
  "created": "2026-08-25T19:53:20.550Z",
- "updated": "2026-08-27T09:30:00.000Z",
+ "updated": "2026-08-27T09:40:00.000Z",
  "events": [
   {
    "id": "xgxcrlkv",
@@ -1636,7 +1636,8 @@
    "outcome_visible": true,
    "ref_signal": null,
    "uncertain": false,
-   "note": ""
+   "note": " eliminated=false 2026-08-27: far-2 was already out from his throw being caught at 2681 (end 2700) and was still walking off; WDBF 19.1 puts out live players only, and the on-court count shows two far outs across 2681/2701/2725, not three.",
+   "eliminated": false
   },
   {
    "id": "4ovau51f",

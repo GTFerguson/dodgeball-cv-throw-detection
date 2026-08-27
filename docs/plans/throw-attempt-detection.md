@@ -134,6 +134,7 @@ than a fourth class, so it can be reported separately instead of defaulting into
 | Field | Rule |
 |---|---|
 | `kind` | `fake` (no release), `pass` (released, ball stays on the thrower's own side), `throw` (released, ball crosses to the opposing side) |
+| `eliminated` | on a `hit`: `false` where the player struck was already out — only a live player can be put out (WDBF 19.1) — so the hit counts as a ball event and not as an elimination. One on the evaluation clip (2701), found by folding the labels against the on-court count |
 | `ball_in_hand` | on a `fake`: whether there was a ball to release. A fake with no ball is an event at the candidate level and is reported apart, since a stage that looks for the ball has nothing to find. Two on the evaluation clip |
 | `start` | First frame of the wind-up: throwing arm moves behind the shoulder line with a ball in hand |
 | `release` | First frame the ball is no longer in contact with the hand |
