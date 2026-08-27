@@ -604,3 +604,14 @@ label-uncertainty case, not a model failure.
   doesn't make sense otherwise"): coordinated attacks convert at the solo rate on the
   half (40% v 42% far, 18% v 21% near, on 5 and 11 attacks). Fake-led: no signal. Identity pass OOM'd at 27 GB and
   now keeps only the shortlist's crops (`CropKeeper`). Graduated to [[pipeline]].
+- 2026-08-27 — the outcome push. Two fixes carried over from the previous session stood
+  on stale premises: the set-ending double is paired by player and the pipeline put the
+  hit on the wrong thrower's ball (an assignment matcher pairs the clip identically —
+  reverted), and the second near return at 2953 is a +1 step on the current roster, not
+  +2 (a rise of +k now explains k catches, `test_a_two_player_return_explains_two_catches`;
+  correct, and moves nothing). Outcome stays 13 of 22. Gary's challenge — a hit changes
+  the ball's trajectory, a miss does not — held on the strips: the rebound sits beside
+  the struck player for 5+ frames and the mask sees it; the chain dies at the box and the
+  ball is against the body for 1–3 frames first. Three quick extractions (line
+  continuation, box lingering, greedy post-contact chain with gaps) did not separate.
+  [[outcome]] and the README corrected; the rebound witness is the next experiment.

@@ -26,14 +26,23 @@ Upstream: [[roster]] for who is in play, [[set-start]] for live play,
 The ball was tried first, and the plan had it the other way round: ball
 for release, game state for outcome, on the argument that a noisy release
 stream could be matched to a robust state-change stream. Measured on the
-clip, the argument holds for a reason the plan did not have yet: **the
-contact frame is not observable.** At 25 fps and twenty pixels, the frame
-where the ball meets a player is the frame the chain loses it, so a dodge
-and a hit both end inside the box; letting the chain through the box only
-lets it grab the next orange thing (misses then kink at 130–146°, hits at
-4–137°). No feature of the ball at the contact separates hit from miss.
-The ball's contact still names the player it reached, and
-[[destination]] uses it; it cannot say what happened next.
+clip the argument holds, but for a narrower reason than the first version
+of this doc gave: **the chain does not reach the contact.** At 25 fps and
+twenty pixels the frame where the ball meets a player is the frame the
+chain loses it, and for the next one to three frames the ball is against
+the body, so a dodge and a hit both end the chain inside the box; letting
+it run through the box only lets it grab the next orange thing (misses
+then kink at 130–146°, hits at 4–137°). The ball's contact still names the
+player it reached, and [[destination]] uses it; the chain cannot say what
+happened next.
+
+The rebound, though, is observable. On every visible hit on the clip the
+ball is beside the player it struck for five frames or more at a fraction
+of its incoming speed, and the colour mask sees it; after a miss nothing is
+left near the player (`docs/figures/rebound-hits-v-misses.jpg`). Reading it
+is a linking problem — occlusion at the body, held balls beside the target,
+two balls at one player — that three quick attempts did not solve; it is
+the next experiment in the README. Until then the game is the witness.
 
 Two other witnesses were measured and set aside. The **whistle** band
 (2.5–4.5 kHz) fires 56 times in three minutes at a floor low enough to
@@ -103,10 +112,15 @@ The errors are three families, none a threshold:
   1067 — and it breaks the other such pair (4018's ball passes through the
   box of the player 4030 then hits). Latest-throw is kept and the case
   reported.
-- **Identity.** The truth throw at 2725 sits on a second, empty detection
-  of its thrower, so the real thrower's proposal is unmatched — and it is
-  that proposal the catch resolves to; the far-side drop at 2898 then falls
-  to a held-ball false positive at 2749. Both are the identity layer's.
+- **A return the roster never saw.** The truth throw at 2725 sits on a
+  second, empty detection of its thrower, so the real thrower's proposal is
+  unmatched — and it is that proposal the catch resolves to. Two far
+  catches (2681, 2725) put two far players off and the count shows both
+  departures (2813, 2898), but only one near player walking back on (2953,
+  +1); the second departure has no return to pair with and falls to a
+  held-ball false positive at 2749 as a hit. Both are the identity layer's.
+  A rise of +k does explain k catches (`resolve` counts uses per rise),
+  which matters once the roster sees both players return.
 - **Blocks are misses.** Three of them. State cannot see a block, exactly
   as the plan said, and the metric does not need it.
 

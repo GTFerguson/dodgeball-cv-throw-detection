@@ -105,6 +105,16 @@ class Resolve(unittest.TestCase):
         self.assertEqual(out[1].outcome, "hit")
         self.assertEqual(len(orphans), 1)
 
+    def test_a_two_player_return_explains_two_catches(self):
+        # Far catches twice; the two thrown-out near players leave in one
+        # step and the two returning far players walk on in one step. One
+        # rise, two catches - not one catch and a hit invented for the second.
+        throws = [Thrown(1, 1000, "far"), Thrown(2, 1030, "far")]
+        out, orphans = resolve(throws, [Step(1060, "far", 6, 5), Step(1080, "far", 5, 4),
+                                        Step(1120, "near", 4, 6)])
+        self.assertEqual((out[1].outcome, out[2].outcome), ("catch", "catch"))
+        self.assertEqual(orphans, [])
+
     def test_a_two_player_drop_claims_two_throws(self):
         throws = [Thrown(1, 1000, "near"), Thrown(2, 1010, "near")]
         out, _ = resolve(throws, [Step(1100, "far", 6, 4)])

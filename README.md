@@ -86,12 +86,13 @@ shaped the result:
   Contact with a player decides where the chain reaches one; otherwise the
   first three links' direction against the centre line.
   → [destination.md](docs/architecture/destination.md)
-- **Outcome from the game, not the ball.** The frame of contact is
-  unobservable at 25 fps and 20 px of ball (a dodge and a hit both end the
-  chain in the target's box), and the whistle sounds for fakes too. What is
-  observable is that someone leaves: a persistent step in a side's on-court
-  count is a hit (or a catch, if the other side gains one), attributed to
-  the last throw at that side.
+- **Outcome from the game, not the ball.** The chain dies at the target's
+  box — the contact and the frames after it are against the body — so a
+  dodge and a hit look the same to the chain, and the whistle sounds for
+  fakes too. What is observable is that someone leaves: a persistent step
+  in a side's on-court count is a hit (or a catch, if the other side gains
+  one), attributed to the last throw at that side. The rebound *is* visible
+  a few frames later; reading it is the next experiment.
   → [outcome.md](docs/architecture/outcome.md)
 - **Identity is a roster, not a track id.** ByteTrack fragments are joined
   by jersey number and side; role comes from being in play during the set's
@@ -155,22 +156,23 @@ errors — a hard throw that reached a teammate's box first (throw → pass) and
 pass that left the hand too slowly for the chain (pass → fake) — complete the
 8 of 56.
 
-**Outcome (13 of 22 right).** The nine wrong come in four shapes, all in the
-attribution rather than the detection — every count step on the clip is
-explained by some throw. *Recency:* two near throws ten frames apart (1067,
-1077) and one departure; the later throw takes the hit, so one is missed and
-one invented. *Merged returns:* two far catches (2681, 2725) put two far
-players off and brought two near players back as one step; the fold read the
-first departure as a catch and gave it to the latest far throw — 2727, the
-identity artefact's proposal, right in substance and spurious in the score —
-and the second as a hit on a spurious near proposal at 2749. *Not claimed:*
-the three blocks are all called miss (`block` is not claimed — a blocked ball
-stays live and moves no count), and 2701, a hit on a player already out, is
-called miss: the right answer for the metric and the wrong outcome label.
-*The set-ending double:* two near throws a frame apart (4650 miss, 4651 hit);
-the set-end tracer puts the hit on the later ball, which is what the truth
-says, but the matcher pairs the two predictions the other way round and scores
-two errors where the pipeline had it right. Two of the nine are the harness's.
+**Outcome (13 of 22 right).** The nine wrong come in three shapes, all in
+the attribution rather than the detection — every count step on the clip is
+explained by some throw. *Recency, twice:* two near throws inside one
+departure's lag — 1067 and 1077 ten frames apart, and the set-ending double
+4650 (miss) and 4651 (hit), both balls reaching the same far player within a
+second — and each time the later throw takes the hit, so one is missed and
+one invented. Four of the nine. *A return the roster never saw:* two far
+catches (2681, 2725) put two far players off, and the count shows both
+departures (2813, 2898) but only one near player walking back on (2953);
+the second departure has no return to pair with and falls through to a hit
+on the latest near throw, a held-ball false positive at 2749 — so 2681
+scores miss and near efficiency gains a hit that never happened. *Not
+claimed:* the three blocks are all called miss (`block` is not claimed — a
+blocked ball stays live and moves no count), and 2701, a hit on a player
+already out, is called miss: the right answer for the metric and the wrong
+outcome label. The first two shapes are the count witness's blind spots,
+and the rebound experiment below is aimed at them.
 
 ### Error budget
 
@@ -337,18 +339,28 @@ bodies, not names.
 
 ## Next experiment
 
-Run the chain backwards. The departure chain is followed only far enough to
-say the ball left; run to its end it names the player it reached and the
-frame it got there, which is a second, independent witness for the outcome the
-count fold infers by recency. The three invented near hits and the two missed
-ones are all attribution-by-recency errors, and the fold already records the
-step frame each hit was inferred from — so the experiment has its result
-waiting: for each resolved hit, does a chain from any throw at that side end
-in the eliminated player's box before the step? If the chain agrees with the
-fold on the 13 it got right and disagrees on the 5 it got wrong, the ball
-becomes the tie-breaker; if it cannot reach the target at far-court scale,
-that is the answer too, and the next move is a learned ball detector rather
-than colour.
+Read the rebound. The first draft of this write-up said no feature of the
+ball at the contact separates a hit from a miss; that was measured on the
+chain, and it is wrong about the ball. Around every visible contact on the
+clip ([four hits above four misses, ±3
+frames](docs/figures/rebound-hits-v-misses.jpg)) a hit leaves the ball
+beside the player it struck for five frames or more at a fraction of its
+incoming speed — popping off a chest, drifting off a shoulder — and a miss
+leaves nothing: the ball is gone in a frame. The colour mask sees the
+rebound (a clean 26 px blob four frames after the hit at 602); the chain
+does not, because it dies at the box and the ball is against the body for
+one to three frames before it reappears. Three quick extractions failed on
+the clip — continuing the incoming line (a hit breaks it by definition),
+counting non-static blobs in the target's box (held balls on the far side,
+and the double at 4650/4651 contaminating each other) and a greedy
+post-contact chain with occlusion gaps (it jumps to neighbours) — so the
+witness needs the release linker's discipline seeded at the contact with no
+velocity prior, and the constraint the strips show: within two player
+widths of the contact, under half the incoming speed, for four frames. It
+speaks only where the chain reached a player, which is exactly where
+recency fails — two balls at one target inside the lag — and it is the
+first witness that could see a block. Six visible hits is a small sample;
+the second set is the one to test it on.
 
 **Further out.** A second venue is a config change plus a retune, not a
 rewrite: the colour window, court dimensions and kit vocabulary are in

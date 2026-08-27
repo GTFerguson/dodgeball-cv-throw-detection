@@ -153,8 +153,9 @@ the metric is a match-level quantity read off one set.
   rerun, and the carry-over would be wrong.
 - The bootstrap resamples this clip's events; it says nothing about a second
   venue, camera or kit.
-- Nearest-first pairing can cross two throws a frame apart by two players
-  whose boxes overlap: the set-ending double on the clip is scored as two
-  outcome errors where the pipeline put the hit on the right ball. A pairing
-  that maximises total agreement rather than taking the nearest first would
-  fix it; it is one event on this clip and is reported rather than fixed.
+- Pairs are gated by the thrower's box, so two throws a frame apart by two
+  players pair by player, not by frame: the set-ending double (4650 miss,
+  4651 hit) is scored as the pipeline's two errors — it put the hit on the
+  other thrower's ball — not as a crossing. A maximum-agreement assignment
+  in place of nearest-first was tried and pairs the clip identically; it
+  is not kept.

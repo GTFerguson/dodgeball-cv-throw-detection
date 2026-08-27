@@ -1,10 +1,11 @@
 """What a throw did, read from the game rather than from the ball.
 
-The ball cannot say. At 25 fps and twenty pixels across, the frame where it
-meets a player is the frame the chain loses it: a dodge and a hit both end
-the chain inside the box, and letting the chain through the box only lets it
-grab whatever orange is next. Measured on the evaluation clip, no feature of
-the ball at the contact separates a hit from a miss.
+The chain cannot say. At 25 fps and twenty pixels across, the frame where
+the ball meets a player is the frame the chain loses it: a dodge and a hit
+both end the chain inside the box, and letting the chain through the box only
+lets it grab whatever orange is next. The rebound after a hit is visible a
+few frames later, slow and beside the struck player; reading it is a linking
+problem not solved here.
 
 The game can. In dodgeball the only thing that changes the state is a throw
 resolving: a hit puts the player struck off the court, a catch puts the
@@ -28,6 +29,7 @@ proposed, and it is what found the label that counted one player out twice.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 
 from src.timing import REFERENCE_FPS, frames, window
@@ -133,7 +135,8 @@ def resolve(throws: list[Thrown], steps: list[Step],
     by_team = {t: sorted((x for x in throws if x.team == t), key=lambda x: x.frame)
                for t in TEAMS}
     rises = [s for s in steps if s.delta > 0]
-    used_rises: set[int] = set()
+    # A rise of +k is k players walking on, so it explains k catches.
+    returns_used: Counter[int] = Counter()
     taken: set[int] = set()
     out: dict[int, Resolution] = {}
     orphans: list[Step] = []
@@ -146,12 +149,13 @@ def resolve(throws: list[Thrown], steps: list[Step],
 
     for drop in (s for s in steps if s.delta < 0):
         for _ in range(-drop.delta):
-            rise = next((r for r in rises if r.team == other(drop.team) and r.frame not in used_rises
+            rise = next((r for r in rises if r.team == other(drop.team)
+                         and returns_used[r.frame] < r.delta
                          and return_lo <= r.frame - drop.frame <= return_hi), None)
             if rise is not None:
                 thrown = latest(drop.team, min(drop.frame, rise.frame))
                 if thrown is not None:
-                    used_rises.add(rise.frame)
+                    returns_used[rise.frame] += 1
                     taken.add(thrown.id)
                     out[thrown.id] = Resolution(thrown.id, "catch", drop.frame, rise.frame)
                     continue
