@@ -226,20 +226,20 @@ Tolerance stays ±0.25 s.
 | Condition | Clip | Cand. F1 | Release | Kind | Outcome | Throw F1 | Pose-only recall | Efficiency near / far (truth 27% / 14%) |
 |---|---|---|---|---|---|---|---|---|
 | source | 1080p, CRF 16, 25 fps | 88% | 88% | 86% | 82% | 75% | 98% | 29% / 8% |
-| 480p | 854×480, same CRF | 66% | 75% | 70% | 25% | 52% | 88% | 38% / 22% |
-| crf40 | 1080p, x264 CRF 40 | 51% | 79% | 79% | 50% | 50% | 72% | 18% / 8% |
-| drop2, as shipped | every second frame, 12.5 fps; windows in frames | 64% | 87% | 85% | 58% | 62% | 78% | 25% / 8% |
-| drop2, durations | same clip; windows in seconds, wrist speed per second | 58% | 92% | 85% | 47% | 61% | 55% | 22% / 9% |
+| 480p | 854×480, same CRF | 66% | 90% | 82% | 47% | 67% | 88% | 25% / 20% |
+| crf40 | 1080p, x264 CRF 40 | 51% | 76% | 76% | 67% | 55% | 72% | 38% / 14% |
+| drop2, as shipped | every second frame, 12.5 fps; windows in frames (before the rebound stage) | 64% | 87% | 85% | 58% | 62% | 78% | 25% / 8% |
+| drop2, durations | same clip; windows in seconds, wrist speed per second | 60% | 93% | 85% | 50% | 64% | 57% | 22% / 8% |
 
 Three different failure shapes, which is what the conditions were chosen for:
 
 - **Frame drop looked like a units bug and was not.** The release chain
-  barely notices half the frames (release 87%, kind 85% on matched events);
+  barely notices half the frames (release 93%, kind 85% on matched events);
   the loss is at the wind-up detector, whose windows were frame counts
   (`WINDUP_LOOKBACK = 8`, `MIN_SEPARATION = 12`) and whose wrist-speed score
   is displacement per frame. Restating every window as a duration and the
   speed as per-second — which is now how the pipeline is written, and at 25
-  fps changes nothing — did *not* recover it: recall fell from 78% to 55%.
+  fps changes nothing — did *not* recover it: recall fell from 78% to 57%.
   A throw's whip lasts under 100 ms, so at 12.5 fps the peak is under-sampled
   and no rescaling of a per-frame score reproduces the 25 fps threshold. The
   detector's sensitivity is a property of the frame rate it was tuned at; a
@@ -247,15 +247,18 @@ Three different failure shapes, which is what the conditions were chosen for:
   motion rather than thresholds a peak.
 - **480p breaks the ball and identity.** Pose still proposes 88% of the
   events, but the ball at the wrists is dropped twice as often (34 "no ball in
-  hand" v 20 — an 8 px ball is a few pixels of hue), the roster fragments (44
-  players v 22, the far team wholly unnamed), and the on-court count picks up
-  nine steps no throw explains, which takes the outcome from 59% to 25%.
+  hand" v 20 — an 8 px ball is a few pixels of hue), the roster fragments, and
+  the on-court count picks up nine steps no throw explains (none at source),
+  which takes the outcome from 82% to 47% — three misses read as catches off
+  phantom returns. The rebound holds up better than the count: the ball is
+  still followed at 8 px, and two of the three blocks are still seen.
 - **Heavy compression breaks pose itself.** Blocking artefacts fire the
-  wrist-speed detector: 137 proposals at 31% precision, and the far side has
-  eight players "in play". The gates then work on what they are given (79%
-  release, 79% kind) but the denominator inflates — near 22 throws v 15 — and
-  efficiency halves. CRF 40 is past the cliff; where the cliff is between 16
-  and 40 is not measured.
+  wrist-speed detector: 137 proposals at 31% precision, and pose finds only
+  72% of the events at all. The gates then work on what they are given (76%
+  release, 76% kind, outcome 67% on the dozen throws that survive) but the
+  denominator collapses — near 8 throws v 15, far 7 v 14 — and the efficiency
+  that comes out (38% / 14%) is a number on half the throws. CRF 40 is past
+  the cliff; where the cliff is between 16 and 40 is not measured.
 
 The identity layer is rerun in every cell, so a cell's outcome number is
 partly the roster's; a mode that carries the source roster across would
