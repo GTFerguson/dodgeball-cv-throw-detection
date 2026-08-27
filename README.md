@@ -297,9 +297,9 @@ predicted throws.
 |---|---|---|---|---|---|---|---|
 | labelled set, truth | far | 2/14 = 14% | 2/12 = 17% | 0/1 | 2/9 = 22% | 0/3 | 0/2 |
 | labelled set, truth | near | 4/15 = 27% | 3/13 = 23% | 1/1 | 2/5 = 40% | 2/8 = 25% | 0/2 |
-| same set, predicted from the half | far | 2/11 = 18% | 2/11 = 18% | — | 0/3 | 0/2 | 2/6 |
+| same set, predicted from the half | far | 2/11 = 18% | 2/11 = 18% | — | 0/3 | 1/2 | 1/6 |
 | same set, predicted from the half | near | 5/18 = 28% | 4/13 = 31% | 1/2 | 3/11 = 27% | 2/4 | 0/3 |
-| **whole half, predicted** | far | **46/114 = 40%** | 44/104 = 42% | 2/5 = 40% | 23/66 = 35% | 17/32 = 53% | 6/16 = 38% |
+| **whole half, predicted** | far | **47/114 = 41%** | 43/104 = 41% | 4/5 = 80% | 25/66 = 38% | 17/32 = 53% | 5/16 = 31% |
 | **whole half, predicted** | near | **23/126 = 18%** | 21/101 = 21% | 2/11 = 18% | 14/65 = 22% | 6/42 = 14% | 3/19 = 16% |
 
 Three readings, all with the outcome level's 82% accuracy attached:
@@ -308,15 +308,16 @@ Three readings, all with the outcome level's 82% accuracy attached:
   from the whole-half run (set 3 of 8) lands where the clip run did: near
   28% v 27% truth, far 18% v 14%. Set boundaries, roster and outcomes were
   all re-derived from 23 minutes of footage with no labels involved.
-- **USA converted twice as often as Canada across the half** — 40% v 18% —
-  and every one of the eight sets has the far side ahead. That is the
+- **USA converted twice as often as Canada across the half** — 41% v 18% —
+  and seven of the eight sets have the far side ahead. That is the
   match-level statement the metric exists to make, and it is not visible in
   one set.
-- **Coordinated attacks convert at the solo rate** — 40% v 42% far, 18% v
-  21% near — on 5 and 11 attacks. The one coordinated attack in the truth set
-  is the set-ending double on the last player standing, which is what the
-  tactic is for; the half says it neither helps nor hurts per attack, at a
-  sample that can't separate 40% from 60%. Fake-led throws show no consistent
+- **Coordinated attacks: 4 of 5 far, 2 of 11 near** against solo rates of
+  41% and 21%. The one coordinated attack in the truth set is the set-ending
+  double on the last player standing, which is what the tactic is for; five
+  and eleven attacks cannot separate a tactic from noise (the far figure was
+  2 of 5 before the rebound stage moved two outcomes), and the half says only
+  that the question is askable. Fake-led throws show no consistent
   direction. Both are the questions to ask of a tournament, and the pipeline
   now asks them of any footage it is given.
 
