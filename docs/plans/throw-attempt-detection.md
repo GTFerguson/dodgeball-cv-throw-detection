@@ -625,3 +625,13 @@ label-uncertainty case, not a model failure.
   rebound is as fast as the throw). `resolve` ranks a ball seen to turn over no answer over a
   ball seen to carry on, for hits only. Outcome 13 → 15 of 22 (68%): 1067/1077 split; the
   set-ending double has no contact on either ball. `weights/sam2_l.pt`, ~3 s a throw.
+- 2026-08-27 — the rebound done properly (Gary: "only 2 change? … fix it properly"). The
+  first cut was a tie-break that spoke only where the chain had already reached a player;
+  the chain is what fails. Now: segments on a moving crop from the chain's last clean blob to
+  the player and through; contact is the box the ball *turns* in, measured from entry to
+  exit (through the far side = passed, back out the near side = turned), floor-band turns
+  at the feet skipped — one big crop and "first box entered" was tried and scored 55%,
+  because the ball crosses bystanders' boxes in 2D and shrinks in a large crop. `blocks`
+  claims a turn no step took. Outcome 13 → **18 of 22 (82%)**: 1067/1077 split, blocks
+  1451/1898 claimed, 2701 recovered from the held-ball FP. Left: 2681 (roster), 3214 (track
+  dies in the box), the set-ending double (a 34° graze). Graduated to [[rebound]].

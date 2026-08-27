@@ -97,22 +97,23 @@ flowchart LR
 ## What it scores
 
 On the clip, outcome on the 22 matched throws the pipeline called throws:
-**68%** — 15 of 22, with [[rebound]] as the tie-break; 13 of 22 by recency
-alone. Predicted efficiency **near 5/17 against a truth of 4/15; far 1/13
+**82%** — 18 of 22, with [[rebound]] as the tie-break and the block
+witness; 13 of 22 by recency alone. Predicted efficiency **near 5/17 against a truth of 4/15; far 1/13
 against 2/14.**
 
 The errors are three families, none a threshold:
 
 - **Two throws at one side inside the window.** 1067 (hit) and 1077 (miss)
   are ten frames apart and the far side's drop at 1125 went to the later
-  one until [[rebound]]: 1067's ball turns 119° at the player it reached,
-  1077's reaches nobody, and the drop is 1067's. The set's last hit is the
-  same shape and is still wrong: [[set-end]] hands the final elimination to
-  the latest unclaimed near throw in its window, a second proposal of the
-  throw before it (near-10 at 4656, the same ball as 4641), five frames
-  after the true one (near-4C at 4647) — and 4647's chain ends eight frames
-  short of the player, so neither ball has an answer. One motion proposed
-  twice is [[throw-candidates]]' to fold. The ball's *contact* alone was
+  one until [[rebound]]: 1067's ball turns 77° at the player it reached,
+  1077's passes straight through, and the drop is 1067's. The set's last
+  hit is the same shape and is still wrong: [[set-end]] hands the final
+  elimination to the latest unclaimed near throw in its window, a second
+  proposal of the throw before it (near-10 at 4656, the same ball as 4641),
+  five frames after the true one (near-4C at 4647) — and the rebound
+  follows both balls through the same far player with turns of 6° and 34°,
+  a graze under its threshold. One motion proposed twice is
+  [[throw-candidates]]' to fold. The ball's *contact* alone was
   tried first as the tie-break and breaks the other pair (4018's ball passes
   through the box of the player 4030 then hits); the turn is what separates
   passing through from striking.
@@ -125,7 +126,9 @@ The errors are three families, none a threshold:
   held-ball false positive at 2749 as a hit. Both are the identity layer's.
   A rise of +k does explain k catches (`resolve` counts uses per rise),
   which matters once the roster sees both players return.
-- **Blocks are misses.** Three of them. State cannot see a block, exactly
+- **Blocks.** Three of them; two are claimed by [[rebound]] — a ball seen
+  to turn at a player that no step claimed — and the third's track dies
+  inside the box. Before the rebound all three were misses. State cannot see a block, exactly
   as the plan said, and the metric does not need it.
 
 ## What the fold found in the labels
@@ -148,15 +151,15 @@ saw as two far outs and two near returns — which is what happened.
 
 ## Boundaries
 
-- `block` is not claimed. A blocked ball stays live (21.2) and state does
-  not move; the target's wrists showed a trace of it on the clip but too
-  weakly to build on.
+- `block` is claimed only from the ball: a blocked ball stays live (21.2)
+  and state does not move, so `blocks` in `src/outcome.py` names one where
+  [[rebound]] saw a turn that no step and no set end took.
 - No `target` is attributed here; [[destination]]'s contact names one
   where the chain reached a player.
 - The window is the whole of the lag. A second throw at the same side
   inside it is attributed by recency unless [[rebound]] saw one ball turn;
-  the clip has two such pairs, one split by the rebound and one where
-  neither chain reached the player.
+  the clip has two such pairs, one split by the rebound and one where the
+  hit was a graze under the rebound's threshold.
 - The final elimination is not a step: the last player is still on the
   paint while the floor fills, so the count rises rather than drops.
   [[set-end]] reads the end from that shape and traces the hit back to the

@@ -471,8 +471,13 @@ class Timeline:
                                 if d.contact else None),
                     "destination_source": d.destination_source,
                     "destination_agreed": d.destination_agreed,
-                    "rebound": ({"contact_frame": d.rebound.contact_frame,
-                                 "seeded": d.rebound.seeded, "tracked": d.rebound.tracked,
+                    "rebound": ({"seeded": d.rebound.seeded,
+                                 "contact": ({"frame": d.rebound.contact.frame,
+                                              "team": d.rebound.contact.team,
+                                              "track_id": d.rebound.contact.track_id,
+                                              "participant": d.rebound.contact.participant_id}
+                                             if d.rebound.contact else None),
+                                 "tracked": d.rebound.tracked, "passed": d.rebound.passed,
                                  "turn_deg": (round(d.rebound.turn_deg, 1)
                                               if d.rebound.turn_deg is not None else None),
                                  "deflected": d.rebound.deflected}

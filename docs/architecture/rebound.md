@@ -5,149 +5,156 @@ tags: [architecture, outcome, ball, sam2]
 
 # Rebound — what the ball did at the player it reached
 
-`src/rebound.py`, run inside `scripts/detect_events.py` for every throw whose
-chain reached a player; tests in `scripts/test_rebound.py`.
+`src/rebound.py`, run inside `scripts/detect_events.py` for every throw with
+a chain; tests in `scripts/test_rebound.py`.
 
 ## Purpose
 
 [[outcome]] reads hits from the game — a persistent drop in a side's in-play
 count — and attributes the drop to the last throw at that side. That rule
-cannot split two throws at one side inside the elimination lag, and the
-evaluation clip has two such pairs. This stage is the second witness: it
-follows the ball *through* the contact and reports whether it turned. A
-ball that comes back off a player hit them; a ball that carries on past did
-not. Where two throws compete for one departure, the one whose ball turned
-takes it.
+cannot split two throws at one side inside the elimination lag, and it
+cannot see a block at all, because a blocked ball moves no count. This
+stage is the second witness: it follows the ball to the player it reached
+and *through* the contact, and reports whether it turned there. A ball that
+comes back off a player struck them; a ball that carries on past did not.
+Where two throws compete for one departure, the one whose ball turned takes
+it; a ball that turned and put nobody out was blocked.
 
-Upstream: [[release-gate]] for the chain and [[destination]] for the player
-it reached. Downstream: [[outcome]], which uses `deflected` as a tie-break
-for hits only.
+Upstream: [[release-gate]] for the chain, [[roster]] for every player's box.
+Downstream: [[outcome]], which ranks hits by `deflected` and claims `block`
+from it.
 
 ## Why the chain cannot see this, and a segmenter can
 
-The chain in [[release-gate]] links colour blobs frame to frame on a
-velocity prediction. At the target it dies for two reasons at once: the ball
-is against the body for one to three frames, and when it reappears it is
-moving in a new direction, which the prediction does not allow. The rebound
-itself is plain to the eye and to the colour mask
+The chain links colour blobs frame to frame on a velocity prediction, and
+it dies twice over at the target: it loses a fast ball short of the box
+(4651's chain ends eight frames before the player), and where it does reach
+the box the ball is against the body for a frame or three and comes out in
+a new direction, which the prediction does not allow. The rebound itself is
+plain to the eye and to the colour mask
 (`docs/figures/rebound-hits-v-misses.jpg`); what was missing was a linker
 that re-acquires on appearance rather than motion. SAM2 (Ravi et al., 2024)
 is that linker: prompted with the ball on one frame it carries a memory of
 what it looks like and finds it again after occlusion wherever it went.
 
-Three cheaper readings were tried on the clip first and did not separate:
-continuing the incoming line (a hit breaks it by definition), counting
-non-static blobs in the target's box (held balls beside far-side players,
-and the two balls of the set-ending double contaminating each other), and a
-greedy post-contact chain with occlusion gaps (once gaps are allowed it
-hops to neighbouring balls).
+Three cheaper readings were tried first and did not separate: continuing
+the incoming line (a hit breaks it by definition), counting non-static
+blobs in the target's box (held balls beside far-side players, two balls of
+one double contaminating each other), and a greedy post-contact chain with
+occlusion gaps (once gaps are allowed it hops to neighbouring balls).
 
 ## How it works
 
-For a throw with a contact, the **contact frame** is the first chain point
-inside the contacted player's box (grown by `CONTACT_BOX_MARGIN`, as
-[[destination]] grows it). The tracker is **seeded** `SEED_BEFORE_S` before
-that frame with a box on the colour blob under the chain point — not a box
-of nominal ball size, because a prompt twice the ball segments the floor
-round it and the tracker follows the floor — and run to `FOLLOW_AFTER_S`
-past the contact on a square **crop** round the contact point, sized by how
-far the ball moves per frame and how big the player is, resized to
-`CROP_SIDE_PX`. The crop is what lets a twenty-pixel ball survive the
-segmenter's 1024-pixel input.
+**Seed.** The chain's last point with a clean colour blob under it, looking
+back `SEED_LOOKBACK_LINKS` from the end — the chain's last link is often
+the one that went wrong. The prompt is a box on that blob, not a box of
+nominal ball size: a prompt twice the ball segments the floor round it and
+the tracker follows the floor. Chains shorter than the lookback are not
+followed.
 
-The result is read three ways before it is believed:
+**Segments.** One tracker run is `SEGMENT_S` on a square crop round the
+ball — sized by how far it moves in the segment and the court scale where
+it is, resized to `CROP_SIDE_PX` — so a twenty-pixel ball is never handed
+to the segmenter small. If the ball is still tracked and has not yet turned
+at a player, the next segment is seeded from its last position and the crop
+moves with it, up to `EXTEND_MAX_S` looking for a player plus
+`FOLLOW_AFTER_S` past a contact. Each run is its own predictor: the video
+predictor keeps a memory bank for the source it was set up on.
 
-- **Seeded.** The tracker's centre must sit within `ON_CHAIN_NORM` of every
-  chain point from the seed to the contact. A tracker that had already left
-  the ball has nothing to say about what it did next.
-- **Cut at a jump.** Past the contact the track ends at the first step
-  longer than `JUMP_SPEED_FRAMES` frames of the incoming speed plus
-  `JUMP_SLACK_NORM`. Six identical balls are on court; when the followed one
-  leaves the crop the segmenter's memory finds another, and the jump is how
-  that shows.
-- **Turn over the first widths.** The angle between the chain's incoming
-  velocity (the median of its last `VELOCITY_LINKS` steps) and the ball's net
-  displacement over its first `TURN_SPAN_WIDTHS` player-widths out of the
-  contact. Measured over the whole window instead, a miss that reaches the
-  floor by the camera and bounces reads as a turn.
+**Believed only on the chain.** Where the tracker and the chain overlap the
+tracker must sit within `ON_CHAIN_NORM` of every chain point, else the run
+is `seeded: false` and every verdict from it is None — a tracker that had
+already left the ball has nothing to say about what it did next. Past the
+seed the track ends at the first step longer than `JUMP_SPEED_FRAMES`
+frames of the ball's speed plus `JUMP_SLACK_NORM`: six identical balls are
+on court, and when the followed one leaves the crop the memory finds
+another.
 
-`deflected` is True at or above `DEFLECT_MIN_TURN_DEG`, False below, and
-None where the run was not seeded or the ball was not followed past the
-contact. The timeline carries all of it under `evidence.rebound`.
+**Contact is where the ball turns, not the first box it enters.** In the
+image a ball crosses the boxes of teammates and bystanders on its way; the
+first box entered is not the player it reached. So every box the ball
+enters (the thrower's own excluded) is tried in order, and the turn is
+measured from the entry point to where the ball *leaves that box* — out the
+far side it passed through, back out the near side it turned — or, where
+it never leaves, over its first `TURN_SPAN_WIDTHS` player-widths. The first
+box with a turn at or above `DEFLECT_MIN_TURN_DEG` is the contact and the
+ball is `deflected`; a turn in the bottom `FLOOR_BAND` of a box is the
+floor at the player's feet and is skipped, because a ball that bounces
+beside a crouching player turns as sharply as one that hits them. A ball
+that passes through every box it enters has its last box as contact and is
+not deflected; one whose track dies inside a box has that contact and no
+answer.
 
 ```mermaid
 flowchart LR
-    D[chain reached a player] --> C[contact frame: first point in the box]
-    C --> S[seed SAM2 on the blob under the chain, SEED_BEFORE_S earlier]
-    S --> F[follow FOLLOW_AFTER_S past the contact, on a crop]
-    F --> V{on the chain up to the contact?}
+    S[seed: chain's last clean blob] --> G[segment: SAM2 on a moving crop]
+    G -- ball tracked, no turn yet, time left --> G
+    G --> V{on the chain where they overlap?}
     V -- no --> N[deflected: None]
-    V -- yes --> J[cut at the first impossible jump]
-    J --> T[turn over the first TURN_SPAN_WIDTHS]
-    T --> R{turn >= DEFLECT_MIN_TURN_DEG}
-    R -- yes --> H[deflected: True]
-    R -- no --> M[deflected: False]
+    V -- yes --> B[each box entered, in order]
+    B --> T{turned at the exit, not at the feet?}
+    T -- yes --> H[contact, deflected: True]
+    T -- no, passed through --> B
+    B -- none turned --> M[last box, deflected: False]
+    B -- track died inside --> N
 ```
 
 ## What it measured
 
-On the evaluation clip's 20 throws with a contact and a labelled outcome:
+On the evaluation clip's 22 matched throws, the ball reached a player on 21
+and turned at one on 6; every turn is a labelled hit or block, every
+pass-through a labelled miss or a graze. Wired into [[outcome]] the clip
+went from 13 of 22 by recency alone to **18 of 22**:
 
-| Truth | Turn, degrees |
-|---|---|
-| hit | 153, 119, 144, 80, 30 |
-| miss | 25, 14, 7, 8 |
-| block | 117, 134, 12, 7 |
-| catch | 17 |
+- 1067/1077, two near throws ten frames apart with one far departure: 1067's
+  ball turns 77° at far-24, 1077's passes through far-27 at 1.5°; the
+  departure is 1067's.
+- 1451 and 1898, blocks: turns of 118° and 129° at near-7 with no count
+  step; claimed as `block`.
+- 2701, a hit on a player already out: with the two spurious near throws
+  after it seen to carry on, the far departure at 2898 falls back to it
+  rather than to a held-ball false positive.
 
-Four runs were not seeded (two fast far-side throws, one seeded on a point
-because no blob sat under the chain, one on a broken chain) and one track
-died at the contact; those are None. The hit at 30° is a graze off a raised
-arm that barely bends the flight. Two of four blocks show as deflections —
-the first outcome signal for a block anything in the pipeline has had.
-Speed was the expected signal and is not: 1067's rebound comes off at the
+What is still wrong: 3214 (block) — the track dies inside the box; 2681
+(catch) — the roster never saw the return; and the set-ending double, where
+both balls pass through far-27 with turns of 6° and 34° — a graze the label
+calls a hit, under the threshold, and not tuned for.
+
+Speed was the expected signal and is not: a rebound can come off at the
 speed it went in.
-
-Wired into [[outcome]] the clip's outcome went from 13 to 15 of 22: the
-pair at 1067/1077 is split (1067's ball turns 119° at far-24, 1077's
-reaches nobody). The set-ending pair is not — 4651's chain ends eight frames
-before the player, so neither ball has a contact for the witness to speak
-on.
 
 ## Design decisions
 
-- **A tie-break, not a witness on its own.** The count still says *that*
-  someone left; the rebound says *whose ball*. A deflection with no count
-  step is not claimed as a hit — the two deflecting blocks are exactly that
-  case, and a block is not a hit.
-- **No answer outranks a wrong answer.** `resolve` ranks True over None over
-  False: a ball seen to carry on is the last throw to be given a hit, a
-  ball the tracker could not follow keeps its place by recency.
-- **Fresh predictor per throw.** The video predictor keeps a memory bank for
-  the source it was set up on; a throw's crop is its own source, so each
-  gets its own. It costs a model load per throw (~3 s for SAM2-large on the
-  laptop GPU) and buys no cross-talk between throws.
+- **The count still says *that* someone left; the ball says *whose*.** For
+  hits `resolve` ranks a ball seen to turn over no answer over a ball seen to
+  carry on, and recency only inside a rank. No answer outranks a wrong
+  answer.
+- **A turn nobody left for is a block.** `blocks` runs after every step and
+  the set end have taken their throws, so a deflection that did put someone
+  out is never demoted; what is left turned and moved no count, which is
+  what a block is (WDBF 21.2, the ball stays live).
+- **Catches are not read.** A caught ball stops; its turn is small and says
+  nothing recency does not. 2681 is the roster's to fix.
 - **Threshold by eye, on this clip.** `DEFLECT_MIN_TURN_DEG` sits between
-  the two groups above; six visible hits is the sample. The second set is
-  the blind test.
+  the turns and the pass-throughs above; six visible hits is the sample.
+  The second set is the blind test.
 
 ## Configuration
 
 Weights at `weights/sam2_l.pt` (`scripts/download_weights.py`; Meta's
 `sam2_hiera_large.pt` loads under the same name). Every window is a
-duration converted at the clip's rate; the crop and tolerance constants are
-at the top of `src/rebound.py` and written to the timeline's `thresholds`.
-`scripts/detect_events.py --no-rebound` runs outcomes by recency alone.
+duration converted at the clip's rate; the crop, tolerance and turn
+constants are at the top of `src/rebound.py` and written to the timeline's
+`thresholds`. `scripts/detect_events.py --no-rebound` runs outcomes by
+recency alone, no blocks. Cost: about 3 s a throw for one segment, a model
+load each, on the laptop GPU.
 
 ## Boundaries
 
-- Speaks only where the chain reached a player's box; a throw whose chain
-  ends short (4651 on the clip) gets no answer.
-- Catches are not read. A caught ball stops; its turn is small and says
-  nothing recency does not.
 - The final elimination is named by [[set-end]]'s tracer, not `resolve`,
-  and the tracer does not consult the rebound; on the clip neither ball of
-  that pair had an answer, so nothing was lost.
+  and the tracer does not consult `deflected`.
 - Identical balls remain the failure mode. The jump cut catches the one
   instance on the clip; a ball crossing the crop at plausible speed would
   not be caught.
+- A hit that barely bends the flight — the set's last, 34° — is under the
+  threshold and reads as a pass-through.

@@ -8,7 +8,7 @@ one complete set, 60 labelled events) is the evaluation set.
 Headline, at ±0.25 s: throwing motions are found at **F1 88%** (P 84%, R 93%);
 of the matched motions the **release** (did the ball leave the hand) is right
 **88%** of the time, the **kind** (fake / pass / throw) **86%**, and the
-**outcome** (hit / catch / miss) **68%**. Team throw efficiency reads **29%**
+**outcome** (hit / catch / block / miss) **82%**. Team throw efficiency reads **29%**
 near v 27% truth and **8%** far v 14% truth. Every number below has a named
 failure behind it; the cascade, the labels and the error budget are all built
 so that the failures can be read rather than averaged away.
@@ -95,12 +95,14 @@ shaped the result:
   in a side's on-court count is a hit (or a catch, if the other side gains
   one), attributed to the last throw at that side.
   → [outcome.md](docs/architecture/outcome.md)
-- **The ball breaks the tie.** Two throws at one side inside the lag is the
-  case the count cannot split. Where the chain reached a player, SAM2 is
-  seeded on the chain's last blob and follows the ball through the contact;
-  a ball that comes back off the player turned (hits 80–153° on the clip),
-  one that carries on past did not (misses under 30°). The one that turned
-  takes the departure.
+- **The ball says whose, and sees the blocks.** Two throws at one side
+  inside the lag is the case the count cannot split, and a block moves no
+  count at all. SAM2 is seeded on the chain's last clean blob and follows
+  the ball to the player it reaches and through, on a crop that moves with
+  it; contact is the box the ball *turns* in, not the first it crosses. A
+  ball that comes back off the player struck them (77–130° on the clip),
+  one that carries on past did not (under 20°). The one that turned takes
+  the departure; one that turned and put nobody out was blocked.
   → [rebound.md](docs/architecture/rebound.md)
 - **Identity is a roster, not a track id.** ByteTrack fragments are joined
   by jersey number and side; role comes from being in play during the set's
@@ -126,7 +128,7 @@ same-player through the roster ([evaluation.md](docs/architecture/evaluation.md)
 | Release (fake v released) | 88% | 56 matched: fakes right 21/23, releases right 28/33 |
 | Kind (fake / pass / throw) | 86% | 56 matched |
 | Throw detection (throw claimed = positive) | P 73% · R 76% · F1 75% | 29 truth throws |
-| Outcome (hit / catch / block / miss) | 68% | 22 matched throws (59% by recency alone) |
+| Outcome (hit / catch / block / miss) | 82% | 22 matched throws (59% by the count alone) |
 | Efficiency | near 5/17 = 29% (truth 4/15 = 27%); far 1/13 = 8% (truth 2/14 = 14%) | per team |
 
 The timeline is `data/timeline/wdbf2014_final_h2_set2.json`: every
@@ -164,24 +166,21 @@ errors — a hard throw that reached a teammate's box first (throw → pass) and
 pass that left the hand too slowly for the chain (pass → fake) — complete the
 8 of 56.
 
-**Outcome (15 of 22 right; 13 by recency alone).** The seven wrong come in
-three shapes, all in the attribution rather than the detection — every count
-step on the clip is explained by some throw. *Recency:* the set-ending
-double, two near throws a frame apart (4650 miss, 4651 hit) whose balls
-reach the same far player within a second; the later throw takes the step,
-so one is missed and one invented. The pair at 1067/1077, the same shape,
-is now right: the rebound witness saw 1067's ball turn 119° at the player it
-reached and 1077's reach nobody. It has nothing to say on 4651, whose chain
-ends eight frames short of its player. *A return the roster never saw:* two far
-catches (2681, 2725) put two far players off, and the count shows both
-departures (2813, 2898) but only one near player walking back on (2953);
-the second departure has no return to pair with and falls through to a hit
-on the latest near throw, a held-ball false positive at 2749 — so 2681
-scores miss and near efficiency gains a hit that never happened. *Not
-claimed:* the three blocks are all called miss (`block` is not claimed — a
-blocked ball stays live and moves no count), and 2701, a hit on a player
-already out, is called miss: the right answer for the metric and the wrong
-outcome label. The first two shapes are the count witness's blind spots.
+**Outcome (18 of 22 right; 13 by the count alone).** The rebound witness
+took five of the nine: 1067/1077, two near throws ten frames apart with one
+far departure, split by the ball that turned (77°) against the one that
+passed straight through; the blocks at 1451 and 1898, turns of 118° and
+129° with no count step behind them, now claimed as `block`; and 2701, a
+hit on a player already out, which the far departure at 2898 falls back to
+once the two spurious near throws after it are seen to carry on. The four
+left: *the set-ending double*, two near throws a frame apart (4650 miss,
+4651 hit) whose balls both go through the same far player — the rebound
+follows both and reads 6° and 34°, a graze under its threshold, so recency
+keeps the later one and scores two errors; *2681*, a catch the roster never
+saw the return for (two far players walk off after two catches, one near
+player walks back on), which nothing downstream can recover; and *3214*, a
+block whose track dies inside the box. The count witness's blind spots are
+now the graze and the roster's.
 
 ### Error budget
 
@@ -195,7 +194,7 @@ the model's error from the labels'.
 | Denominator: throws claimed | 12 true, 5 matched no event, 0 fakes, 0 passes | 10 true, 3 matched no event |
 | Denominator: true throws not claimed | 3 (1 called fake, 1 pass, 1 no proposal) | 4 (3 called fake, 1 no proposal) |
 | Numerator: hits | 3 right, 1 missed, 2 invented | 1 right, 1 missed, 0 invented |
-| **Model** — paired bootstrap, 95% band on (predicted − truth) | −20 .. +25 points | −23 .. +3 points |
+| **Model** — paired bootstrap, 95% band on (predicted − truth) | −23 .. +27 points | −23 .. +3 points |
 | **Labels** — if every `uncertain` event went the other way | 25% .. 33% | 13% .. 14% |
 | **Sampling** — Wilson 95% on the truth itself | 11% .. 52% | 4% .. 40% |
 
@@ -226,7 +225,7 @@ Tolerance stays ±0.25 s.
 
 | Condition | Clip | Cand. F1 | Release | Kind | Outcome | Throw F1 | Pose-only recall | Efficiency near / far (truth 27% / 14%) |
 |---|---|---|---|---|---|---|---|---|
-| source | 1080p, CRF 16, 25 fps | 88% | 88% | 86% | 68% | 75% | 98% | 29% / 8% |
+| source | 1080p, CRF 16, 25 fps | 88% | 88% | 86% | 82% | 75% | 98% | 29% / 8% |
 | 480p | 854×480, same CRF | 66% | 75% | 70% | 25% | 52% | 88% | 38% / 22% |
 | crf40 | 1080p, x264 CRF 40 | 51% | 79% | 79% | 50% | 50% | 72% | 18% / 8% |
 | drop2, as shipped | every second frame, 12.5 fps; windows in frames | 64% | 87% | 85% | 58% | 62% | 78% | 25% / 8% |
@@ -300,7 +299,7 @@ predicted throws.
 | **whole half, predicted** | far | **46/114 = 40%** | 44/104 = 42% | 2/5 = 40% | 23/66 = 35% | 17/32 = 53% | 6/16 = 38% |
 | **whole half, predicted** | near | **23/126 = 18%** | 21/101 = 21% | 2/11 = 18% | 14/65 = 22% | 6/42 = 14% | 3/19 = 16% |
 
-Three readings, all with the outcome level's 68% accuracy attached:
+Three readings, all with the outcome level's 82% accuracy attached:
 
 - **The pipeline reproduces itself across cuts.** The labelled set scored
   from the whole-half run (set 3 of 8) lands where the clip run did: near
@@ -336,11 +335,12 @@ bodies, not names.
   jersey, ball-sized components only. It cannot see a ball against the red
   team at the far baseline, and it cannot tell one ball from another when two
   cross — the chain rules for that are geometric, not visual.
-- **The outcome is inferred from the count, with the ball as tie-break.** A
-  count step is attributed to the last throw at that side unless a ball was
-  seen to turn at a player. The rebound witness answers on 16 of 20 contacts
-  on the clip, its one threshold was set by eye on the clip it is scored on,
-  and six visible hits is the sample. `block` is not claimed.
+- **The outcome is the count's, with the ball as witness.** A count step is
+  attributed to the last throw at that side unless a ball was seen to turn
+  at a player; a turn nobody left for is a block. The rebound's one
+  threshold was set by eye on the clip it is scored on, from six visible
+  hits, and a graze under it reads as a pass-through. `catch` is the
+  count's alone.
 - **Identity is one clip deep.** Seven players named of twelve; the far team
   is largely unnamed (numbers unreadable at 90 px). Attribution is by track
   and side, which is what the metric needs; player-level attribution is
@@ -354,17 +354,14 @@ Score the rebound witness blind. It was built, and its one threshold set,
 on the clip it is scored on, from six visible hits ([four hits above four
 misses, ±3 frames](docs/figures/rebound-hits-v-misses.jpg)); the second set
 is where it earns its place or loses it. Three things to read off that run.
-The four throws in twenty where the tracker leaves the ball before the
-contact — fast far-side throws, where the ball moves five diameters a frame
-and the segmenter's memory has nothing to match — need a bridge across the
-lost frames, and optical flow from the last good position is the obvious
-one. Whether the chain reaches the player often enough to matter: it fell
-eight frames short on the set-ending double here, so the witness had nothing
-to say on the one pair it was built for, and the fix is upstream in the
-chain's reach, not in the tracker. And blocks, which showed as deflections
-twice in four and are the first outcome the count cannot see and the ball
-can; with a second set's worth, `block` becomes claimable as a deflection
-with no count step behind it.
+Whether the turn threshold holds — the set's last hit is a 34° graze that
+reads as a pass-through, and a second set says whether grazes are the
+exception. The tracks that die inside a box (3214, a block with no answer):
+the tracker loses a ball that drops straight down behind a body, and a
+second segment seeded on the colour mask at the feet is the obvious patch.
+And the fast far-side throws where the tracker leaves the ball before it
+arrives — an optical-flow bridge across the lost frames from the last good
+position — which cost nothing on this clip and will on a faster one.
 
 **Further out.** A second venue is a config change plus a retune, not a
 rewrite: the colour window, court dimensions and kit vocabulary are in
@@ -449,7 +446,7 @@ duration converted at the clip's own frame rate
 on a laptop RTX 4080, ~9 fps → 10 min for the clip. Identity (tracking + OCR) 24 s. Everything after it is
 seconds: candidates 3 s, the release gate 52 s (it reads the clip once around
 every proposal), the rebound witness ~3 s per throw that reached a player
-(SAM2-large on a crop, a model load each), evaluation 1 s. Nothing is trained.
+(SAM2-large on a moving crop, a model load a segment), evaluation 1 s. Nothing is trained.
 
 ## Layout
 

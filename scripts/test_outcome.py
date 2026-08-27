@@ -13,7 +13,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.outcome import (ELIMINATION_WINDOW_S, HOLD_S, HOLD_SLACK_S, Step,  # noqa: E402
+from src.outcome import (ELIMINATION_WINDOW_S, HOLD_S, HOLD_SLACK_S, Step, blocks,  # noqa: E402
                          Thrown, count_steps, fold, resolve)
 from src.timing import frames  # noqa: E402
 
@@ -125,6 +125,14 @@ class Resolve(unittest.TestCase):
         throws = [Thrown(1, 1000, "far", deflected=True), Thrown(2, 1010, "far")]
         out, _ = resolve(throws, [Step(1080, "far", 6, 5), Step(1120, "near", 5, 6)])
         self.assertEqual(out[2].outcome, "catch")
+
+    def test_a_ball_seen_to_turn_that_no_step_claimed_was_blocked(self):
+        throws = [Thrown(1, 1000, "near", deflected=True), Thrown(2, 1010, "near", deflected=True),
+                  Thrown(3, 1020, "near", deflected=False), Thrown(4, 1030, "near", deflected=None)]
+        resolved, _ = resolve(throws, [Step(1100, "far", 6, 5)])
+        self.assertEqual(resolved[2].outcome, "hit")
+        extra = blocks(throws, resolved)
+        self.assertEqual({i: r.outcome for i, r in extra.items()}, {1: "block"})
 
     def test_a_two_player_return_explains_two_catches(self):
         # Far catches twice; the two thrown-out near players leave in one

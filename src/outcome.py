@@ -184,6 +184,18 @@ def resolve(throws: list[Thrown], steps: list[Step],
     return out, orphans
 
 
+def blocks(throws: list[Thrown], resolved: dict[int, Resolution]) -> dict[int, Resolution]:
+    """A ball seen to turn at a player that no step claimed was blocked.
+
+    A block leaves no trace in the state - the ball stays live (WDBF 21.2) and
+    nobody leaves - so it is the one outcome only the ball can see. Run after
+    every step and the set end have taken their throws, so a deflection that
+    did put someone out is never demoted.
+    """
+    return {x.id: Resolution(x.id, "block", x.frame)
+            for x in throws if x.id not in resolved and x.deflected}
+
+
 def fold(throws: list[Thrown], outcomes: dict[int, str], start: dict[str, int]) -> list[tuple[int, dict[str, int]]]:
     """The side counts implied by a set of outcomes, throw by throw.
 

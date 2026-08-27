@@ -33,9 +33,12 @@
   "max_turn_deg": 50.0,
   "depart_min_norm": 0.25,
   "chain_min_links": 2,
-  "seed_before_s": 0.12,
+  "seed_lookback_links": 3,
+  "extend_max_s": 0.48,
   "follow_after_s": 0.32,
+  "segment_s": 0.32,
   "crop_side_px": 768,
+  "floor_band": 0.15,
   "on_chain_norm": 0.075,
   "jump_speed_frames": 2.0,
   "jump_slack_norm": 0.15,
@@ -409,11 +412,17 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 601,
-     "seeded": true,
-     "tracked": 7,
-     "turn_deg": 152.9,
-     "deflected": true
+     "seeded": false,
+     "contact": {
+      "frame": 601,
+      "team": "near",
+      "track_id": 435,
+      "participant": "near-4C"
+     },
+     "tracked": 6,
+     "passed": 1,
+     "turn_deg": 133.6,
+     "deflected": null
     },
     "path": [
      [
@@ -894,10 +903,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 1075,
      "seeded": true,
-     "tracked": 8,
-     "turn_deg": 119.1,
+     "contact": {
+      "frame": 1075,
+      "team": "far",
+      "track_id": 21,
+      "participant": "far-24"
+     },
+     "tracked": 9,
+     "passed": 1,
+     "turn_deg": 77.0,
      "deflected": true
     },
     "path": [
@@ -976,7 +991,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 1082,
+      "team": "far",
+      "track_id": 17,
+      "participant": "far-27"
+     },
+     "tracked": 13,
+     "passed": 1,
+     "turn_deg": 1.5,
+     "deflected": false
+    },
     "path": [
      [
       1371.7,
@@ -1181,9 +1208,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "miss",
+   "outcome": "block",
    "evidence": {
-    "outcome_step_frame": null,
+    "outcome_step_frame": 1451,
     "outcome_return_frame": null,
     "ball_before": 0.148,
     "depart": 0.6222,
@@ -1195,7 +1222,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 1453,
+      "team": "near",
+      "track_id": 56,
+      "participant": "near-7"
+     },
+     "tracked": 1,
+     "passed": 0,
+     "turn_deg": 118.2,
+     "deflected": true
+    },
     "path": [
      [
       1188.7,
@@ -1291,9 +1330,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "miss",
+   "outcome": "block",
    "evidence": {
-    "outcome_step_frame": null,
+    "outcome_step_frame": 1492,
     "outcome_return_frame": null,
     "ball_before": 0.1935,
     "depart": 0.7288,
@@ -1310,11 +1349,17 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 1492,
      "seeded": true,
-     "tracked": 0,
-     "turn_deg": null,
-     "deflected": null
+     "contact": {
+      "frame": 1492,
+      "team": "near",
+      "track_id": 56,
+      "participant": "near-7"
+     },
+     "tracked": 3,
+     "passed": 0,
+     "turn_deg": 83.3,
+     "deflected": true
     },
     "path": [
      [
@@ -1385,11 +1430,17 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 1507,
-     "seeded": false,
-     "tracked": 8,
-     "turn_deg": 63.7,
-     "deflected": null
+     "seeded": true,
+     "contact": {
+      "frame": 1507,
+      "team": "far",
+      "track_id": 17,
+      "participant": "far-27"
+     },
+     "tracked": 9,
+     "passed": 0,
+     "turn_deg": 1.6,
+     "deflected": false
     },
     "path": [
      [
@@ -1492,10 +1543,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 1533,
      "seeded": false,
-     "tracked": 3,
-     "turn_deg": 1.8,
+     "contact": {
+      "frame": 1534,
+      "team": "near",
+      "track_id": 18,
+      "participant": "near-6"
+     },
+     "tracked": 2,
+     "passed": 0,
+     "turn_deg": 1.0,
      "deflected": null
     },
     "path": [
@@ -1763,9 +1820,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "miss",
+   "outcome": "block",
    "evidence": {
-    "outcome_step_frame": null,
+    "outcome_step_frame": 1902,
     "outcome_return_frame": null,
     "ball_before": 0.5144,
     "depart": 0.6861,
@@ -1782,10 +1839,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 1903,
      "seeded": true,
-     "tracked": 8,
-     "turn_deg": 134.0,
+     "contact": {
+      "frame": 1903,
+      "team": "near",
+      "track_id": 56,
+      "participant": "near-7"
+     },
+     "tracked": 13,
+     "passed": 0,
+     "turn_deg": 129.1,
      "deflected": true
     },
     "path": [
@@ -1861,11 +1924,17 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 1978,
-     "seeded": false,
-     "tracked": 8,
-     "turn_deg": 31.6,
-     "deflected": null
+     "seeded": true,
+     "contact": {
+      "frame": 1978,
+      "team": "far",
+      "track_id": 169,
+      "participant": "far-2"
+     },
+     "tracked": 10,
+     "passed": 1,
+     "turn_deg": 18.5,
+     "deflected": false
     },
     "path": [
      [
@@ -1927,7 +1996,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": false,
+     "contact": {
+      "frame": 1996,
+      "team": "far",
+      "track_id": 12,
+      "participant": "far-01"
+     },
+     "tracked": 6,
+     "passed": 1,
+     "turn_deg": 5.1,
+     "deflected": null
+    },
     "path": [
      [
       729.5,
@@ -2000,7 +2081,19 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": false,
+     "contact": {
+      "frame": 2020,
+      "team": "far",
+      "track_id": 12,
+      "participant": "far-01"
+     },
+     "tracked": 0,
+     "passed": 0,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       1482.5,
@@ -2050,11 +2143,17 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 2020,
      "seeded": true,
-     "tracked": 7,
-     "turn_deg": 24.8,
-     "deflected": false
+     "contact": {
+      "frame": 2032,
+      "team": "far",
+      "track_id": 169,
+      "participant": "far-2"
+     },
+     "tracked": 0,
+     "passed": 2,
+     "turn_deg": null,
+     "deflected": null
     },
     "path": [
      [
@@ -2364,10 +2463,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 2686,
      "seeded": true,
-     "tracked": 8,
-     "turn_deg": 17.3,
+     "contact": {
+      "frame": 2686,
+      "team": "near",
+      "track_id": 436,
+      "participant": "near-44"
+     },
+     "tracked": 9,
+     "passed": 0,
+     "turn_deg": 18.8,
      "deflected": false
     },
     "path": [
@@ -2447,10 +2552,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 2701,
      "seeded": true,
-     "tracked": 6,
-     "turn_deg": 14.3,
+     "contact": {
+      "frame": 2701,
+      "team": "far",
+      "track_id": 169,
+      "participant": "far-2"
+     },
+     "tracked": 2,
+     "passed": 0,
+     "turn_deg": 9.2,
      "deflected": false
     },
     "path": [
@@ -2539,9 +2650,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "miss",
+   "outcome": "hit",
    "evidence": {
-    "outcome_step_frame": null,
+    "outcome_step_frame": 2898,
     "outcome_return_frame": null,
     "ball_before": 0.437,
     "depart": 0.6265,
@@ -2558,10 +2669,16 @@
     "destination_source": "default",
     "destination_agreed": null,
     "rebound": {
-     "contact_frame": 2696,
      "seeded": false,
-     "tracked": 8,
-     "turn_deg": 26.7,
+     "contact": {
+      "frame": 2696,
+      "team": "near",
+      "track_id": 436,
+      "participant": "near-44"
+     },
+     "tracked": 0,
+     "passed": 1,
+     "turn_deg": null,
      "deflected": null
     },
     "path": [
@@ -2613,11 +2730,17 @@
     "destination_source": "default",
     "destination_agreed": null,
     "rebound": {
-     "contact_frame": 2701,
-     "seeded": false,
-     "tracked": 8,
-     "turn_deg": 130.3,
-     "deflected": null
+     "seeded": true,
+     "contact": {
+      "frame": 2701,
+      "team": "far",
+      "track_id": 169,
+      "participant": "far-2"
+     },
+     "tracked": 15,
+     "passed": 0,
+     "turn_deg": 39.3,
+     "deflected": false
     },
     "path": [
      [
@@ -2668,10 +2791,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 2732,
      "seeded": true,
-     "tracked": 8,
-     "turn_deg": 0.8,
+     "contact": {
+      "frame": 2732,
+      "team": "near",
+      "track_id": 54,
+      "participant": "near-18"
+     },
+     "tracked": 9,
+     "passed": 0,
+     "turn_deg": 6.4,
      "deflected": false
     },
     "path": [
@@ -2732,9 +2861,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "hit",
+   "outcome": "miss",
    "evidence": {
-    "outcome_step_frame": 2898,
+    "outcome_step_frame": null,
     "outcome_return_frame": null,
     "ball_before": 0.2009,
     "depart": 0.352,
@@ -2746,7 +2875,19 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 2755,
+      "team": "near",
+      "track_id": 210,
+      "participant": "near-4C"
+     },
+     "tracked": 1,
+     "passed": 1,
+     "turn_deg": 12.9,
+     "deflected": false
+    },
     "path": [
      [
       1414.9,
@@ -2974,7 +3115,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 3233,
+      "team": "far",
+      "track_id": 17,
+      "participant": "far-27"
+     },
+     "tracked": 0,
+     "passed": 1,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       854.3,
@@ -3040,10 +3193,16 @@
     "destination_source": "default",
     "destination_agreed": null,
     "rebound": {
-     "contact_frame": 3214,
      "seeded": false,
-     "tracked": 8,
-     "turn_deg": 126.7,
+     "contact": {
+      "frame": 3214,
+      "team": "near",
+      "track_id": 248,
+      "participant": "near-10"
+     },
+     "tracked": 0,
+     "passed": 0,
+     "turn_deg": null,
      "deflected": null
     },
     "path": [
@@ -3131,10 +3290,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 3494,
      "seeded": true,
+     "contact": {
+      "frame": 3494,
+      "team": "near",
+      "track_id": 434,
+      "participant": "near-7"
+     },
      "tracked": 3,
-     "turn_deg": 6.9,
+     "passed": 0,
+     "turn_deg": 4.8,
      "deflected": false
     },
     "path": [
@@ -3209,7 +3374,14 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": null,
+     "tracked": 0,
+     "passed": 0,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       1117.1,
@@ -3274,7 +3446,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 3846,
+      "team": "near",
+      "track_id": 299,
+      "participant": "near-10"
+     },
+     "tracked": 3,
+     "passed": 1,
+     "turn_deg": 2.0,
+     "deflected": false
+    },
     "path": [
      [
       664.6,
@@ -3356,10 +3540,16 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 3855,
      "seeded": true,
+     "contact": {
+      "frame": 3855,
+      "team": "far",
+      "track_id": 171,
+      "participant": "far-01"
+     },
      "tracked": 7,
-     "turn_deg": 143.7,
+     "passed": 0,
+     "turn_deg": 130.3,
      "deflected": true
     },
     "path": [
@@ -3585,7 +3775,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 4038,
+      "team": "far",
+      "track_id": 73,
+      "participant": "far-55"
+     },
+     "tracked": 11,
+     "passed": 1,
+     "turn_deg": 5.0,
+     "deflected": false
+    },
     "path": [
      [
       765.5,
@@ -3825,7 +4027,19 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 4335,
+      "team": "near",
+      "track_id": 299,
+      "participant": "near-10"
+     },
+     "tracked": 2,
+     "passed": 0,
+     "turn_deg": 1.2,
+     "deflected": false
+    },
     "path": [
      [
       1047.5,
@@ -3914,7 +4128,14 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": null,
+     "tracked": 0,
+     "passed": 0,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       1532.9,
@@ -3959,7 +4180,14 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": null,
+     "tracked": 0,
+     "passed": 0,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       1405.0,
@@ -4008,7 +4236,19 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
-    "rebound": null,
+    "rebound": {
+     "seeded": true,
+     "contact": {
+      "frame": 4656,
+      "team": "far",
+      "track_id": 17,
+      "participant": "far-27"
+     },
+     "tracked": 12,
+     "passed": 0,
+     "turn_deg": 33.7,
+     "deflected": false
+    },
     "path": [
      [
       867.3,
@@ -4094,11 +4334,17 @@
     "destination_source": "contact",
     "destination_agreed": true,
     "rebound": {
-     "contact_frame": 4655,
      "seeded": true,
-     "tracked": 1,
-     "turn_deg": null,
-     "deflected": null
+     "contact": {
+      "frame": 4655,
+      "team": "far",
+      "track_id": 17,
+      "participant": "far-27"
+     },
+     "tracked": 9,
+     "passed": 0,
+     "turn_deg": 5.8,
+     "deflected": false
     },
     "path": [
      [
