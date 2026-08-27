@@ -1,0 +1,134 @@
+---
+title: Outcome
+created: 2026-08-27
+updated: 2026-08-27
+tags: [architecture, event-detection, game-state, outcome]
+---
+
+# Outcome
+
+What a throw did — `hit`, `catch` or `miss` — read from the game rather
+than from the ball. The last decision of the cascade and the numerator of
+the metric.
+
+| File | Role |
+|---|---|
+| `src/outcome.py` | Count steps, their attribution to throws, and the fold |
+| `scripts/detect_events.py` | Runs it over the timeline's throws and writes `outcome` on each |
+| `scripts/test_outcome.py` | Checks on steps, attribution and the fold |
+
+Upstream: [[roster]] for who is in play, [[set-start]] for live play,
+[[release-gate]] and [[destination]] for the throws. Downstream:
+[[evaluation]] scores `outcome` and computes efficiency.
+
+## Why the game and not the ball
+
+The ball was tried first, and the plan had it the other way round: ball
+for release, game state for outcome, on the argument that a noisy release
+stream could be matched to a robust state-change stream. Measured on the
+clip, the argument holds for a reason the plan did not have yet: **the
+contact frame is not observable.** At 25 fps and twenty pixels, the frame
+where the ball meets a player is the frame the chain loses it, so a dodge
+and a hit both end inside the box; letting the chain through the box only
+lets it grab the next orange thing (misses then kink at 130–146°, hits at
+4–137°). No feature of the ball at the contact separates hit from miss.
+The ball's contact still names the player it reached, and
+[[destination]] uses it; it cannot say what happened next.
+
+Two other witnesses were measured and set aside. The **whistle** band
+(2.5–4.5 kHz) fires 56 times in three minutes at a floor low enough to
+catch quiet calls — on pump fakes as often as throws, which is shoe squeak
+and crowd; the dozen long, loud ones are real calls and precede far-side
+outs by 9–100 frames, but two of them have no out behind them at all. The
+**departure of a track** fragments: a player who leaves reads as an exit
+and a re-entry under a new id in the same frame.
+
+What holds is the **count of a side in play**, held for a while. In
+dodgeball only a throw resolving changes it: a hit takes one off the side
+struck, a catch takes the thrower off and returns one to the catcher's
+side. A persistent step in the count is an outcome; the throw responsible
+is the last one thrown at that side before it.
+
+## How it works
+
+`count_steps` reads each side's in-play count frame by frame across live
+play (from `Roster.on_court`, which is the elimination curve the roster doc
+already reports) and keeps a change only when the next `HOLD_FRAMES` sit
+at the new level, with `HOLD_SLACK_FRAMES` forgiven — a track that drops
+out and back inside two seconds is the tracker, not a player.
+
+`resolve` takes the drops in order. A drop on side X with an unused rise on
+the other side inside `RETURN_WINDOW` is a **catch** of X's latest throw
+before the earlier of the two; the return may precede the drop, because
+the catcher's teammate walks on while the thrower is still walking off.
+Otherwise it is a **hit** by the other side's latest throw before it. The
+throw must fall within `ELIMINATION_WINDOW` — the slowest departure on the
+clip is 141 frames after the hit, the slowest return 220 after the catch —
+and resolves once. Every throw no step claims is a **miss**. A drop no
+throw explains is written to the timeline as `unexplained_steps` rather
+than dropped.
+
+`fold` runs the resolved outcomes forward from the opening counts. On the
+predictions it is the temporal prior the plan asked for; on the labels it
+is an audit, and it is what found the two label corrections below.
+
+```mermaid
+flowchart LR
+    R[Roster - in play per side per frame] --> C[Persistent count steps]
+    T[Timeline throws] --> A
+    C --> A{Drop on X}
+    A -- rise on the other side nearby --> K[catch - X's last throw]
+    A -- no rise --> H[hit - the other side's last throw at X]
+    T --> M[everything unclaimed - miss]
+```
+
+## What it scores
+
+On the clip, outcome on the 20 matched throws the pipeline called throws:
+**65%** — 13 of 20. Predicted efficiency **near 4/15 against a truth of
+4/15; far 1/12 against 2/14.**
+
+The seven errors are three families, none a threshold:
+
+- **Two throws at one side inside the window.** 1067 (hit) and 1077 (miss)
+  are ten frames apart; the far side's drop at 1125 goes to the later one.
+  The ball's contact was tried as the tie-break — it names the leaver for
+  1067 — and it breaks the other such pair (4018's ball passes through the
+  box of the player 4030 then hits). Latest-throw is kept and the case
+  reported.
+- **Identity.** The truth throw at 2725 sits on a second, empty detection
+  of its thrower, so the real thrower's proposal is unmatched — and it is
+  that proposal the catch resolves to; the far-side drop at 2898 then falls
+  to a held-ball false positive at 2749. Both are the identity layer's.
+- **Blocks are misses.** Three of them. State cannot see a block, exactly
+  as the plan said, and the metric does not need it.
+
+## What the fold found in the labels
+
+Folding the labelled outcomes from 6 v 6 reached 8 v −2 against an
+on-court count that went 6 v 6 → 6 v 1. Two labels were wrong about the
+game and right about the ball, and were corrected with the count as the
+witness ([[wdbf-rules]]):
+
+- **1485**, labelled a catch: no far player leaves and no near player
+  returns; the count is flat. Now a block, as the annotator's own note
+  ("block or catch, hard to see") allowed.
+- **2701**, a hit on far-2 twenty-two frames after far-2's own throw was
+  caught at 2681. He was already out and still walking off; under 19.1 only
+  a live player can be put out. The label keeps `hit` and carries
+  `eliminated: false`; the metric counts eliminations, not hits.
+
+Three eliminating events on one player in 44 frames is what the roster
+saw as two far outs and two near returns — which is what happened.
+
+## Boundaries
+
+- `block` is not claimed. A blocked ball stays live (21.2) and state does
+  not move; the target's wrists showed a trace of it on the clip but too
+  weakly to build on.
+- No `target` is attributed here; [[destination]]'s contact names one
+  where the chain reached a player.
+- The window is the whole of the lag. A second throw at the same side
+  inside it is attributed by recency, and the clip has one such pair.
+- Set end could be read from the last resolved elimination and is not
+  yet; the live-play bound still comes from [[set-start]].

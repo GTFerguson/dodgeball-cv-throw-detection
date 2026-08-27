@@ -2,7 +2,7 @@
 title: Dodgeball Throw-Attempt Detection — Plan
 created: 2026-08-25
 updated: 2026-08-26
-status: clip labelled; candidate and release stages shipped; destination and outcome next
+status: every level of the cascade shipped; evaluation, stress and write-up next
 tags: [plan, dodgeball, event-detection, temporal]
 ---
 
@@ -553,3 +553,14 @@ label-uncertainty case, not a model failure.
   the outcome signal the plan proposed and found to lag a hit by 20–100 frames with tracker
   flicker on top - fine for the count, not for saying which throw; the ball resolves within
   21 frames. Outcome, when it comes, will read the chain's end and use exits to corroborate.
+- 2026-08-27 — outcome shipped and graduated to [[outcome]]. The ball cannot say: at 25 fps
+  the contact frame is where the chain loses it, and letting it through the box only grabs the
+  next orange. The whistle band is shoe squeak on fakes as often as a call; single tracks
+  fragment. A side's in-play count, held fifty frames, is the witness: a drop is a hit by the
+  last throw at that side, a drop with a return opposite is a catch of that side's last throw,
+  everything else a miss with block folded in. Outcome 65% on 20 matched throws; predicted
+  efficiency near 4/15 (truth 4/15), far 1/12 (truth 2/14). Folding the labels against the
+  count found two label errors - 1485 was a block, and 2701 hit a player already out
+  (`eliminated: false`, WDBF 19.1) - and confirmed the sequence 2681/2701/2725 as two outs and
+  two returns. The plan's original occupancy-first design stands for outcome, for a reason it
+  did not have: the contact is unobservable, not merely noisy.

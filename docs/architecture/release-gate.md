@@ -250,7 +250,8 @@ thresholds, `events` (proposals that passed gate one, each with `released`,
 `kind` and its evidence, including the chain's `path` and its `angle` to
 the opponent) and `dropped` (the rest, each with why). `kind` is `fake`,
 `pass` or `throw`; pass against throw is [[destination]]'s reading of the
-same chain.
+same chain, and a throw's `outcome` is [[outcome]]'s reading of the game
+state. Count steps no throw explains are listed as `unexplained_steps`.
 
 ## Boundaries
 

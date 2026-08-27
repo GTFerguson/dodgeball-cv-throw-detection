@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -25,6 +26,7 @@ from src.ball import trace_candidates  # noqa: E402
 from src.candidates import CandidateSet  # noqa: E402
 from src.court import Court  # noqa: E402
 from src.pose import PoseRun  # noqa: E402
+from src.outcome import Thrown, count_steps, resolve  # noqa: E402
 from src.release import TIMELINE_ROOT, Timeline, decide, thresholds  # noqa: E402
 from src.roster import Roster  # noqa: E402
 from setstart import SetTimeline  # noqa: E402
@@ -59,15 +61,41 @@ def main() -> int:
         interval = sets.interval_for(trace.candidate.frame)
         decisions.append(decide(trace, interval.start_frame if interval else None, pose.fps,
                                 players_at))
+    # Outcomes from the game state: a side's in-play count over live play,
+    # its persistent steps, each attributed to the last throw at that side.
+    unexplained = []
+    for interval in sets.live_play_intervals():
+        frames = range(interval.start_frame, interval.end_frame + 1)
+        counts = {team: [] for team in ("near", "far")}
+        for f in frames:
+            on = roster.on_court(f)
+            for team in counts:
+                counts[team].append(len(on[team]))
+        steps = count_steps(counts, interval.start_frame)
+        throws = [Thrown(i, d.frame, d.team) for i, d in enumerate(decisions)
+                  if d.kind == "throw" and d.team in ("near", "far") and interval.contains(d.frame)]
+        resolved, orphans = resolve(throws, steps)
+        for i, d in enumerate(decisions):
+            if d.kind == "throw" and interval.contains(d.frame):
+                r = resolved.get(i)
+                decisions[i] = replace(d, outcome=r.outcome if r else "miss",
+                                       outcome_step_frame=r.step_frame if r else None,
+                                       outcome_return_frame=r.return_frame if r else None)
+        unexplained += [{"frame": s.frame, "team": s.team, "before": s.before, "after": s.after}
+                        for s in orphans]
     timeline = Timeline(video=f"{stem}.mp4", clip_sha256=clip, pose_run=pose.dir.name,
-                        fps=pose.fps, thresholds=thresholds(), decisions=decisions)
+                        fps=pose.fps, thresholds=thresholds(), decisions=decisions,
+                        unexplained_steps=unexplained)
     out = timeline.write(TIMELINE_ROOT / f"{stem}.json")
 
     dropped = Counter(d.dropped for d in decisions if not d.is_event)
     kinds = Counter(d.kind for d in timeline.events)
+    outcomes = Counter(d.outcome for d in timeline.events if d.kind == "throw")
     print(f"{len(candidates.candidates)} proposals -> {len(timeline.events)} events "
           f"({', '.join(f'{k}: {n}' for k, n in sorted(kinds.items()))}); dropped "
           + ", ".join(f"{n} {why}" for why, n in dropped.most_common()))
+    print("throw outcomes: " + ", ".join(f"{o}: {n}" for o, n in sorted(outcomes.items(), key=str))
+          + f"; {len(unexplained)} count steps no throw explains")
     print(f"wrote {out.relative_to(REPO_ROOT)}")
     return 0
 

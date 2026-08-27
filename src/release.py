@@ -42,9 +42,8 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
-
 from typing import Callable
 
 from src.ball import Trace, WristFrame
@@ -325,6 +324,11 @@ class Decision:
     ball_before: float
     departure: Departure
     contact: Contact | None = None
+    # What the throw did, from the game state (src/outcome.py); None until resolved
+    # or for anything that is not a throw.
+    outcome: str | None = None
+    outcome_step_frame: int | None = None
+    outcome_return_frame: int | None = None
 
     @property
     def released(self) -> bool | None:
@@ -410,6 +414,8 @@ class Timeline:
     fps: float
     thresholds: dict
     decisions: list[Decision]
+    # Persistent drops in a side's count that no throw explains.
+    unexplained_steps: list[dict] = field(default_factory=list)
 
     @property
     def events(self) -> list[Decision]:
@@ -421,7 +427,10 @@ class Timeline:
                 "frame": d.frame, "track_id": d.track_id, "participant": d.participant_id,
                 "team": d.team, "box": [round(v, 1) for v in d.box],
                 "released": d.released, "kind": d.kind, "dropped": d.dropped,
+                "outcome": d.outcome,
                 "evidence": {
+                    "outcome_step_frame": d.outcome_step_frame,
+                    "outcome_return_frame": d.outcome_return_frame,
                     "ball_before": round(d.ball_before * 1e3, 4),
                     "depart": d.departure.distance, "links": d.departure.links,
                     "seed_offset": d.departure.seed_offset, "wrist": d.departure.wrist,
@@ -441,6 +450,7 @@ class Timeline:
             "thresholds": dict(self.thresholds),
             "events": [one(d) for d in self.decisions if d.is_event],
             "dropped": [one(d) for d in self.decisions if not d.is_event],
+            "unexplained_steps": list(self.unexplained_steps),
         }
 
     def write(self, path: str | Path) -> Path:
