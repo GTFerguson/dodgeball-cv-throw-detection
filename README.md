@@ -13,6 +13,17 @@ near v 27% truth and **8%** far v 14% truth. Every number below has a named
 failure behind it; the cascade, the labels and the error budget are all built
 so that the failures can be read rather than averaged away.
 
+## Start here
+
+| | |
+|---|---|
+| **[docs/design.pdf](docs/design.pdf)** | The design document — pipeline, signal strategy, models and methods, data and labels, evaluation, compute, failure modes. Source `docs/design.tex`, rebuild with `make design` |
+| **[docs/report.pdf](docs/report.pdf)** | The report — what the build changed from the design and why, results, what went wrong, error budget, stress, ablation, the metric at scale, next experiment. Source `docs/report.tex`, `make report` |
+| **[docs/video/](docs/video/README.md)** | The recorded walkthrough: [script.md](docs/video/script.md) is the beat-by-beat narration, `deck.html` the self-contained 10-slide deck (open it in a browser) |
+| **[Results](#results)** | The scores, level by level, and every failure behind them |
+| **[Reproducing](#reproducing)** | Prerequisites, the clip, the whole half, one stage at a time |
+| **The labels** | `cd tools/labeler && npm install && npm run dev`, then open **`wdbf2014_final_h2_set2.mp4`** — the 3.5-minute clip is the only labelled footage, and the picker shows each clip's event count. See [tools/labeler/README.md](tools/labeler/README.md) |
+
 ## The event
 
 A **throw attempt** is a player propelling a ball toward the opposing side
@@ -503,6 +514,7 @@ docs/design.pdf      the design document — pipeline, signals, methods, data, e
 docs/report.pdf      the report — what changed from the design and why, results, failures,
                      error budget, stress, ablation, compute, next experiment (`make report`)
 docs/labeling-guide.md  the annotation rule, written to be handed to a second person
+docs/video/          the recorded walkthrough — narration script, slide deck, figures
 docs/architecture/   how each shipped stage works and why (start at README.md)
 docs/reference/      the WDBF rules and jersey-reading evidence, cited
 docs/plans/          intent before code — selection, event definition, work log
