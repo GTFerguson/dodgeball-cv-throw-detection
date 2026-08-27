@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Callable
 
 from src.ball import Trace, WristFrame
+from src.rebound import Rebound
 from src.timing import frames, window
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -350,6 +351,9 @@ class Decision:
     ball_before: float
     departure: Departure
     contact: Contact | None = None
+    # What the ball did at the player it reached (src/rebound.py); None where
+    # the chain reached nobody or the stage did not run.
+    rebound: Rebound | None = None
     # What the throw did, from the game state (src/outcome.py); None until resolved
     # or for anything that is not a throw.
     outcome: str | None = None
@@ -467,6 +471,12 @@ class Timeline:
                                 if d.contact else None),
                     "destination_source": d.destination_source,
                     "destination_agreed": d.destination_agreed,
+                    "rebound": ({"contact_frame": d.rebound.contact_frame,
+                                 "seeded": d.rebound.seeded, "tracked": d.rebound.tracked,
+                                 "turn_deg": (round(d.rebound.turn_deg, 1)
+                                              if d.rebound.turn_deg is not None else None),
+                                 "deflected": d.rebound.deflected}
+                                if d.rebound else None),
                     "path": [list(p) for p in d.departure.path],
                 },
             }

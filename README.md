@@ -8,7 +8,7 @@ one complete set, 60 labelled events) is the evaluation set.
 Headline, at ±0.25 s: throwing motions are found at **F1 88%** (P 84%, R 93%);
 of the matched motions the **release** (did the ball leave the hand) is right
 **88%** of the time, the **kind** (fake / pass / throw) **86%**, and the
-**outcome** (hit / catch / miss) **59%**. Team throw efficiency reads **29%**
+**outcome** (hit / catch / miss) **68%**. Team throw efficiency reads **29%**
 near v 27% truth and **8%** far v 14% truth. Every number below has a named
 failure behind it; the cascade, the labels and the error budget are all built
 so that the failures can be read rather than averaged away.
@@ -59,8 +59,10 @@ flowchart LR
     W --> G[release gate: ball colour at the wrists, chain of blobs leaving]
     V --> G
     G --> D[destination: contact, else first direction v the centre line]
+    D --> B[rebound: SAM2 through the contact, did the ball turn]
     R --> O[outcome: persistent steps in each side's on-court count]
     D --> O
+    B --> O
     O --> SE[set end: one side down to one, then the floor fills]
     SE --> TL[timeline JSON]
     TL --> M[team throw efficiency]
@@ -91,9 +93,15 @@ shaped the result:
   dodge and a hit look the same to the chain, and the whistle sounds for
   fakes too. What is observable is that someone leaves: a persistent step
   in a side's on-court count is a hit (or a catch, if the other side gains
-  one), attributed to the last throw at that side. The rebound *is* visible
-  a few frames later; reading it is the next experiment.
+  one), attributed to the last throw at that side.
   → [outcome.md](docs/architecture/outcome.md)
+- **The ball breaks the tie.** Two throws at one side inside the lag is the
+  case the count cannot split. Where the chain reached a player, SAM2 is
+  seeded on the chain's last blob and follows the ball through the contact;
+  a ball that comes back off the player turned (hits 80–153° on the clip),
+  one that carries on past did not (misses under 30°). The one that turned
+  takes the departure.
+  → [rebound.md](docs/architecture/rebound.md)
 - **Identity is a roster, not a track id.** ByteTrack fragments are joined
   by jersey number and side; role comes from being in play during the set's
   core, because a referee's stripes and USA's black print read alike.
@@ -118,7 +126,7 @@ same-player through the roster ([evaluation.md](docs/architecture/evaluation.md)
 | Release (fake v released) | 88% | 56 matched: fakes right 21/23, releases right 28/33 |
 | Kind (fake / pass / throw) | 86% | 56 matched |
 | Throw detection (throw claimed = positive) | P 73% · R 76% · F1 75% | 29 truth throws |
-| Outcome (hit / catch / block / miss) | 59% | 22 matched throws |
+| Outcome (hit / catch / block / miss) | 68% | 22 matched throws (59% by recency alone) |
 | Efficiency | near 5/17 = 29% (truth 4/15 = 27%); far 1/13 = 8% (truth 2/14 = 14%) | per team |
 
 The timeline is `data/timeline/wdbf2014_final_h2_set2.json`: every
@@ -156,13 +164,15 @@ errors — a hard throw that reached a teammate's box first (throw → pass) and
 pass that left the hand too slowly for the chain (pass → fake) — complete the
 8 of 56.
 
-**Outcome (13 of 22 right).** The nine wrong come in three shapes, all in
-the attribution rather than the detection — every count step on the clip is
-explained by some throw. *Recency, twice:* two near throws inside one
-departure's lag — 1067 and 1077 ten frames apart, and the set-ending double
-4650 (miss) and 4651 (hit), both balls reaching the same far player within a
-second — and each time the later throw takes the hit, so one is missed and
-one invented. Four of the nine. *A return the roster never saw:* two far
+**Outcome (15 of 22 right; 13 by recency alone).** The seven wrong come in
+three shapes, all in the attribution rather than the detection — every count
+step on the clip is explained by some throw. *Recency:* the set-ending
+double, two near throws a frame apart (4650 miss, 4651 hit) whose balls
+reach the same far player within a second; the later throw takes the step,
+so one is missed and one invented. The pair at 1067/1077, the same shape,
+is now right: the rebound witness saw 1067's ball turn 119° at the player it
+reached and 1077's reach nobody. It has nothing to say on 4651, whose chain
+ends eight frames short of its player. *A return the roster never saw:* two far
 catches (2681, 2725) put two far players off, and the count shows both
 departures (2813, 2898) but only one near player walking back on (2953);
 the second departure has no return to pair with and falls through to a hit
@@ -171,8 +181,7 @@ scores miss and near efficiency gains a hit that never happened. *Not
 claimed:* the three blocks are all called miss (`block` is not claimed — a
 blocked ball stays live and moves no count), and 2701, a hit on a player
 already out, is called miss: the right answer for the metric and the wrong
-outcome label. The first two shapes are the count witness's blind spots,
-and the rebound experiment below is aimed at them.
+outcome label. The first two shapes are the count witness's blind spots.
 
 ### Error budget
 
@@ -185,13 +194,13 @@ the model's error from the labels'.
 | Predicted | 5/17 = 29% | 1/13 = 8% |
 | Denominator: throws claimed | 12 true, 5 matched no event, 0 fakes, 0 passes | 10 true, 3 matched no event |
 | Denominator: true throws not claimed | 3 (1 called fake, 1 pass, 1 no proposal) | 4 (3 called fake, 1 no proposal) |
-| Numerator: hits | 2 right, 2 missed, 3 invented | 1 right, 1 missed, 0 invented |
-| **Model** — paired bootstrap, 95% band on (predicted − truth) | −27 .. +31 points | −23 .. +3 points |
+| Numerator: hits | 3 right, 1 missed, 2 invented | 1 right, 1 missed, 0 invented |
+| **Model** — paired bootstrap, 95% band on (predicted − truth) | −20 .. +25 points | −23 .. +3 points |
 | **Labels** — if every `uncertain` event went the other way | 25% .. 33% | 13% .. 14% |
 | **Sampling** — Wilson 95% on the truth itself | 11% .. 52% | 4% .. 40% |
 
 Two readings. The near number is right for the wrong reasons: five spurious
-throws in the denominator and three invented hits in the numerator cancel to
+throws in the denominator and two invented hits in the numerator cancel to
 within two points. And the clip's own sampling interval is wider than any
 pipeline error: with fifteen throws a side, this set's efficiency says little
 about the team's. The metric needs a match, not a set — which is what the
@@ -217,7 +226,7 @@ Tolerance stays ±0.25 s.
 
 | Condition | Clip | Cand. F1 | Release | Kind | Outcome | Throw F1 | Pose-only recall | Efficiency near / far (truth 27% / 14%) |
 |---|---|---|---|---|---|---|---|---|
-| source | 1080p, CRF 16, 25 fps | 88% | 88% | 86% | 59% | 75% | 98% | 29% / 8% |
+| source | 1080p, CRF 16, 25 fps | 88% | 88% | 86% | 68% | 75% | 98% | 29% / 8% |
 | 480p | 854×480, same CRF | 66% | 75% | 70% | 25% | 52% | 88% | 38% / 22% |
 | crf40 | 1080p, x264 CRF 40 | 51% | 79% | 79% | 50% | 50% | 72% | 18% / 8% |
 | drop2, as shipped | every second frame, 12.5 fps; windows in frames | 64% | 87% | 85% | 58% | 62% | 78% | 25% / 8% |
@@ -291,7 +300,7 @@ predicted throws.
 | **whole half, predicted** | far | **46/114 = 40%** | 44/104 = 42% | 2/5 = 40% | 23/66 = 35% | 17/32 = 53% | 6/16 = 38% |
 | **whole half, predicted** | near | **23/126 = 18%** | 21/101 = 21% | 2/11 = 18% | 14/65 = 22% | 6/42 = 14% | 3/19 = 16% |
 
-Three readings, all with the outcome level's 59% accuracy attached:
+Three readings, all with the outcome level's 68% accuracy attached:
 
 - **The pipeline reproduces itself across cuts.** The labelled set scored
   from the whole-half run (set 3 of 8) lands where the clip run did: near
@@ -327,9 +336,11 @@ bodies, not names.
   jersey, ball-sized components only. It cannot see a ball against the red
   team at the far baseline, and it cannot tell one ball from another when two
   cross — the chain rules for that are geometric, not visual.
-- **The outcome is inferred, never seen.** A count step is attributed to the
-  last throw at that side. Two throws at one side inside the elimination lag
-  resolve by recency, and the clip has one such pair. `block` is not claimed.
+- **The outcome is inferred from the count, with the ball as tie-break.** A
+  count step is attributed to the last throw at that side unless a ball was
+  seen to turn at a player. The rebound witness answers on 16 of 20 contacts
+  on the clip, its one threshold was set by eye on the clip it is scored on,
+  and six visible hits is the sample. `block` is not claimed.
 - **Identity is one clip deep.** Seven players named of twelve; the far team
   is largely unnamed (numbers unreadable at 90 px). Attribution is by track
   and side, which is what the metric needs; player-level attribution is
@@ -339,28 +350,21 @@ bodies, not names.
 
 ## Next experiment
 
-Read the rebound. The first draft of this write-up said no feature of the
-ball at the contact separates a hit from a miss; that was measured on the
-chain, and it is wrong about the ball. Around every visible contact on the
-clip ([four hits above four misses, ±3
-frames](docs/figures/rebound-hits-v-misses.jpg)) a hit leaves the ball
-beside the player it struck for five frames or more at a fraction of its
-incoming speed — popping off a chest, drifting off a shoulder — and a miss
-leaves nothing: the ball is gone in a frame. The colour mask sees the
-rebound (a clean 26 px blob four frames after the hit at 602); the chain
-does not, because it dies at the box and the ball is against the body for
-one to three frames before it reappears. Three quick extractions failed on
-the clip — continuing the incoming line (a hit breaks it by definition),
-counting non-static blobs in the target's box (held balls on the far side,
-and the double at 4650/4651 contaminating each other) and a greedy
-post-contact chain with occlusion gaps (it jumps to neighbours) — so the
-witness needs the release linker's discipline seeded at the contact with no
-velocity prior, and the constraint the strips show: within two player
-widths of the contact, under half the incoming speed, for four frames. It
-speaks only where the chain reached a player, which is exactly where
-recency fails — two balls at one target inside the lag — and it is the
-first witness that could see a block. Six visible hits is a small sample;
-the second set is the one to test it on.
+Score the rebound witness blind. It was built, and its one threshold set,
+on the clip it is scored on, from six visible hits ([four hits above four
+misses, ±3 frames](docs/figures/rebound-hits-v-misses.jpg)); the second set
+is where it earns its place or loses it. Three things to read off that run.
+The four throws in twenty where the tracker leaves the ball before the
+contact — fast far-side throws, where the ball moves five diameters a frame
+and the segmenter's memory has nothing to match — need a bridge across the
+lost frames, and optical flow from the last good position is the obvious
+one. Whether the chain reaches the player often enough to matter: it fell
+eight frames short on the set-ending double here, so the witness had nothing
+to say on the one pair it was built for, and the fix is upstream in the
+chain's reach, not in the tracker. And blocks, which showed as deflections
+twice in four and are the first outcome the count cannot see and the ball
+can; with a second set's worth, `block` becomes claimable as a deflection
+with no count step behind it.
 
 **Further out.** A second venue is a config change plus a retune, not a
 rewrite: the colour window, court dimensions and kit vocabulary are in
@@ -405,7 +409,7 @@ Python 3.12, `ffmpeg`/`ffprobe` and `yt-dlp` on PATH, a CUDA GPU for pose
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python scripts/download_weights.py          # yolo11x-pose (~113 MB)
+.venv/bin/python scripts/download_weights.py          # yolo11x-pose (~113 MB), sam2_l (~224 MB)
 scripts/download_footage.sh && scripts/make_clip.sh   # WDBF 2014 final, 2nd half → 6:00–9:30 clip
 
 .venv/bin/python scripts/run.py data/footage/wdbf2014_final_h2_set2.mp4 --offset 360
@@ -427,7 +431,7 @@ rerunning one at a time:
 .venv/bin/python scripts/error_budget.py     wdbf2014_final_h2_set2
 .venv/bin/python scripts/ablate.py           wdbf2014_final_h2_set2   # output/ablation/summary.md
 .venv/bin/python scripts/stress.py 480p crf40 drop2                   # output/stress/summary.md
-make test                                                            # every suite (20)
+make test                                                            # every suite (21)
 ```
 
 `make` wraps the same commands (`make run CLIP=data/footage/x.mp4`, `make evaluate`,
@@ -444,7 +448,8 @@ duration converted at the clip's own frame rate
 **Compute.** Batch, not real time. Pose is the cost: YOLO11x-pose at 1920 px
 on a laptop RTX 4080, ~9 fps → 10 min for the clip. Identity (tracking + OCR) 24 s. Everything after it is
 seconds: candidates 3 s, the release gate 52 s (it reads the clip once around
-every proposal), evaluation 1 s. Nothing is trained.
+every proposal), the rebound witness ~3 s per throw that reached a player
+(SAM2-large on a crop, a model load each), evaluation 1 s. Nothing is trained.
 
 ## Layout
 
@@ -472,6 +477,7 @@ and is recorded with its rationale in `docs/`; every label was placed by hand.
 
 - Ultralytics YOLO11 pose (Jocher & Qiu, 2024, https://github.com/ultralytics/ultralytics) — person detection and keypoints.
 - ByteTrack (Zhang et al., 2022, *ECCV*, https://arxiv.org/abs/2110.06864) — tracking, via Ultralytics.
+- SAM 2 (Ravi et al., 2024, https://arxiv.org/abs/2408.00714) — following the ball through its contact, via Ultralytics' video predictor.
 - EasyOCR (JaidedAI, https://github.com/JaidedAI/EasyOCR) with CRAFT (Baek et al., 2019, *CVPR*) — jersey numbers; thresholds and the measured failure in [docs/reference/jersey-number-reading.md](docs/reference/jersey-number-reading.md).
 - WDBF Rules of Dodgeball 2024 — the event definition; quoted by rule number in [docs/reference/wdbf-rules.md](docs/reference/wdbf-rules.md).
 - Footage: World Dodgeball Federation, 2014 World Championship men's final, Canada v USA, https://www.youtube.com/watch?v=Spu6OlAZHUo.

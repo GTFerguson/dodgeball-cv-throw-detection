@@ -105,6 +105,10 @@ class Thrown:
     id: int
     frame: int
     team: str
+    # Whether the ball turned at the player it reached (src/rebound.py):
+    # True, False, or None where the tracker had no answer or the chain
+    # reached nobody.
+    deflected: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -127,8 +131,9 @@ def resolve(throws: list[Thrown], steps: list[Step],
     on the other side falls inside RETURN_WINDOW_S of it, and then belongs to
     the latest throw *by* X before the earlier of the two; otherwise it is a
     hit and belongs to the latest throw *at* X - by the other side - before
-    it. Either way the throw must be within ELIMINATION_WINDOW_S, and a throw
-    resolves once.
+    it, unless one of those throws was seen to turn at a player and a later
+    one was not. Either way the throw must be within ELIMINATION_WINDOW_S,
+    and a throw resolves once.
     """
     elimination_window = frames(ELIMINATION_WINDOW_S, fps)
     return_lo, return_hi = window(RETURN_WINDOW_S, fps)
@@ -141,11 +146,22 @@ def resolve(throws: list[Thrown], steps: list[Step],
     out: dict[int, Resolution] = {}
     orphans: list[Step] = []
 
-    def latest(team: str, before: int) -> Thrown | None:
-        for x in reversed(by_team.get(team, [])):
-            if x.frame <= before and x.id not in taken and before - x.frame <= elimination_window:
-                return x
-        return None
+    def latest(team: str, before: int, prefer_deflected: bool = False) -> Thrown | None:
+        """The last unresolved throw by `team` inside the window before `before`.
+
+        For a hit, a ball seen to turn at a player outranks recency: two
+        throws at one side inside the lag are the case recency cannot split,
+        and the rebound is the witness that can. A ball seen to carry on
+        is taken last; no answer sits between.
+        """
+        window = [x for x in by_team.get(team, [])
+                  if x.frame <= before and x.id not in taken and before - x.frame <= elimination_window]
+        if not window:
+            return None
+        if prefer_deflected:
+            rank = {True: 2, None: 1, False: 0}
+            return max(window, key=lambda x: (rank[x.deflected], x.frame))
+        return window[-1]
 
     for drop in (s for s in steps if s.delta < 0):
         for _ in range(-drop.delta):
@@ -159,7 +175,7 @@ def resolve(throws: list[Thrown], steps: list[Step],
                     taken.add(thrown.id)
                     out[thrown.id] = Resolution(thrown.id, "catch", drop.frame, rise.frame)
                     continue
-            thrown = latest(other(drop.team), drop.frame)
+            thrown = latest(other(drop.team), drop.frame, prefer_deflected=True)
             if thrown is None:
                 orphans.append(drop)
                 continue

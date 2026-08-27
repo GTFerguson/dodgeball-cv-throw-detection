@@ -26,7 +26,7 @@ detect_set_start   data/sets/<stem>.json        where each set begins         [[
 identify_players   data/roster/<stem>.json      who is a player, which side   [[roster]], [[player-identity]]
 detect_set_end     data/sets/<stem>.json        where each set ends           [[set-end]]
 detect_candidates  data/candidates/<stem>.json  throwing motions              [[throw-candidates]]
-detect_events      data/timeline/<stem>.json    fake | pass | throw, outcome  [[release-gate]], [[destination]], [[outcome]]
+detect_events      data/timeline/<stem>.json    fake | pass | throw, outcome  [[release-gate]], [[destination]], [[rebound]], [[outcome]]
 tactics            output/<stem>/tactics.md     efficiency by set-up
 evaluate           output/<stem>/evaluation.json  every level, where labels exist   [[evaluation]]
 ```

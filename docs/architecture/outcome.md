@@ -37,12 +37,12 @@ player it reached, and [[destination]] uses it; the chain cannot say what
 happened next.
 
 The rebound, though, is observable. On every visible hit on the clip the
-ball is beside the player it struck for five frames or more at a fraction
-of its incoming speed, and the colour mask sees it; after a miss nothing is
-left near the player (`docs/figures/rebound-hits-v-misses.jpg`). Reading it
-is a linking problem — occlusion at the body, held balls beside the target,
-two balls at one player — that three quick attempts did not solve; it is
-the next experiment in the README. Until then the game is the witness.
+ball comes back off the player it struck, and the colour mask sees it;
+after a miss it carries on past (`docs/figures/rebound-hits-v-misses.jpg`).
+Reading it is a linking problem — occlusion at the body, held balls beside
+the target, two balls at one player — and [[rebound]] reads it with a video
+segmenter seeded on the chain. The game stays the witness for *that* a throw
+resolved; the ball is the tie-break for *which* throw.
 
 Two other witnesses were measured and set aside. The **whistle** band
 (2.5–4.5 kHz) fires 56 times in three minutes at a floor low enough to
@@ -70,7 +70,10 @@ out and back inside two seconds is the tracker, not a player.
 the other side inside `RETURN_WINDOW` is a **catch** of X's latest throw
 before the earlier of the two; the return may precede the drop, because
 the catcher's teammate walks on while the thrower is still walking off.
-Otherwise it is a **hit** by the other side's latest throw before it. The
+Otherwise it is a **hit** by the other side's latest throw before it —
+unless [[rebound]] saw one of those throws' balls turn at a player and the
+later one's not: `latest` ranks a ball seen to turn over one with no answer
+over one seen to carry on, and recency only inside a rank. The
 throw must fall within `ELIMINATION_WINDOW` — the slowest departure on the
 clip is 141 frames after the hit, the slowest return 220 after the catch —
 and resolves once. Every throw no step claims is a **miss**. A drop no
@@ -94,24 +97,25 @@ flowchart LR
 ## What it scores
 
 On the clip, outcome on the 22 matched throws the pipeline called throws:
-**59%** — 13 of 22. Predicted efficiency **near 5/17 against a truth of
-4/15; far 1/13 against 2/14.** (It was 13 of 20 before the release gate's
-faint tier found two more throws; both of those score wrong here, one of
-them the set's last hit, below.)
+**68%** — 15 of 22, with [[rebound]] as the tie-break; 13 of 22 by recency
+alone. Predicted efficiency **near 5/17 against a truth of 4/15; far 1/13
+against 2/14.**
 
 The errors are three families, none a threshold:
 
 - **Two throws at one side inside the window.** 1067 (hit) and 1077 (miss)
-  are ten frames apart; the far side's drop at 1125 goes to the later one.
-  The set's last hit is the same shape: [[set-end]] hands the final
-  elimination to the latest unclaimed near throw in its window, and that is
-  a second proposal of the throw before it (near-10 at 4656, the same ball
-  as 4641), five frames after the true one (near-4C at 4647). One motion
-  proposed twice is [[throw-candidates]]' to fold.
-  The ball's contact was tried as the tie-break — it names the leaver for
-  1067 — and it breaks the other such pair (4018's ball passes through the
-  box of the player 4030 then hits). Latest-throw is kept and the case
-  reported.
+  are ten frames apart and the far side's drop at 1125 went to the later
+  one until [[rebound]]: 1067's ball turns 119° at the player it reached,
+  1077's reaches nobody, and the drop is 1067's. The set's last hit is the
+  same shape and is still wrong: [[set-end]] hands the final elimination to
+  the latest unclaimed near throw in its window, a second proposal of the
+  throw before it (near-10 at 4656, the same ball as 4641), five frames
+  after the true one (near-4C at 4647) — and 4647's chain ends eight frames
+  short of the player, so neither ball has an answer. One motion proposed
+  twice is [[throw-candidates]]' to fold. The ball's *contact* alone was
+  tried first as the tie-break and breaks the other pair (4018's ball passes
+  through the box of the player 4030 then hits); the turn is what separates
+  passing through from striking.
 - **A return the roster never saw.** The truth throw at 2725 sits on a
   second, empty detection of its thrower, so the real thrower's proposal is
   unmatched — and it is that proposal the catch resolves to. Two far
@@ -150,7 +154,9 @@ saw as two far outs and two near returns — which is what happened.
 - No `target` is attributed here; [[destination]]'s contact names one
   where the chain reached a player.
 - The window is the whole of the lag. A second throw at the same side
-  inside it is attributed by recency, and the clip has one such pair.
+  inside it is attributed by recency unless [[rebound]] saw one ball turn;
+  the clip has two such pairs, one split by the rebound and one where
+  neither chain reached the player.
 - The final elimination is not a step: the last player is still on the
   paint while the floor fills, so the count rises rather than drops.
   [[set-end]] reads the end from that shape and traces the hit back to the

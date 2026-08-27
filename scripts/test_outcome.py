@@ -105,6 +105,27 @@ class Resolve(unittest.TestCase):
         self.assertEqual(out[1].outcome, "hit")
         self.assertEqual(len(orphans), 1)
 
+    def test_a_ball_seen_to_turn_takes_the_hit_over_a_later_throw(self):
+        # Two near throws at the far side inside one departure's lag: recency
+        # would give the hit to the later one; the ball that turned at a
+        # player is the one that hit.
+        throws = [Thrown(1, 1000, "near", deflected=True), Thrown(2, 1010, "near", deflected=None)]
+        out, _ = resolve(throws, [Step(1100, "far", 6, 5)])
+        self.assertEqual(out[1].outcome, "hit")
+        self.assertNotIn(2, out)
+
+    def test_a_ball_seen_to_carry_on_is_the_last_resort(self):
+        throws = [Thrown(1, 1000, "near", deflected=None), Thrown(2, 1010, "near", deflected=False)]
+        out, _ = resolve(throws, [Step(1100, "far", 6, 5)])
+        self.assertEqual(out[1].outcome, "hit")
+        out, _ = resolve([Thrown(2, 1010, "near", deflected=False)], [Step(1100, "far", 6, 5)])
+        self.assertEqual(out[2].outcome, "hit")
+
+    def test_a_catch_goes_by_recency_alone(self):
+        throws = [Thrown(1, 1000, "far", deflected=True), Thrown(2, 1010, "far")]
+        out, _ = resolve(throws, [Step(1080, "far", 6, 5), Step(1120, "near", 5, 6)])
+        self.assertEqual(out[2].outcome, "catch")
+
     def test_a_two_player_return_explains_two_catches(self):
         # Far catches twice; the two thrown-out near players leave in one
         # step and the two returning far players walk on in one step. One

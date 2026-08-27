@@ -615,3 +615,13 @@ label-uncertainty case, not a model failure.
   ball is against the body for 1–3 frames first. Three quick extractions (line
   continuation, box lingering, greedy post-contact chain with gaps) did not separate.
   [[outcome]] and the README corrected; the rebound witness is the next experiment.
+- 2026-08-27 — the rebound witness shipped and graduated to [[rebound]]. Gary asked whether
+  SAM2 would help: it does exactly what the chain lacks — re-acquires the ball after the 1–3
+  frames against the body from appearance, not motion. Seeded on the chain's last blob (a box
+  of the blob's own size; a nominal-size box segments the floor), run on an upscaled crop,
+  believed only if it sat on the chain up to the contact, cut at the first jump a ball could
+  not make (it hopped to a second ball once), the turn over the ball's first player-widths out
+  separates: hits 80–153°, misses under 30°, two of four blocks deflect; speed does not (1067's
+  rebound is as fast as the throw). `resolve` ranks a ball seen to turn over no answer over a
+  ball seen to carry on, for hits only. Outcome 13 → 15 of 22 (68%): 1067/1077 split; the
+  set-ending double has no contact on either ball. `weights/sam2_l.pt`, ~3 s a throw.

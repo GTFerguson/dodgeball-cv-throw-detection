@@ -32,7 +32,15 @@
   "link_velocity_fraction": 0.6,
   "max_turn_deg": 50.0,
   "depart_min_norm": 0.25,
-  "chain_min_links": 2
+  "chain_min_links": 2,
+  "seed_before_s": 0.12,
+  "follow_after_s": 0.32,
+  "crop_side_px": 768,
+  "on_chain_norm": 0.075,
+  "jump_speed_frames": 2.0,
+  "jump_slack_norm": 0.15,
+  "turn_span_widths": 1.5,
+  "deflect_min_turn_deg": 60.0
  },
  "events": [
   {
@@ -63,6 +71,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       631.5,
@@ -159,6 +168,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1410.3,
@@ -193,7 +203,7 @@
   },
   {
    "frame": 516,
-   "track_id": 49,
+   "track_id": 435,
    "participant": "near-4C",
    "team": "near",
    "box": [
@@ -219,6 +229,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1001.2,
@@ -237,7 +248,7 @@
   },
   {
    "frame": 535,
-   "track_id": 49,
+   "track_id": 435,
    "participant": "near-4C",
    "team": "near",
    "box": [
@@ -267,6 +278,7 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": null,
     "path": [
      [
       906.8,
@@ -343,6 +355,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1267.8,
@@ -390,11 +403,18 @@
     "end_offset": 7,
     "contact": {
      "team": "near",
-     "track_id": 49,
+     "track_id": 435,
      "participant": "near-4C"
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 601,
+     "seeded": true,
+     "tracked": 7,
+     "turn_deg": 152.9,
+     "deflected": true
+    },
     "path": [
      [
       737.5,
@@ -463,6 +483,7 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": null,
     "path": [
      [
       649.6,
@@ -541,7 +562,7 @@
   },
   {
    "frame": 820,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -567,6 +588,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       824.0,
@@ -621,7 +643,7 @@
   },
   {
    "frame": 848,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -647,6 +669,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1028.8,
@@ -673,7 +696,7 @@
   },
   {
    "frame": 878,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -699,6 +722,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       943.7,
@@ -759,6 +783,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       729.5,
@@ -777,7 +802,7 @@
   },
   {
    "frame": 1055,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -807,6 +832,7 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": null,
     "path": [
      [
       957.8,
@@ -849,9 +875,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "miss",
+   "outcome": "hit",
    "evidence": {
-    "outcome_step_frame": null,
+    "outcome_step_frame": 1125,
     "outcome_return_frame": null,
     "ball_before": 0.2722,
     "depart": 0.4267,
@@ -867,6 +893,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 1075,
+     "seeded": true,
+     "tracked": 8,
+     "turn_deg": 119.1,
+     "deflected": true
+    },
     "path": [
      [
       725.1,
@@ -929,9 +962,9 @@
    "released": true,
    "kind": "throw",
    "dropped": null,
-   "outcome": "hit",
+   "outcome": "miss",
    "evidence": {
-    "outcome_step_frame": 1125,
+    "outcome_step_frame": null,
     "outcome_return_frame": null,
     "ball_before": 0.3904,
     "depart": 0.4692,
@@ -943,6 +976,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1371.7,
@@ -1027,6 +1061,7 @@
     },
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1455.7,
@@ -1075,6 +1110,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -1106,6 +1142,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1215.2,
@@ -1158,6 +1195,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1188.7,
@@ -1214,6 +1252,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1371.1,
@@ -1270,6 +1309,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 1492,
+     "seeded": true,
+     "tracked": 0,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       1376.0,
@@ -1338,6 +1384,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 1507,
+     "seeded": false,
+     "tracked": 8,
+     "turn_deg": 63.7,
+     "deflected": null
+    },
     "path": [
      [
       203.2,
@@ -1438,6 +1491,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 1533,
+     "seeded": false,
+     "tracked": 3,
+     "turn_deg": 1.8,
+     "deflected": null
+    },
     "path": [
      [
       800.2,
@@ -1510,6 +1570,7 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": null,
     "path": [
      [
       1315.4,
@@ -1556,7 +1617,7 @@
   },
   {
    "frame": 1870,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -1582,6 +1643,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       854.3,
@@ -1604,7 +1666,7 @@
   },
   {
    "frame": 1896,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -1630,6 +1692,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       963.6,
@@ -1682,6 +1745,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -1717,6 +1781,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 1903,
+     "seeded": true,
+     "tracked": 8,
+     "turn_deg": 134.0,
+     "deflected": true
+    },
     "path": [
      [
       930.7,
@@ -1789,6 +1860,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 1978,
+     "seeded": false,
+     "tracked": 8,
+     "turn_deg": 31.6,
+     "deflected": null
+    },
     "path": [
      [
       1303.9,
@@ -1849,6 +1927,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       729.5,
@@ -1921,6 +2000,7 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1482.5,
@@ -1969,6 +2049,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 2020,
+     "seeded": true,
+     "tracked": 7,
+     "turn_deg": 24.8,
+     "deflected": false
+    },
     "path": [
      [
       1510.1,
@@ -2027,7 +2114,7 @@
   },
   {
    "frame": 2062,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -2053,6 +2140,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1137.0,
@@ -2105,6 +2193,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -2136,6 +2225,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       697.3,
@@ -2188,6 +2278,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1422.0,
@@ -2236,6 +2327,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -2266,11 +2358,18 @@
     "end_offset": 6,
     "contact": {
      "team": "near",
-     "track_id": 2,
+     "track_id": 436,
      "participant": "near-44"
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 2686,
+     "seeded": true,
+     "tracked": 8,
+     "turn_deg": 17.3,
+     "deflected": false
+    },
     "path": [
      [
       1013.2,
@@ -2347,6 +2446,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 2701,
+     "seeded": true,
+     "tracked": 6,
+     "turn_deg": 14.3,
+     "deflected": false
+    },
     "path": [
      [
       171.1,
@@ -2446,11 +2552,18 @@
     "end_offset": -3,
     "contact": {
      "team": "near",
-     "track_id": 2,
+     "track_id": 436,
      "participant": "near-44"
     },
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": {
+     "contact_frame": 2696,
+     "seeded": false,
+     "tracked": 8,
+     "turn_deg": 26.7,
+     "deflected": null
+    },
     "path": [
      [
       1584.4,
@@ -2469,7 +2582,7 @@
   },
   {
    "frame": 2707,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -2499,6 +2612,13 @@
     },
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": {
+     "contact_frame": 2701,
+     "seeded": false,
+     "tracked": 8,
+     "turn_deg": 130.3,
+     "deflected": null
+    },
     "path": [
      [
       867.9,
@@ -2547,6 +2667,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 2732,
+     "seeded": true,
+     "tracked": 8,
+     "turn_deg": 0.8,
+     "deflected": false
+    },
     "path": [
      [
       1457.3,
@@ -2619,6 +2746,7 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1414.9,
@@ -2663,6 +2791,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1817.7,
@@ -2681,7 +2810,7 @@
   },
   {
    "frame": 2840,
-   "track_id": 2,
+   "track_id": 436,
    "participant": "near-44",
    "team": "near",
    "box": [
@@ -2707,6 +2836,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -2738,6 +2868,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       669.6,
@@ -2794,6 +2925,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       839.6,
@@ -2842,6 +2974,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       854.3,
@@ -2906,6 +3039,13 @@
     },
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": {
+     "contact_frame": 3214,
+     "seeded": false,
+     "tracked": 8,
+     "turn_deg": 126.7,
+     "deflected": null
+    },
     "path": [
      [
       1079.5,
@@ -2954,6 +3094,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -2989,6 +3130,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 3494,
+     "seeded": true,
+     "tracked": 3,
+     "turn_deg": 6.9,
+     "deflected": false
+    },
     "path": [
      [
       1327.4,
@@ -3061,6 +3209,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1117.1,
@@ -3125,6 +3274,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       664.6,
@@ -3205,6 +3355,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 3855,
+     "seeded": true,
+     "tracked": 7,
+     "turn_deg": 143.7,
+     "deflected": true
+    },
     "path": [
      [
       477.5,
@@ -3273,6 +3430,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1331.9,
@@ -3321,6 +3479,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       548.7,
@@ -3369,6 +3528,7 @@
     },
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       548.6,
@@ -3425,6 +3585,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       765.5,
@@ -3501,6 +3662,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       637.1,
@@ -3545,6 +3707,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1464.8,
@@ -3613,6 +3776,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       197.3,
@@ -3661,6 +3825,7 @@
     "contact": null,
     "destination_source": "direction",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1047.5,
@@ -3717,6 +3882,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -3748,6 +3914,7 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1532.9,
@@ -3792,6 +3959,7 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1405.0,
@@ -3840,6 +4008,7 @@
     "contact": null,
     "destination_source": "default",
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       867.3,
@@ -3888,6 +4057,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -3923,6 +4093,13 @@
     },
     "destination_source": "contact",
     "destination_agreed": true,
+    "rebound": {
+     "contact_frame": 4655,
+     "seeded": true,
+     "tracked": 1,
+     "turn_deg": null,
+     "deflected": null
+    },
     "path": [
      [
       1431.8,
@@ -3989,6 +4166,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4020,6 +4198,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4051,6 +4230,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1805.3,
@@ -4095,6 +4275,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4126,12 +4307,13 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
   {
    "frame": 577,
-   "track_id": 49,
+   "track_id": 435,
    "participant": "near-4C",
    "team": "near",
    "box": [
@@ -4157,12 +4339,13 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
   {
    "frame": 595,
-   "track_id": 49,
+   "track_id": 435,
    "participant": "near-4C",
    "team": "near",
    "box": [
@@ -4188,12 +4371,13 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
   {
    "frame": 630,
-   "track_id": 49,
+   "track_id": 435,
    "participant": "near-4C",
    "team": "near",
    "box": [
@@ -4219,12 +4403,13 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
   {
    "frame": 705,
-   "track_id": 49,
+   "track_id": 435,
    "participant": "near-4C",
    "team": "near",
    "box": [
@@ -4250,6 +4435,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1693.3,
@@ -4298,6 +4484,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4329,6 +4516,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4360,6 +4548,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4391,6 +4580,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4422,6 +4612,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4453,6 +4644,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4484,6 +4676,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1411.4,
@@ -4556,6 +4749,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4587,6 +4781,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4618,6 +4813,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4649,6 +4845,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4680,6 +4877,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1156.8,
@@ -4724,6 +4922,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4755,6 +4954,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4786,6 +4986,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4817,6 +5018,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4848,6 +5050,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4879,6 +5082,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4910,6 +5114,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -4941,6 +5146,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       489.2,
@@ -4985,6 +5191,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -5016,6 +5223,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -5047,6 +5255,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": []
    }
   },
@@ -5078,6 +5287,7 @@
     "contact": null,
     "destination_source": null,
     "destination_agreed": null,
+    "rebound": null,
     "path": [
      [
       1642.4,
