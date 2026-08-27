@@ -6,7 +6,7 @@
  "height": 1080,
  "annotator": "default",
  "created": "2026-08-25T19:53:20.550Z",
- "updated": "2026-08-26T22:40:00.000Z",
+ "updated": "2026-08-27T09:30:00.000Z",
  "events": [
   {
    "id": "xgxcrlkv",
@@ -894,7 +894,7 @@
    },
    "team": "far",
    "team_source": "inferred",
-   "outcome": "catch",
+   "outcome": "block",
    "target": {
     "box": {
      "x1": 1219.9,
@@ -916,7 +916,7 @@
    "outcome_visible": false,
    "ref_signal": null,
    "uncertain": false,
-   "note": "hard to see could be block or catch but they have the ball on the ground next to them after, would need better signaling to corroborate, check the ruling, what is supposed to happen after these two events, can we find anything to help tell us which it was"
+   "note": "hard to see could be block or catch but they have the ball on the ground next to them after, would need better signaling to corroborate, check the ruling, what is supposed to happen after these two events, can we find anything to help tell us which it was Changed catch -> block 2026-08-27: no far player leaves and no near player returns after it; the on-court count is flat."
   },
   {
    "id": "g9e79sip",
