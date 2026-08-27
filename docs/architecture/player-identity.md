@@ -213,6 +213,24 @@ one player wearing that number; asking the same readings to clear the higher
 bar a second time left the tail of 54 - CHALMERS for 800 frames - unnamed, and
 so unjoined to the rest of him.
 
+A swap can also leave each track reading only one number, which `switch()`
+cannot see: two players cross, the tracker trades their ids, and a number that
+was on one id is on the other from then on. It shows between the tracks
+instead. `players.swaps_between` finds two tracks on court together for longer
+than a hand-over that claim the same number in disjoint windows — the number
+moved from one id to the other, and the man it was on did not — and
+`tracking.swap_frame` puts the trade at the frame in between where the two
+boxes came within half a box height of each other; a pair that never came
+that close is left as it is and reported. Both tracks are cut there, the two
+halves that read the number are named by it, and the other two halves are
+the other player, for the reader or the occupancy fold to name. On the
+evaluation clip tracks 2 and 49 trade SARAULT 44 and KUTNER 4C at frame 354
+(0:14): 49 had read `44` nine times by 0:14, 2 reads it from 0:18, and the
+two pass within 0.19 of a box height at 354. Before this the fold named the
+whole of 49 as #4C — right for its tail, wrong for its head — and only the
+reader's nine `44`s exposed it, which is why the fold now defers to any
+number a piece has read ([[roster#Pieces are folded by who is missing from the six]]).
+
 ### What the sheet showed on the full clip
 
 The five-for-five result above was measured on the first 2067 frames of the set,
@@ -301,8 +319,11 @@ joined to nobody.
 
 An absent number vetoes nothing and proposes nothing. Most tracks carry none,
 and if absence forbade a join the veto would forbid every join rather than the
-wrong ones; if it proposed one, the unnamed fragments between CERVUDO's two
-tracks (2862-3634) would have to be joined by motion, which is not built.
+wrong ones. What does name the pieces no number was read on is not the number
+at all but the count: only six a side are on court while a set is live, so a
+piece in play while exactly one of the six has no track is that player. That
+fold runs after this join, on the roster's side and set decisions, and is
+described with them in [[roster#Pieces are folded by who is missing from the six]].
 
 ## What does not work here, and why it was not built
 

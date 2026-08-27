@@ -81,6 +81,80 @@ def box_iou(a, b) -> float:
     return inter / union if union > 0 else 0.0
 
 
+# Two tracks on one body sit on the same box; two players standing close do
+# not overlap their boxes by half.
+TOGETHER_MIN_IOU = 0.5
+
+
+def tracks_together(a: Track, b: Track, min_iou: float = TOGETHER_MIN_IOU) -> bool:
+    """Whether two tracks were one body over the frames they share.
+
+    A tracker hand-over is the old track lingering on the player the new one
+    has taken, so their boxes coincide; two players on court at once do not.
+    Judged on the median box overlap of the shared frames, so a stray frame
+    either way does not decide it. Tracks sharing no frame are not together.
+    """
+    shared = sorted(set(a.frames) & set(b.frames))
+    if not shared:
+        return False
+    ious = sorted(box_iou(a.at(f)["box"], b.at(f)["box"]) for f in shared)
+    return ious[len(ious) // 2] >= min_iou
+
+
+# A hand-over across a gap: the tracker lost the player and picked them up
+# again within a second, within most of a box-height of where it lost them.
+# On the evaluation clip the seams are 8-10 frames and 0.05-0.44 heights; the
+# nearest other player's lost track was 115 frames and 2.3 heights away.
+SEAM_MAX_GAP_FRAMES = 25
+SEAM_MAX_SHIFT = 0.75
+
+
+def tracks_continue(a: Track, b: Track, max_gap: int = SEAM_MAX_GAP_FRAMES,
+                    max_shift: float = SEAM_MAX_SHIFT) -> bool:
+    """Whether `b` picks up where `a` left off: starting within `max_gap`
+    frames after `a` ends, with its first box centred within `max_shift` of
+    `a`'s last box height from where that box was."""
+    gap = b.start - a.end
+    if gap <= 0 or gap > max_gap:
+        return False
+    la, fb = a.detections[-1]["box"], b.detections[0]["box"]
+    height = la[3] - la[1]
+    if height <= 0:
+        return False
+    dx = ((fb[0] + fb[2]) - (la[0] + la[2])) / 2
+    dy = ((fb[1] + fb[3]) - (la[1] + la[3])) / 2
+    return (dx * dx + dy * dy) ** 0.5 <= max_shift * height
+
+
+# Two tracks trading players pass through one another: at the trade the
+# boxes all but coincide. Measured on the centre against the box height, as
+# a seam is, because two tall boxes side by side score a low overlap even
+# when one player is stepping into the other's box.
+SWAP_MAX_SHIFT = 0.5
+
+
+def swap_frame(a: Track, b: Track, after: int, before: int,
+               max_shift: float = SWAP_MAX_SHIFT) -> int | None:
+    """The frame in (after, before] where two tracks came closest, if they came
+    within `max_shift` of a box height of each other - where a swap between
+    them happened - or None if they never did."""
+    best, best_shift = None, max_shift
+    for f in range(after + 1, before + 1):
+        da, db = a.at(f), b.at(f)
+        if da is None or db is None:
+            continue
+        ba, bb = da["box"], db["box"]
+        height = max(ba[3] - ba[1], bb[3] - bb[1])
+        if height <= 0:
+            continue
+        dx = ((bb[0] + bb[2]) - (ba[0] + ba[2])) / 2
+        dy = ((bb[1] + bb[3]) - (ba[1] + ba[3])) / 2
+        shift = (dx * dx + dy * dy) ** 0.5 / height
+        if shift < best_shift or (best is None and shift <= best_shift):
+            best, best_shift = f, shift
+    return best
+
+
 def admit(
     detections: list[dict], playing: Callable[[dict], bool],
     carried: list[Carried], frame: int, hold: int = AIRBORNE_HOLD_FRAMES,

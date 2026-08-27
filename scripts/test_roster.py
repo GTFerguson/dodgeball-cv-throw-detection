@@ -9,6 +9,7 @@ are only meaningful against real footage.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 import sys
 import tempfile
 import unittest
@@ -21,7 +22,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from src.roster import (KIT_MIN_SAMPLES, PLAYER_MIN_CORE_FRAMES, ROSTER_ROOT,  # noqa: E402
                         Participant, Roster, TrackRecord, assign_role, assign_team,
-                        chest_region, crop_vote, in_core, intervals_of, kit_fractions,
+                        chest_region, core_of, crop_vote, in_core, intervals_of, kit_fractions,
                         participant_id, sides_from, vote_kit)
 
 CLIP = "wdbf2014_final_h2_set2"
@@ -146,33 +147,36 @@ class Intervals(unittest.TestCase):
 def small_roster() -> Roster:
     tracks = {
         1: TrackRecord(id=1, participant_id="near-7", role="player", team="near",
-                       team_source="half", kit="red", kit_share=1.0, number=7,
+                       team_source="half", kit="red", kit_share=1.0, number=7, number_source="read",
                        start_frame=0, end_frame=4, detections=((0, 0), (1, 0), (2, 1), (3, 0), (4, 0)),
-                       in_play=((0, 2),), core_in_play_frames=3),
+                       in_play=((0, 2),), core_in_play_by_set={0: 3}),
         2: TrackRecord(id=2, participant_id="near-7", role="player", team="near",
-                       team_source="half", kit="red", kit_share=1.0, number=7,
+                       team_source="half", kit="red", kit_share=1.0, number=7, number_source="read",
                        start_frame=6, end_frame=8, detections=((6, 0), (7, 0), (8, 0)),
-                       in_play=((6, 8),), core_in_play_frames=3,
+                       in_play=((6, 8),), core_in_play_by_set={0: 3},
                        readings=((6, 7, 0.9), (8, 7, 0.8))),
         3: TrackRecord(id=3, participant_id="official-t3", role="official", team=None,
-                       team_source=None, kit="black", kit_share=0.9, number=None,
+                       team_source=None, kit="black", kit_share=0.9, number=None, number_source=None,
                        start_frame=0, end_frame=8, detections=tuple((f, 2) for f in range(9)),
-                       in_play=((4, 4),), core_in_play_frames=0),
+                       in_play=((4, 4),), core_in_play_by_set={}),
         4: TrackRecord(id=4, participant_id="player-t4", role="player", team="far",
-                       team_source="kit", kit="white", kit_share=0.8, number=None,
+                       team_source="kit", kit="white", kit_share=0.8, number=None, number_source=None,
                        start_frame=2, end_frame=3, detections=((2, 3), (3, 3)),
-                       in_play=(), core_in_play_frames=0),
+                       in_play=(), core_in_play_by_set={}),
     }
     participants = {
         "near-7": Participant(id="near-7", role="player", team="near", number=7,
-                              track_ids=(1, 2), start_frame=0, end_frame=8),
+                              track_ids=(1, 2), start_frame=0, end_frame=8,
+                              core_in_play_by_set={0: PLAYER_MIN_CORE_FRAMES}),
         "official-t3": Participant(id="official-t3", role="official", team=None, number=None,
-                                   track_ids=(3,), start_frame=0, end_frame=8),
+                                   track_ids=(3,), start_frame=0, end_frame=8,
+                                   core_in_play_by_set={}),
         "player-t4": Participant(id="player-t4", role="player", team="far", number=None,
-                                 track_ids=(4,), start_frame=2, end_frame=3),
+                                 track_ids=(4,), start_frame=2, end_frame=3,
+                                 core_in_play_by_set={}),
     }
     return Roster(video="clip.mp4", clip_sha256="abc", pose_run="run", fps=25.0, frame_count=10,
-                  sides={"red": "near", "white": "far"}, live_core=(0, 5),
+                  sides={"red": "near", "white": "far"}, live_cores={0: (0, 5)},
                   tracks=tracks, participants=participants)
 
 
@@ -186,9 +190,13 @@ class Ids(unittest.TestCase):
         self.assertEqual(participant_id("player", None, 7, 56), "player-t56")
         self.assertEqual(participant_id("official", None, None, 8), "official-t8")
 
-    def test_the_core_is_inclusive(self):
-        self.assertTrue(in_core(433, [(433, 4183)]))
-        self.assertFalse(in_core(4184, [(433, 4183)]))
+    def test_the_core_is_inclusive_and_names_its_set(self):
+        cores = {0: (433, 4183), 2: (5000, 8750)}
+        self.assertTrue(in_core(433, cores))
+        self.assertFalse(in_core(4184, cores))
+        self.assertEqual(core_of(4183, cores), 0)
+        self.assertEqual(core_of(5000, cores), 2)
+        self.assertIsNone(core_of(4999, cores))
 
 
 class Queries(unittest.TestCase):
@@ -214,6 +222,37 @@ class Queries(unittest.TestCase):
         self.assertEqual([p.id for p in r.officials()], ["official-t3"])
         self.assertEqual(r.participant_of(2).id, "near-7")
 
+    def test_played_is_narrower_than_player(self):
+        # t4 is a team kit never seen in play - a player, but not one who played.
+        r = small_roster()
+        self.assertEqual([p.id for p in r.played()], ["near-7"])
+        self.assertEqual([p.id for p in r.played("far")], [])
+        self.assertFalse(r.participant("player-t4").played)
+
+    def test_played_can_be_asked_per_set(self):
+        r = small_roster()
+        self.assertEqual([p.id for p in r.played(set_index=0)], ["near-7"])
+        self.assertEqual([p.id for p in r.played("near", 0)], ["near-7"])
+        self.assertEqual(r.played(set_index=1), [])
+
+    def test_played_needs_the_same_evidence_as_the_role(self):
+        p = small_roster().participant("near-7")
+        self.assertTrue(p.played)
+        self.assertFalse(replace(p, core_in_play_by_set={0: PLAYER_MIN_CORE_FRAMES - 1}).played)
+        # An official inside the core is a rule violation, never someone who played.
+        self.assertFalse(replace(p, role="official", team=None).played)
+
+    def test_played_is_judged_set_by_set(self):
+        # A second spread over two sets is no set played; a second in one is that one.
+        p = small_roster().participant("near-7")
+        short = PLAYER_MIN_CORE_FRAMES // 2
+        spread = replace(p, core_in_play_by_set={0: short, 1: PLAYER_MIN_CORE_FRAMES - short})
+        self.assertEqual(spread.played_sets, ())
+        self.assertFalse(spread.played)
+        one = replace(p, core_in_play_by_set={0: PLAYER_MIN_CORE_FRAMES, 1: 3, 2: PLAYER_MIN_CORE_FRAMES})
+        self.assertEqual(one.played_sets, (0, 2))
+        self.assertEqual(one.core_in_play_frames, 2 * PLAYER_MIN_CORE_FRAMES + 3)
+
     def test_a_participant_spans_its_tracks(self):
         self.assertEqual(small_roster().participant("near-7").track_ids, (1, 2))
 
@@ -226,7 +265,7 @@ class Queries(unittest.TestCase):
         self.assertEqual(back.track(2).readings, ((6, 7, 0.9), (8, 7, 0.8)))
         self.assertEqual(back.participants, r.participants)
         self.assertEqual(back.sides, r.sides)
-        self.assertEqual(back.live_core, (0, 5))
+        self.assertEqual(back.live_cores, {0: (0, 5)})
         self.assertEqual({p.track.id for p in back.at(2)}, {1, 3, 4})
 
     def test_a_roster_from_another_clip_is_refused(self):
@@ -260,11 +299,11 @@ class OnTheClip(unittest.TestCase):
             self.assertEqual((t.role, t.team), ("player", "far"), tid)
 
     def test_no_official_is_in_play_during_the_live_core(self):
-        start, end = self.roster.live_core
-        for t in self.roster.tracks.values():
-            if t.role == "official":
-                inside = [f for a, b in t.in_play for f in (a, b) if start <= f <= end]
-                self.assertEqual(inside, [], t.id)
+        for start, end in self.roster.live_cores.values():
+            for t in self.roster.tracks.values():
+                if t.role == "official":
+                    inside = [f for a, b in t.in_play for f in (a, b) if start <= f <= end]
+                    self.assertEqual(inside, [], t.id)
 
     def test_each_kit_maps_to_one_side(self):
         self.assertEqual(self.roster.sides, {"red": "near", "white": "far"})
@@ -273,8 +312,18 @@ class OnTheClip(unittest.TestCase):
         # #13 and #2 are USA; the near side's 44 is three fragments of one man,
         # and CHALMERS 7 runs through the swap that cut track 54.
         self.assertEqual(self.roster.participant("far-13").track_ids, (75,))
-        self.assertEqual(self.roster.participant("far-2").track_ids, (169,))
-        self.assertEqual(self.roster.participant("near-44").track_ids, (2, 231, 274))
+        # USA #2's number was first read at 1:18; the three pieces before it are
+        # theirs by occupancy - the one far player with no track, or the seam.
+        self.assertEqual(self.roster.participant("far-2").track_ids, (19, 129, 139, 169))
+        self.assertEqual([self.roster.track(i).number_source for i in (19, 129, 139, 169)],
+                         ["occupancy", "occupancy", "occupancy", "read"])
+        # SARAULT 44 and KUTNER 4C traded tracks at 0:14: 44 is the head of 49
+        # and the tail of 2, cut at frame 354, then 231 and 274 as before.
+        self.assertEqual(self.roster.participant("near-44").track_ids, (49, 436, 231, 274))
+        self.assertEqual((self.roster.track(436).split_from, self.roster.track(435).split_from),
+                         ((2, 354), (49, 354)))
+        self.assertIn(435, self.roster.participant("near-4C").track_ids)
+        self.assertEqual(self.roster.track(435).number_source, "occupancy")
         self.assertEqual(self.roster.participant("near-7").track_ids, (56, 434, 291))
 
     def test_the_readings_behind_a_name_are_on_the_track(self):
@@ -283,9 +332,34 @@ class OnTheClip(unittest.TestCase):
         self.assertGreaterEqual(sum(n == "7" for _, n, _ in t.readings), 3)
 
     def test_both_sides_are_full_at_the_rush(self):
-        start = self.roster.live_core[0]
+        start = self.roster.live_cores[0][0]
         counts = {k: len(v) for k, v in self.roster.on_court(start + 150).items()}
         self.assertEqual(counts, {"near": 6, "far": 6})
+
+    def test_the_twelve_numbered_players_played_the_set(self):
+        numbered = {p.id for p in self.roster.played() if p.number is not None}
+        self.assertEqual(numbered, {"far-01", "far-13", "far-2", "far-24", "far-27", "far-55",
+                                    "near-10", "near-18", "near-44", "near-4C", "near-6", "near-7"})
+
+    def test_the_clip_holds_one_set_and_everyone_who_played_played_it(self):
+        self.assertEqual(list(self.roster.live_cores), [0])
+        for p in self.roster.played():
+            self.assertEqual(p.played_sets, (0,), p.id)
+        self.assertEqual(self.roster.played(set_index=0), self.roster.played())
+        self.assertEqual(self.roster.played(set_index=1), [])
+
+    def test_exactly_the_twelve_played_and_the_seventh_bodies_are_excess(self):
+        self.assertEqual(len(self.roster.played()), 12)
+        self.assertTrue(all(p.number is not None for p in self.roster.played()))
+        # Three near-side pieces in play at 1:50-1:58 and 2:23-2:27 while all
+        # six near players were tracked: a second track or a misrole, not a player.
+        self.assertEqual(sorted(p.track_ids[0] for p in self.roster.excess()), [211, 215, 283])
+        for p in self.roster.excess():
+            self.assertEqual((p.role, p.played), ("player", False), p.id)
+
+    def test_everyone_who_played_has_a_side(self):
+        for p in self.roster.played():
+            self.assertIn(p.team, ("near", "far"), p.id)
 
     def test_every_player_track_has_a_side(self):
         for t in self.roster.player_tracks():

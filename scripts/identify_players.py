@@ -36,18 +36,19 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from src.court import Court  # noqa: E402
-from src.jersey import (Crop, JerseyReader, Reading, confirm,  # noqa: E402
+from src.jersey import (Crop, CropKeeper, JerseyReader, Reading, confirm,  # noqa: E402
                         in_time_order, needs_review, shortlist, switch,
                         torso_crop, unobstructed)
-from src.players import (CLAIM_MIN_READINGS, clash, join,  # noqa: E402
+from src.players import (CLAIM_MIN_READINGS, clash, fold_by_occupancy, join, swaps_between,  # noqa: E402
                          worn_at_once)
 from src.pose import PoseRun  # noqa: E402
-from src.roster import (Participant, Roster, TrackRecord, assign_role,  # noqa: E402
-                        assign_team, chest_region, in_core, intervals_of,
+from src.roster import (PLAYER_MIN_CORE_FRAMES, Participant, Roster, TrackRecord, assign_role,  # noqa: E402
+                        assign_team, chest_region, core_of, intervals_of,
                         kit_fractions, live_cores, participant_id, sides_from,
                         vote_kit)
 from setstart import SetTimeline  # noqa: E402
-from src.tracking import cut_frame, held_in_play, track as track_players  # noqa: E402
+from src.tracking import (cut_frame, held_in_play, swap_frame, tracks_continue,  # noqa: E402
+                          tracks_together, track as track_players)
 
 # A track shorter than this is a detection artefact rather than a player, and
 # naming one spends an identity on noise.
@@ -65,7 +66,7 @@ KIT_SAMPLE_EVERY = 10
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("video", nargs="?", default="wdbf2014_final_h2_set2")
+    ap.add_argument("video", help="clip stem or path under data/footage/")
     ap.add_argument("--start", type=int, default=0)
     ap.add_argument("--end", type=int, default=None)
     ap.add_argument("--sheet", type=Path, default=None)
@@ -113,7 +114,8 @@ def main() -> int:
             if i % KIT_SAMPLE_EVERY == 0:
                 kit_wanted[f].append(t)
 
-    crops: dict[int, list[Crop]] = defaultdict(list)
+    # Bounded per track: the shortlist's crops and no more. See CropKeeper.
+    crops: dict[int, CropKeeper] = defaultdict(CropKeeper)
     kit_samples: dict[int, list[tuple[int, tuple[float, float, float]]]] = defaultdict(list)
     cap.set(cv2.CAP_PROP_POS_FRAMES, args.start)
     for f in range(args.start, end):
@@ -126,7 +128,7 @@ def main() -> int:
                 continue
             crop = torso_crop(image, det)
             if crop is not None:
-                crops[t.id].append(Crop(frame=f, image=crop))
+                crops[t.id].add(Crop(frame=f, image=crop))
         for t in kit_wanted.get(f, ()):
             det = t.at(f)
             if det is None or not unobstructed(det, frames[f]):
@@ -147,7 +149,7 @@ def main() -> int:
     evidence: dict[int, list[Reading]] = {}
     shortlists: dict[int, list[Crop]] = {}
     for t in tracks:
-        picked = shortlist(crops.get(t.id, []))
+        picked = shortlist(crops[t.id].crops()) if t.id in crops else []
         if not picked:
             continue
         shortlists[t.id] = picked
@@ -180,6 +182,24 @@ def main() -> int:
     splits: dict[int, tuple[int, int]] = {}
     switched: dict[int, int] = {}
     next_id = max(t.id for t in tracks) + 1
+
+    def cut(t, at: int):
+        """Split a track at a frame, dividing its readings, crops and kit samples."""
+        nonlocal next_id
+        head, tail = t.split(at, next_id)
+        next_id += 1
+        # The head keeps the id, so take both halves before either is stored.
+        whole_readings, whole_crops = evidence.get(t.id, []), shortlists.get(t.id, [])
+        whole_kit = kit_samples.get(t.id, [])
+        evidence[head.id] = [r for r in whole_readings if r.frame < at]
+        evidence[tail.id] = [r for r in whole_readings if r.frame >= at]
+        shortlists[head.id] = [c for c in whole_crops if c.frame < at]
+        shortlists[tail.id] = [c for c in whole_crops if c.frame >= at]
+        kit_samples[head.id] = [k for k in whole_kit if k[0] < at]
+        kit_samples[tail.id] = [k for k in whole_kit if k[0] >= at]
+        splits[tail.id] = (t.id, at)
+        return head, tail
+
     queue = list(tracks)
     tracks = []
     while queue:
@@ -190,22 +210,47 @@ def main() -> int:
             continue
         a, b, last_a, first_b = found
         at = cut_frame(t, last_a, first_b)
-        head, tail = t.split(at, next_id)
+        head, tail = cut(t, at)
         print(f"track {t.id} reads #{a} then #{b}: cut at {at} -> {head.id}, {tail.id}")
-        # The head keeps the id, so take both halves before either is stored.
-        whole_readings, whole_crops = evidence[t.id], shortlists[t.id]
-        whole_kit = kit_samples.get(t.id, [])
-        evidence[head.id] = [r for r in whole_readings if r.frame < at]
-        evidence[tail.id] = [r for r in whole_readings if r.frame >= at]
-        shortlists[head.id] = [c for c in whole_crops if c.frame < at]
-        shortlists[tail.id] = [c for c in whole_crops if c.frame >= at]
-        kit_samples[head.id] = [k for k in whole_kit if k[0] < at]
-        kit_samples[tail.id] = [k for k in whole_kit if k[0] >= at]
         switched[head.id], switched[tail.id] = a, b
-        splits[tail.id] = (t.id, at)
-        next_id += 1
         queue[:0] = [head, tail]
     tracks = [t for t in tracks if t.frames]
+
+    # Two tracks on court together that read one number one after the other
+    # traded players where their boxes crossed: the number stayed on the man
+    # and moved between the ids. Neither track reads two numbers, so the
+    # switch above cannot see it; the pair can. Both are cut at the crossing,
+    # the halves that read the number are named by it, and the other two halves
+    # are the other player, left for the reader or the fold.
+    def claim_windows():
+        out: dict[int, dict[str, tuple[int, int]]] = {}
+        for tid, rs in evidence.items():
+            counts = Counter(r.number for r in rs)
+            for number, n in counts.items():
+                if n >= CLAIM_MIN_READINGS:
+                    frames = [r.frame for r in rs if r.number == number]
+                    out.setdefault(tid, {})[number] = (min(frames), max(frames))
+        return out
+
+    by_id = {t.id: t for t in tracks}
+    for swap in swaps_between({t.id: (t.start, t.end) for t in tracks}, claim_windows()):
+        a, b = by_id.get(swap.a), by_id.get(swap.b)
+        if a is None or b is None:
+            continue
+        at = swap_frame(a, b, swap.last_a, swap.first_b)
+        if at is None:
+            print(f"tracks {a.id} and {b.id} read #{swap.number} one after the other but never crossed: "
+                  f"left as they are")
+            continue
+        a_head, a_tail = cut(a, at)
+        b_head, b_tail = cut(b, at)
+        print(f"tracks {a.id} and {b.id} traded players at {at}: #{swap.number} is {a_head.id} then "
+              f"{b_tail.id}; {b_head.id} and {a_tail.id} are the other")
+        switched[a_head.id] = switched[b_tail.id] = swap.number
+        for old, halves in ((a, (a_head, a_tail)), (b, (b_head, b_tail))):
+            tracks.remove(old)
+            tracks.extend(h for h in halves if h.frames)
+        by_id = {t.id: t for t in tracks}
     tracks.sort(key=lambda t: (t.start, t.id))
     playing = {t.id: held_in_play(court, t) for t in tracks}
 
@@ -223,24 +268,26 @@ def main() -> int:
     read_any = sum(1 for r in evidence.values() if r)
     print(f"{read_any} tracks returned a reading, {len(numbers)} confirmed")
 
-    # Where each track was while in play, and whether that was inside the live
-    # core of a set - the evidence for calling it a player.
+    # Where each track was while in play, and which set's live core that was
+    # inside - the evidence for calling it a player, and for which sets it played.
     half_counts: dict[int, Counter] = {}
-    core_frames: dict[int, int] = {}
+    core_frames: dict[int, Counter] = {}
     for t in tracks:
         halves = Counter()
-        core = 0
+        core = Counter()
         for (cx, cy), f, on in zip(t.points, t.frames, playing[t.id]):
             if on:
                 halves[str(court.half(cy))] += 1
-                core += in_core(f, cores)
+                inside = core_of(f, cores)
+                if inside is not None:
+                    core[inside] += 1
         half_counts[t.id], core_frames[t.id] = halves, core
 
     kits = {t.id: vote_kit([k for _, k in kit_samples.get(t.id, [])]) for t in tracks}
     sides = sides_from([(kits[t.id][0], half_counts[t.id].most_common(1)[0][0])
                         for t in tracks if core_frames[t.id] and half_counts[t.id]])
     print(f"sides: {sides or 'not established'}")
-    roles = {t.id: assign_role(kits[t.id][0], core_frames[t.id]) for t in tracks}
+    roles = {t.id: assign_role(kits[t.id][0], sum(core_frames[t.id].values())) for t in tracks}
     teams = {t.id: assign_team(dict(half_counts[t.id]), kits[t.id][0], sides) for t in tracks}
 
     # Tracks that confirm to the same number on the same side, in sequence, are
@@ -258,7 +305,32 @@ def main() -> int:
         if pair is not None:
             print(f"  {key[0]} #{key[1]} is on tracks {pair[0]} and {pair[1]} at once: not joined")
 
+    # The pieces no number was read on: a piece in play on a side while exactly
+    # one of its six has no track is that player; one in play when all six are
+    # tracked is a seventh body, and no player.
+    pieces = [t.id for t in tracks if t.id not in numbers and roles[t.id] == "player"
+              and core_frames[t.id]]
     by_id = {t.id: t for t in tracks}
+    claims = {tid: set(numbers_read) for tid, numbers_read in claim_windows().items()}
+    fold = fold_by_occupancy(players, pieces, spans, {tid: teams[tid][0] for tid in spans},
+                             {tid: dict(core_frames[tid]) for tid in spans}, PLAYER_MIN_CORE_FRAMES,
+                             together=lambda a, b: tracks_together(by_id[a], by_id[b]),
+                             continues=lambda a, b: tracks_continue(by_id[a], by_id[b]),
+                             claims=claims)
+    players = fold.players
+    for tid, p in sorted(fold.folded.items(), key=lambda kv: spans[kv[0]]):
+        print(f"  track {tid} {spans[tid][0]}-{spans[tid][1]} folded into {p.team} #{p.number}: "
+              f"the one of the six with no track then")
+    for tid in sorted(fold.excess, key=lambda t: spans[t]):
+        print(f"  track {tid} {spans[tid][0]}-{spans[tid][1]} is a seventh body on the "
+              f"{teams[tid][0]} side: excess, not a player who played")
+    for tid in sorted(fold.unsure, key=lambda t: spans[t]):
+        why = f"read #{'/'.join(sorted(claims[tid]))}" if claims.get(tid) else "two of the six missing, or fewer than six known"
+        print(f"  track {tid} {spans[tid][0]}-{spans[tid][1]} on the {teams[tid][0]} side left unnamed: {why}")
+    print(f"{len(fold.folded)} pieces folded, {len(fold.excess)} excess, {len(fold.unsure)} left unnamed")
+    number_of = dict(numbers)
+    number_of.update({tid: p.number for tid, p in fold.folded.items()})
+
     owner: dict[int, str] = {}
     participants: dict[str, Participant] = {}
     for p in players:
@@ -271,7 +343,8 @@ def main() -> int:
             pid += "'"
         participants[pid] = Participant(
             id=pid, role=role, team=p.team, number=p.number, track_ids=tuple(ids),
-            start_frame=p.start, end_frame=p.end)
+            start_frame=p.start, end_frame=p.end,
+            core_in_play_by_set=dict(sum((core_frames[i] for i in ids), Counter())))
         for i in ids:
             owner[i] = pid
     for t in tracks:
@@ -282,7 +355,9 @@ def main() -> int:
         while pid in participants:
             pid += "'"
         participants[pid] = Participant(id=pid, role=role, team=team, number=numbers.get(t.id),
-                                        track_ids=(t.id,), start_frame=t.start, end_frame=t.end)
+                                        track_ids=(t.id,), start_frame=t.start, end_frame=t.end,
+                                        core_in_play_by_set=dict(core_frames[t.id]),
+                                        excess=t.id in fold.excess)
         owner[t.id] = pid
 
     records: dict[int, TrackRecord] = {}
@@ -295,27 +370,35 @@ def main() -> int:
         team, source = teams[t.id]
         records[t.id] = TrackRecord(
             id=t.id, participant_id=owner[t.id], role=roles[t.id], team=team,
-            team_source=source, kit=kit, kit_share=share, number=numbers.get(t.id),
+            team_source=source, kit=kit, kit_share=share, number=number_of.get(t.id),
+            number_source=("read" if t.id in numbers else "occupancy" if t.id in fold.folded else None),
             start_frame=t.start, end_frame=t.end, detections=tuple(detections),
             in_play=tuple(intervals_of(t.frames, playing[t.id])),
-            core_in_play_frames=core_frames[t.id], split_from=splits.get(t.id),
+            core_in_play_by_set=dict(core_frames[t.id]), split_from=splits.get(t.id),
             readings=tuple((r.frame, r.number, r.confidence)
                            for r in sorted(evidence.get(t.id, []), key=lambda r: r.frame)))
 
     roster = Roster(
         video=f"{stem}.mp4", clip_sha256=run.manifest["clip_sha256"], pose_run=run.dir.name,
         fps=run.fps, frame_count=run.frame_count, sides=sides,
-        live_core=cores[0] if cores else None, tracks=records, participants=participants)
+        live_cores=cores, tracks=records, participants=participants)
     out = roster.write(REPO_ROOT / "data" / "roster" / f"{stem}.json")
     back = Roster.load(out)
     by_role = Counter(t.role for t in back.tracks.values())
     print(f"\n{len(back.tracks)} tracks: " + ", ".join(f"{n} {r}" for r, n in by_role.items()))
     for team in ("near", "far"):
         ps = back.players(team)
-        named = sorted(p.number for p in ps if p.number is not None)
-        print(f"  {team}: {len(ps)} players, numbered {named}, "
-              f"{sum(p.number is None for p in ps)} unnamed")
-    print(f"  {len(back.officials())} officials, {len(back.unknown())} unknown")
+        played = back.played(team)
+        named = sorted(p.number for p in played if p.number is not None)
+        print(f"  {team}: {len(ps)} players, {len(played)} played - "
+              f"numbered {named}, {sum(p.number is None for p in played)} unnamed")
+        for s in sorted(back.live_cores):
+            in_set = back.played(team, s)
+            print(f"    set {s + 1}: {len(in_set)} played - "
+                  f"numbered {sorted(p.number for p in in_set if p.number is not None)}, "
+                  f"{sum(p.number is None for p in in_set)} unnamed")
+    print(f"  {len(back.officials())} officials, {len(back.unknown())} unknown, "
+          f"{len(back.excess())} excess")
     print(f"wrote {out.relative_to(REPO_ROOT)}")
 
     review = [t for t in tracks if roles[t.id] == "player"

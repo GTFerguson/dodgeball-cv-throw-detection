@@ -14,7 +14,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.players import (CLAIM_MIN_READINGS, JOIN_MAX_OVERLAP,  # noqa: E402
-                         MAX_WEARERS, Player, clash, join, worn_at_once)
+                         MAX_WEARERS, Player, Swap, clash, fold_by_occupancy, join, swaps_between,
+                         worn_at_once)
 
 
 class Joining(unittest.TestCase):
@@ -137,3 +138,168 @@ class WornAtOnce(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class Folding(unittest.TestCase):
+    """The pieces no number was read on, named by who is missing from the six."""
+
+    # A near side of six, all on court 0-1000 except where a test says otherwise.
+    def side(self, gaps: dict[str, tuple[int, int]] | None = None):
+        gaps = gaps or {}
+        spans, teams, core, players = {}, {}, {}, []
+        for k, number in enumerate(("1", "2", "3", "4", "5", "6")):
+            tid = 10 + k
+            if number in gaps:
+                a, b = gaps[number]
+                spans[tid] = (0, a)
+                spans[100 + tid] = (b, 1000)
+                for t in (tid, 100 + tid):
+                    teams[t], core[t] = "near", {0: 30}
+                ids = (tid, 100 + tid)
+            else:
+                spans[tid], teams[tid], core[tid] = (0, 1000), "near", {0: 30}
+                ids = (tid,)
+            players.append(Player(team="near", number=number, track_ids=ids, start=0, end=1000))
+        return spans, teams, core, players
+
+    def fold(self, players, pieces, spans, teams, core, **kw):
+        return fold_by_occupancy(players, pieces, spans, teams, core, min_core_frames=25, **kw)
+
+    def test_a_piece_in_the_one_gap_is_that_player(self):
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        fold = self.fold(players, [50], spans, teams, core)
+        self.assertEqual(fold.folded[50].number, "4")
+        self.assertEqual(fold.folded[50].track_ids, (13, 50, 113))
+        self.assertEqual(fold.folded[50].start, 0)
+        self.assertEqual((fold.excess, fold.unsure), (frozenset(), frozenset()))
+
+    def test_a_piece_with_nobody_missing_is_a_seventh_body(self):
+        spans, teams, core, players = self.side()
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        fold = self.fold(players, [50], spans, teams, core)
+        self.assertEqual(fold.excess, frozenset({50}))
+        self.assertEqual(fold.folded, {})
+
+    def test_two_players_missing_at_once_names_nobody(self):
+        spans, teams, core, players = self.side({"4": (300, 600), "5": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        fold = self.fold(players, [50], spans, teams, core)
+        self.assertEqual(fold.unsure, frozenset({50}))
+
+    def test_naming_one_piece_can_make_the_next_one_certain(self):
+        # 4 is missing 300-450 and 5 is missing 300-600; two pieces overlap
+        # across 380-440. The later piece runs past 4's return, so it can only
+        # be 5 - and once it is, 5 is on court with the earlier piece, which
+        # can then only be 4.
+        spans, teams, core, players = self.side({"4": (300, 450), "5": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 440), "near", {0: 100}
+        spans[51], teams[51], core[51] = (380, 590), "near", {0: 100}
+        fold = self.fold(players, [50, 51], spans, teams, core)
+        self.assertEqual({p: q.number for p, q in fold.folded.items()}, {51: "5", 50: "4"})
+
+    def test_two_pieces_on_court_together_with_one_candidate_are_left_alone(self):
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        spans[51], teams[51], core[51] = (320, 580), "near", {0: 200}
+        fold = self.fold(players, [50, 51], spans, teams, core)
+        self.assertEqual(fold.folded, {})
+        self.assertEqual(fold.unsure, frozenset({50, 51}))
+
+    def test_a_side_with_fewer_than_six_known_keeps_silent(self):
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        players = players[:5]
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        fold = self.fold(players, [50], spans, teams, core)
+        self.assertEqual(fold.unsure, frozenset({50}))
+        self.assertEqual(fold.excess, frozenset())
+
+    def test_a_player_who_sat_this_set_out_is_not_among_the_six(self):
+        # 4 played only set 1; in set 0 the side is five known players.
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        for t in (13, 113):
+            core[t] = {1: 30}
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        fold = self.fold(players, [50], spans, teams, core)
+        self.assertEqual(fold.unsure, frozenset({50}))
+
+    def test_a_hand_over_overlap_does_not_make_a_player_present(self):
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        spans[50], teams[50], core[50] = (300 - JOIN_MAX_OVERLAP + 1, 590), "near", {0: 200}
+        self.assertEqual(self.fold(players, [50], spans, teams, core).folded[50].number, "4")
+        spans[50] = (300 - JOIN_MAX_OVERLAP, 590)
+        self.assertEqual(self.fold(players, [50], spans, teams, core).excess, frozenset({50}))
+
+    def test_position_tells_a_hand_over_from_two_players_at_once(self):
+        # 4's track lingers 20 frames into the piece. On one body that is 4
+        # handed over to the piece; on two bodies it is 4 still on court, and
+        # the piece is whoever else is missing.
+        spans, teams, core, players = self.side({"4": (320, 600), "5": (300, 700)})
+        spans[50], teams[50], core[50] = (301, 590), "near", {0: 200}
+        one_body = self.fold(players, [50], spans, teams, core, together=lambda a, b: True)
+        self.assertEqual(one_body.unsure, frozenset({50}))  # 4 or 5: both handed over or absent
+        two_bodies = self.fold(players, [50], spans, teams, core, together=lambda a, b: False)
+        self.assertEqual(two_bodies.folded[50].number, "5")
+
+    def test_the_player_just_lost_where_the_piece_starts_is_the_piece(self):
+        # 4 and 5 are both missing; 4's track ended a few frames before the
+        # piece began, in the same place. That seam names the piece.
+        spans, teams, core, players = self.side({"4": (300, 600), "5": (200, 700)})
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        seam = lambda a, b: (a, b) == (13, 50)  # noqa: E731
+        self.assertEqual(self.fold(players, [50], spans, teams, core, continues=seam).folded[50].number, "4")
+        # With both lost there, the seam says nothing.
+        both = lambda a, b: b == 50 and a in (13, 14)  # noqa: E731
+        self.assertEqual(self.fold(players, [50], spans, teams, core, continues=both).unsure, frozenset({50}))
+
+    def test_the_reader_is_never_overruled_by_the_count(self):
+        # 4 is the one missing, but the piece read 5's number: it is not 4, and
+        # 5 is on court, so it is nobody the count can name.
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        fold = self.fold(players, [50], spans, teams, core, claims={50: {"5"}})
+        self.assertEqual((fold.folded, fold.unsure, fold.excess), ({}, frozenset({50}), frozenset()))
+        # A seventh body is a seventh body whatever it read.
+        spans, teams, core, players = self.side()
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        self.assertEqual(self.fold(players, [50], spans, teams, core, claims={50: {"17"}}).excess, frozenset({50}))
+        # And a claim that agrees with the count settles a choice of two.
+        spans, teams, core, players = self.side({"4": (300, 600), "5": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 590), "near", {0: 200}
+        self.assertEqual(self.fold(players, [50], spans, teams, core, claims={50: {"5"}}).folded[50].number, "5")
+
+    def test_a_piece_with_no_side_or_no_core_frames_is_unsure(self):
+        spans, teams, core, players = self.side({"4": (300, 600)})
+        spans[50], teams[50], core[50] = (310, 590), None, {0: 200}
+        spans[51], teams[51], core[51] = (310, 590), "near", {}
+        fold = self.fold(players, [50, 51], spans, teams, core)
+        self.assertEqual(fold.unsure, frozenset({50, 51}))
+
+
+class Swapping(unittest.TestCase):
+    """Two tracks on court together that read one number one after the other."""
+
+    def test_a_number_that_moves_between_concurrent_tracks_is_a_swap(self):
+        spans = {2: (0, 2900), 49: (100, 740)}
+        windows = {2: {"44": (450, 2800)}, 49: {"44": (280, 360)}}
+        self.assertEqual(swaps_between(spans, windows), [Swap(a=49, b=2, number="44", last_a=360, first_b=450)])
+
+    def test_the_order_of_the_windows_says_who_had_it_first(self):
+        spans = {2: (0, 2900), 49: (100, 740)}
+        windows = {2: {"44": (120, 200)}, 49: {"44": (400, 700)}}
+        self.assertEqual(swaps_between(spans, windows)[0], Swap(a=2, b=49, number="44", last_a=200, first_b=400))
+
+    def test_tracks_in_sequence_are_a_join_not_a_swap(self):
+        spans = {2: (0, 2932), 227: (2935, 3394)}
+        windows = {2: {"44": (100, 2800)}, 227: {"44": (3000, 3300)}}
+        self.assertEqual(swaps_between(spans, windows), [])
+
+    def test_a_number_two_tracks_read_at_once_is_not_a_swap(self):
+        spans = {2: (0, 2900), 49: (100, 740)}
+        windows = {2: {"44": (200, 600)}, 49: {"44": (300, 500)}}
+        self.assertEqual(swaps_between(spans, windows), [])
+
+    def test_different_numbers_do_not_swap(self):
+        spans = {2: (0, 2900), 49: (100, 740)}
+        windows = {2: {"44": (450, 2800)}, 49: {"18": (280, 360)}}
+        self.assertEqual(swaps_between(spans, windows), [])

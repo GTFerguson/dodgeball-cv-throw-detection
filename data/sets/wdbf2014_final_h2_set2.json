@@ -11,7 +11,11 @@
     "armed_min_balls": 4,
     "armed_min_spread_m": 5.0,
     "whistle_min_prominence_db": 20.0,
-    "sprint_min_players": 3
+    "sprint_min_players": 3,
+    "last_stand_min_s": 2.0,
+    "flood_min_rise": 2,
+    "flood_min_s": 0.4,
+    "flood_window_s": 10.0
   },
   "sets": [
     {
@@ -27,7 +31,19 @@
         "max_balls": 6,
         "max_spread_m": 7.97
       },
-      "notes": []
+      "notes": [],
+      "end": {
+        "frame": 4657,
+        "end_s": 186.28,
+        "source": "hit",
+        "side": "far",
+        "last_stand": [
+          4051,
+          4660
+        ],
+        "flood_frame": 4722,
+        "hit_frame": 4657
+      }
     },
     {
       "status": "no_whistle",

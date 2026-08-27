@@ -20,6 +20,7 @@ way the number cannot say which later fragment is whose.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 # Two tracks of one player can overlap briefly: when a tracker swap is cut, the
 # player's own starved track lingers a second on stray detections after the
@@ -133,3 +134,200 @@ def join(spans: dict[int, tuple[int, int]], numbers: dict[int, str],
                 end=max(spans[i][1] for i in group),
             ))
     return players
+
+
+# --------------------------------------------------------------------------
+# Folding the pieces no number was read on
+# --------------------------------------------------------------------------
+
+# Players a side in a WDBF set. The rule of the game the fold rests on: nobody
+# but those six is inside a side's court while the set is live.
+SIDE_SIZE = 6
+
+
+@dataclass(frozen=True)
+class Fold:
+    """What folding decided about the unnamed pieces.
+
+    ``folded`` maps a piece to the player it turned out to be; ``excess`` holds
+    the pieces that were in play when their side already had its six on the
+    floor, which no player can be - a second track on one body, or a misrole;
+    ``unsure`` is the rest: two players missing at once, a side with fewer than
+    six players known, or no side at all.
+    """
+
+    players: list[Player]
+    folded: dict[int, Player]
+    excess: frozenset[int]
+    unsure: frozenset[int]
+
+
+def _present(player: Player, piece: int, spans: dict[int, tuple[int, int]],
+             max_overlap: int, together: Callable[[int, int], bool] | None) -> bool:
+    """Whether any of a player's tracks is on court with the piece.
+
+    Two tracks on court together for longer than a hand-over are two people.
+    A shorter overlap is a hand-over - the player's own track lingering while
+    the piece takes their body - or two people after all, and only position
+    can say which: `together` answers whether two tracks share one body over
+    the frames they share. Without it a short overlap is taken as a hand-over.
+    """
+    a, b = spans[piece]
+    for tid in player.track_ids:
+        overlap = min(spans[tid][1], b) - max(spans[tid][0], a) + 1
+        if overlap > max_overlap:
+            return True
+        if overlap > 0 and together is not None and not together(tid, piece):
+            return True
+    return False
+
+
+def fold_by_occupancy(players: list[Player], pieces: list[int],
+                      spans: dict[int, tuple[int, int]],
+                      teams: dict[int, str | None],
+                      core_frames: dict[int, dict[int, int]],
+                      min_core_frames: int,
+                      side_size: int = SIDE_SIZE,
+                      max_overlap: int = JOIN_MAX_OVERLAP,
+                      together: Callable[[int, int], bool] | None = None,
+                      continues: Callable[[int, int], bool] | None = None,
+                      claims: dict[int, set[str]] | None = None) -> Fold:
+    """Name the pieces no number was read on, by who is missing from the six.
+
+    A piece is an unnamed track that was in play inside a set's live core. Only
+    a side's six players can be on its court then, so if exactly one of the six
+    has no track on court during the piece, the piece is that player. The rule
+    is exact rather than a guess, and it keeps silent whenever it is not: with
+    fewer than six of a side's players numbered the sixth is an unknown who is
+    always a candidate, and with two players missing at once the number cannot
+    say which. It runs to a fixpoint, because naming one piece can be what
+    makes the next one unambiguous.
+
+    `core_frames` is each track's in-play frames inside each set's core, by set
+    index; a piece is judged in the set it was mostly in play in, against the
+    players who played that set. `together(a, b)` says whether two tracks were
+    one body over the frames they share, which is what tells a hand-over from
+    two players briefly on court at once (see :func:`_present`); `continues(a,
+    b)` says whether track `b` picks up where `a` left off - a short gap with
+    the box in the same place - which names the piece when two players are
+    missing at once but only one of them was just lost there. `claims` holds
+    the numbers each piece read often enough to claim, short of confirming:
+    the count never overrules the reader, so a piece that read a number can
+    only be that number, and one that read a number the count rules out is
+    left unnamed and reported rather than folded. Two undecided pieces on court together whose
+    only candidate is the same player are left undecided, rather than one being
+    named by the order they were looked at.
+    """
+    players = list(players)
+    folded: dict[int, Player] = {}
+    undecided = [p for p in pieces if teams.get(p) and core_frames.get(p)]
+    unsure = set(pieces) - set(undecided)
+
+    def set_of(piece: int) -> int:
+        frames = core_frames[piece]
+        return max(frames, key=lambda s: (frames[s], -s))
+
+    def played(player: Player, set_index: int) -> bool:
+        return sum(core_frames.get(t, {}).get(set_index, 0) for t in player.track_ids) >= min_core_frames
+
+    def candidates(piece: int) -> list[int] | None:
+        """Indices into `players`, or None where the rule cannot speak."""
+        side, set_index = teams[piece], set_of(piece)
+        six = [i for i, p in enumerate(players) if p.team == side and played(p, set_index)]
+        if len(six) < side_size:
+            return None
+        found = [i for i in six if not _present(players[i], piece, spans, max_overlap, together)]
+        if not found:
+            return found  # a seventh body, whatever it read
+        claimed = (claims or {}).get(piece)
+        if claimed:
+            found = [i for i in found if players[i].number in claimed]
+            if not found:
+                return None
+        if len(found) > 1 and continues is not None:
+            seam = [i for i in found if any(continues(t, piece) for t in players[i].track_ids)]
+            if len(seam) == 1:
+                return seam
+        return found
+
+    while True:
+        options = {p: candidates(p) for p in undecided}
+        decided: dict[int, int] = {}
+        for piece, found in options.items():
+            if not found or len(found) != 1:
+                continue
+            only = found[0]
+            rivals = [q for q in undecided if q != piece and options[q] == [only]
+                      and min(spans[q][1], spans[piece][1]) - max(spans[q][0], spans[piece][0]) + 1 > max_overlap]
+            if not rivals:
+                decided[piece] = only
+        if not decided:
+            break
+        for piece, i in decided.items():
+            p = players[i]
+            ids = tuple(sorted(p.track_ids + (piece,), key=lambda t: spans[t]))
+            players[i] = Player(team=p.team, number=p.number, track_ids=ids,
+                                start=min(p.start, spans[piece][0]), end=max(p.end, spans[piece][1]))
+            folded[piece] = players[i]
+            undecided.remove(piece)
+        # Whatever was named this round now names the player it became, so
+        # every earlier fold points at the player's final shape.
+        for piece, p in folded.items():
+            folded[piece] = next(q for q in players if q.team == p.team and q.number == p.number
+                                 and piece in q.track_ids)
+
+    excess = set()
+    for piece in undecided:
+        found = candidates(piece)
+        if found is not None and not found:
+            excess.add(piece)
+        else:
+            unsure.add(piece)
+    return Fold(players=players, folded=folded, excess=frozenset(excess), unsure=frozenset(unsure))
+
+
+# --------------------------------------------------------------------------
+# A swap between two tracks
+# --------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Swap:
+    """Two tracks that traded players: `a` wore `number` until `last_a`, and
+    `b` wears it from `first_b`. The trade happened in between."""
+
+    a: int
+    b: int
+    number: str
+    last_a: int
+    first_b: int
+
+
+def swaps_between(spans: dict[int, tuple[int, int]],
+                  windows: dict[int, dict[str, tuple[int, int]]],
+                  max_overlap: int = JOIN_MAX_OVERLAP) -> list[Swap]:
+    """Pairs of concurrent tracks that claim one number one after the other.
+
+    A track that reads a number and then stops, while another track on court
+    with it starts reading the same number, is the tracker having swapped the
+    two players between them: the number moved from one id to the other, and
+    the man it was on did not. `windows` maps each track to the first and
+    last frame it read each number it claims. Both tracks must be on court
+    together for longer than a hand-over - a number handed from one track to
+    its successor is a join, not a swap - and the reading windows must not
+    overlap, since a number two tracks read at once is two people or a misread.
+    Where the trade happened is for the boxes to say (`tracking.swap_frame`).
+    """
+    found = []
+    ids = sorted(windows, key=lambda i: spans[i])
+    for k, a in enumerate(ids):
+        for b in ids[k + 1:]:
+            overlap = min(spans[a][1], spans[b][1]) - max(spans[a][0], spans[b][0]) + 1
+            if overlap <= max_overlap:
+                continue
+            for number in windows[a].keys() & windows[b].keys():
+                (fa, la), (fb, lb) = windows[a][number], windows[b][number]
+                if la < fb:
+                    found.append(Swap(a, b, number, la, fb))
+                elif lb < fa:
+                    found.append(Swap(b, a, number, lb, fa))
+    return found

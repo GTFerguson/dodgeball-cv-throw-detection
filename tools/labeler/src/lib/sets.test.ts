@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { DetectedSet, LivePlayInterval, SetTimelineFile } from '../types'
+import type { DetectedEnd, DetectedSet, LivePlayInterval, SetTimelineFile } from '../types'
 import {
-  detectedLivePlay, detectionSummary, hasDetection, livePlayBadge, setMarks,
+  detectedLivePlay, detectedSetAt, detectionSummary, hasDetection, livePlayBadge, setIndexOf, setMarks,
 } from './sets'
 
 const confirmed = (start: number, armed: number): DetectedSet => ({
@@ -85,6 +85,53 @@ describe('live play', () => {
 
   it('gives no interval to a layout that never started', () => {
     expect(detectedLivePlay(timeline(layoutOnly(4920)))).toEqual([])
+  })
+
+  it('numbers a set by its place in the timeline, whistle-less layouts included', () => {
+    // The roster records played_sets by the same index, so a layout that never
+    // started still takes a number: this confirmed set is set-1, not set-0.
+    const sets = timeline(layoutOnly(50), confirmed(433, 135), layoutOnly(4920))
+    const [interval] = detectedLivePlay(sets)
+    expect(interval.id).toBe('detected-live-1')
+    expect(setIndexOf(interval)).toBe(1)
+    expect(setMarks(sets)[1].id).toBe('set-1')
+    expect(detectedSetAt(sets, 1000)).toBe(1)
+    expect(detectedSetAt(sets, 100)).toBeNull()
+    expect(detectedSetAt(sets, 4921)).toBeNull()
+    expect(detectedSetAt(null, 1000)).toBeNull()
+  })
+})
+
+describe('a detected end', () => {
+  const ended = (start: number, armed: number, end: Partial<DetectedEnd>): DetectedSet => ({
+    ...confirmed(start, armed),
+    end: {
+      frame: 4660, end_s: 186.4, source: 'floor', side: 'far',
+      last_stand: [4051, 4660], flood_frame: 4722, hit_frame: null, ...end,
+    },
+  })
+
+  it('closes the set there instead of at the next layout', () => {
+    const [iv] = detectedLivePlay(timeline(ended(433, 135, {}), layoutOnly(4920)))
+    expect(iv.end_frame).toBe(4660)
+  })
+
+  it('says how the end was read', () => {
+    const [floor] = setMarks(timeline(ended(433, 135, {})))
+    expect(floor.label).toContain('ends by frame 4660 (far down to one, then the floor fills)')
+    const [hit] = setMarks(timeline(ended(433, 135, { source: 'hit', frame: 4655, hit_frame: 4655 })))
+    expect(hit.label).toContain('ends on the hit at frame 4655')
+  })
+
+  it('is counted in the summary', () => {
+    expect(detectionSummary(timeline(ended(433, 135, {}), layoutOnly(4920))))
+      .toBe('1 set start · 1 end · 1 ball layout without one')
+  })
+
+  it('puts the frames after it outside the set', () => {
+    const tl = timeline(ended(433, 135, {}), layoutOnly(4920))
+    expect(livePlayBadge([], tl, 4700)).toEqual({ text: 'no set in progress', source: 'model' })
+    expect(livePlayBadge([], tl, 4600)).toEqual({ text: 'set 1 · not marked', source: 'model' })
   })
 })
 

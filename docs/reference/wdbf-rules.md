@@ -68,8 +68,11 @@ miss in the outcome set.
 > **10.2.1** A set is won, when (1) a team has eliminated all players of the opposing team, or (2) a team has more live players than the opposing team after the designated set time runs out when using the Cloth Playing Format.
 
 Consequence: set end is the outcome of the last hit or catch, which is what
-the harness derives from the labels ([[evaluation]]) and what the pipeline
-will derive from the outcome resolver.
+the harness derives from the labels ([[evaluation]]). The pipeline reads the
+same moment from the floor — one side down to a single player, then more
+bodies on the court than (1) allows — and traces the hit back to it
+([[set-end]]); (2), the timed cloth format, has no such shape and is out of
+scope.
 
 ## Advantage and the throw clock
 

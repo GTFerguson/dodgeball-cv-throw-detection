@@ -42,8 +42,13 @@ export function setMarks(
   return timeline.sets.map((set, i) => {
     const confirmed = set.status === 'confirmed' && set.start_frame != null
     const verdict = verdictFor(reviews, set)
+    const ending = set.end
+      ? set.end.source === 'hit'
+        ? `, ends on the hit at frame ${set.end.frame}`
+        : `, ends by frame ${set.end.frame} (${set.end.side} down to one, then the floor fills)`
+      : ''
     const claim = confirmed
-      ? `set ${i + 1} starts · whistle at frame ${set.start_frame}`
+      ? `set ${i + 1} starts · whistle at frame ${set.start_frame}${ending}`
       : `set ${i + 1} · balls laid out at frame ${set.armed.start_frame}, no start detected`
     return {
       id: `set-${i}`,
@@ -59,28 +64,37 @@ export function setMarks(
 /**
  * Live play as the detector has it, in the shape the timeline already shades.
  *
- * A set runs from its start to the next ball layout, because play has stopped by
- * the time the balls are being laid out again. That end is an upper bound - a set
- * really ends on its last elimination, which nothing detects yet - so the last
- * interval takes a null end, which the timeline draws as running to the clip end
- * exactly as an unfinished hand-marked interval does.
+ * A set with a detected end runs to it. Otherwise it runs to the next ball
+ * layout, because play has stopped by the time the balls are being laid out
+ * again - an upper bound, later than the end by the huddle - and the last such
+ * interval takes a null end, which the timeline draws as running to the clip
+ * end exactly as an unfinished hand-marked interval does.
+ *
+ * Intervals are numbered by the set's index in the timeline as written, layouts
+ * that never got a whistle included — the numbering the marks, the roster's
+ * `played_sets` and the identity pass all use — so `detected-live-2` is the
+ * interval of the mark `set-2`, not the third interval that happened to exist.
  */
 export function detectedLivePlay(timeline: SetTimelineFile | null): LivePlayInterval[] {
   if (!timeline) return []
   const layouts = timeline.sets.map((s) => s.armed.start_frame).sort((a, b) => a - b)
-  return timeline.sets
-    .filter((s) => s.status === 'confirmed' && s.start_frame != null)
-    .map((s, i) => {
-      const start = s.start_frame as number
-      const next = layouts.find((f) => f > start)
-      return {
-        id: `detected-live-${i}`,
-        start_frame: start,
-        end_frame: next ?? null,
-        start_source: 'model' as const,
-        detected_start_frame: start,
-      }
-    })
+  return timeline.sets.flatMap((s, setIndex) => {
+    if (s.status !== 'confirmed' || s.start_frame == null) return []
+    const start = s.start_frame
+    const next = layouts.find((f) => f > start)
+    return [{
+      id: `detected-live-${setIndex}`,
+      start_frame: start,
+      end_frame: s.end?.frame ?? next ?? null,
+      start_source: 'model' as const,
+      detected_start_frame: start,
+    }]
+  })
+}
+
+/** The index into `sets` an interval from `detectedLivePlay` belongs to. */
+export function setIndexOf(interval: LivePlayInterval): number {
+  return Number(interval.id.slice('detected-live-'.length))
 }
 
 /** Whether the detector produced anything to draw for this clip. */
@@ -94,17 +108,20 @@ export function detectionSummary(timeline: SetTimelineFile | null): string {
   if (!marks.length) return 'no set starts detected — run scripts/detect_set_start.py'
   const confirmed = marks.filter((m) => m.timed).length
   const partial = marks.length - confirmed
+  const ended = (timeline?.sets ?? []).filter((s) => s.end).length
   const parts = [`${confirmed} set ${confirmed === 1 ? 'start' : 'starts'}`]
+  if (ended) parts.push(`${ended} ${ended === 1 ? 'end' : 'ends'}`)
   if (partial) parts.push(`${partial} ball layout without one`)
   return parts.join(' · ')
 }
 
-/** Which detected set a frame falls in, counted from 1, or null outside them. */
+/** Which set a frame falls in, as its index into the timeline's `sets` — the
+ *  number the roster's `played_sets` holds — or null outside live play. */
 export function detectedSetAt(timeline: SetTimelineFile | null, frame: number): number | null {
-  const intervals = detectedLivePlay(timeline)
-  for (let i = 0; i < intervals.length; i++) {
-    const iv = intervals[i]
-    if (frame >= iv.start_frame && (iv.end_frame == null || frame <= iv.end_frame)) return i + 1
+  for (const iv of detectedLivePlay(timeline)) {
+    if (frame >= iv.start_frame && (iv.end_frame == null || frame <= iv.end_frame)) {
+      return setIndexOf(iv)
+    }
   }
   return null
 }
@@ -137,7 +154,8 @@ export function livePlayBadge(
   if (inMarked) return null
 
   const set = detectedSetAt(timeline, frame)
-  if (set != null) return { text: `set ${set} · not marked`, source: 'model' }
+  // Shown counted from 1, as the timeline marks are.
+  if (set != null) return { text: `set ${set + 1} · not marked`, source: 'model' }
   if (hasDetection(timeline)) return { text: 'no set in progress', source: 'model' }
   if (marked.length) return { text: 'outside live play', source: 'label' }
   return { text: 'live play not marked', source: 'label' }

@@ -36,6 +36,28 @@ between the shoulder and hip keypoints - because a box-based torso crop drags
 in hair, sleeves and background until a white jersey with black sleeves and a
 black shirt with white shoulder panels look alike.
 
+Who played
+----------
+
+``player`` is a role, and it is wider than "played the set": a team kit on a
+track never seen in play is a player waiting to rush, eliminated, or on the
+bench. The question the cards, the occupancy stream and attribution all ask is
+narrower - who was on the court while a set was live - and it is answered per
+set at the participant grain: ``played_sets`` names every set whose live core
+held the person's tracks in play for at least ``PLAYER_MIN_CORE_FRAMES``, the
+same evidence that made their tracks players, and ``played`` is whether that
+names any. A clip holds several sets and a player sits some out, so the list
+is what a per-set filter needs; the total alone cannot say which. It is a
+decision the roster writes down, not one readers derive.
+
+The same rule of the game names the pieces no number was read on. A track
+lost and picked up again is a fresh id with no number until the reader gets
+one, and on a set's court there are only the six: a piece in play on a side
+while exactly one of its six has no track is that player
+(:func:`players.fold_by_occupancy`). A piece in play when all six are already
+tracked is a seventh body - a second track on one player, or a misrole - and
+is marked ``excess`` rather than counted as someone who played.
+
 The live core has a start (the whistle, exact) and a length, because the end
 of a set is still only bounded - officials lay balls out on the court between
 sets and the interval runs into that. Sets on this footage run three minutes
@@ -51,18 +73,24 @@ from pathlib import Path
 
 import numpy as np
 
+from src.venue import VENUE
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROSTER_ROOT = REPO_ROOT / "data" / "roster"
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 6
+# Schema 5 lacks only the fold's provenance, which reads as "nothing folded".
+READABLE_SCHEMAS = (5, SCHEMA_VERSION)
 
 ROLES = ("player", "official", "unknown")
 TEAMS = ("near", "far")
 
 # The kits on the evaluation footage. Team kits map to a side once the roster
 # has seen which half each colour plays in; the officials' kit maps to no side.
-KITS = ("red", "white", "black", "unknown")
-OFFICIAL_KIT = "black"
+# The kit colours chests are classified into and which the officials wear are
+# the venue's (config/venue.toml); "unknown" is the classifier's own answer.
+KITS = (*VENUE["teams"]["kits"], "unknown")
+OFFICIAL_KIT = VENUE["teams"]["official_kit"]
 
 # COCO keypoint indices.
 LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP = 5, 6, 11, 12
@@ -100,17 +128,25 @@ LIVE_CORE_S = 150.0
 PLAYER_MIN_CORE_FRAMES = 25
 
 
-def live_cores(timeline, fps: float) -> list[tuple[int, int]]:
-    """The stretch of each set that is certainly still live."""
-    cores = []
+def live_cores(timeline, fps: float) -> dict[int, tuple[int, int]]:
+    """The stretch of each set that is certainly still live, by set index."""
+    cores = {}
     for interval in timeline.live_play_intervals():
         end = min(interval.end_frame, interval.start_frame + int(LIVE_CORE_S * fps))
-        cores.append((interval.start_frame, end))
+        cores[interval.set_index] = (interval.start_frame, end)
     return cores
 
 
-def in_core(frame: int, cores: list[tuple[int, int]]) -> bool:
-    return any(a <= frame <= b for a, b in cores)
+def core_of(frame: int, cores: dict[int, tuple[int, int]]) -> int | None:
+    """The set whose live core holds a frame, or None."""
+    for index, (a, b) in cores.items():
+        if a <= frame <= b:
+            return index
+    return None
+
+
+def in_core(frame: int, cores: dict[int, tuple[int, int]]) -> bool:
+    return core_of(frame, cores) is not None
 
 
 def participant_id(role: str, team: str | None, number: str | None, track_id: int) -> str:
@@ -257,6 +293,9 @@ class TrackRecord:
     kit: str
     kit_share: float
     number: str | None
+    # How the track got its number: `read` off the jersey, or `occupancy` -
+    # folded into the one player missing from the six while it was in play.
+    number_source: str | None
     start_frame: int
     end_frame: int
     # (frame, index of the detection in the pose run's list for that frame).
@@ -264,7 +303,9 @@ class TrackRecord:
     detections: tuple[tuple[int, int], ...]
     # Inclusive frame intervals where the player counted as in play.
     in_play: tuple[tuple[int, int], ...]
-    core_in_play_frames: int
+    # In-play frames inside each set's live core, by set index. Kept per set
+    # so a person's `played_sets` can be seen track by track.
+    core_in_play_by_set: dict[int, int]
     split_from: tuple[int, int] | None = None
     # Every jersey number the reader returned on this track, as
     # (frame, number, confidence) in time order - the evidence behind `number`,
@@ -278,6 +319,11 @@ class TrackRecord:
     @property
     def in_play_frames(self) -> int:
         return sum(b - a + 1 for a, b in self.in_play)
+
+    @property
+    def core_in_play_frames(self) -> int:
+        """In-play frames inside any live core - the evidence for `player`."""
+        return sum(self.core_in_play_by_set.values())
 
     def is_in_play(self, frame: int) -> bool:
         return any(a <= frame <= b for a, b in self.in_play)
@@ -294,6 +340,34 @@ class Participant:
     track_ids: tuple[int, ...]
     start_frame: int
     end_frame: int
+    # In-play frames inside each set's live core, summed over the tracks.
+    core_in_play_by_set: dict[int, int]
+    # In play when its side already had six on the floor: a second track on
+    # one player, or a misrole. Kept as a player so the box is still not an
+    # official's, but never counted as someone who played.
+    excess: bool = False
+
+    @property
+    def core_in_play_frames(self) -> int:
+        return sum(self.core_in_play_by_set.values())
+
+    @property
+    def played_sets(self) -> tuple[int, ...]:
+        """The sets this person was on the court for while they were live.
+
+        Judged set by set: a second inside one set's core, not a second spread
+        over several. An official inside a core is a rule violation, never
+        someone who played, and neither is a seventh body.
+        """
+        if self.role != "player" or self.excess:
+            return ()
+        return tuple(sorted(s for s, n in self.core_in_play_by_set.items()
+                            if n >= PLAYER_MIN_CORE_FRAMES))
+
+    @property
+    def played(self) -> bool:
+        """Whether this person was on the court while any set was live."""
+        return bool(self.played_sets)
 
 
 @dataclass(frozen=True)
@@ -327,7 +401,8 @@ class Roster:
     fps: float
     frame_count: int
     sides: dict[str, str]
-    live_core: tuple[int, int] | None
+    # The frames the `player` rule was judged over, by set index.
+    live_cores: dict[int, tuple[int, int]]
     tracks: dict[int, TrackRecord]
     participants: dict[str, Participant]
     _by_frame: dict[int, list[tuple[int, int]]] = field(default_factory=dict, repr=False)
@@ -342,7 +417,7 @@ class Roster:
     @classmethod
     def load(cls, path: str | Path) -> "Roster":
         data = json.loads(Path(path).read_text())
-        if data.get("schema_version") != SCHEMA_VERSION:
+        if data.get("schema_version") not in READABLE_SCHEMAS:
             raise ValueError(f"{path} is schema {data.get('schema_version')}, "
                              f"expected {SCHEMA_VERSION}")
         tracks = {
@@ -350,10 +425,11 @@ class Roster:
                 id=t["id"], participant_id=t["participant"], role=t["role"],
                 team=t["team"], team_source=t["team_source"], kit=t["kit"],
                 kit_share=t["kit_share"], number=t["number"],
+                number_source=t.get("number_source", "read" if t["number"] is not None else None),
                 start_frame=t["start_frame"], end_frame=t["end_frame"],
                 detections=tuple((f, i) for f, i in t["detections"]),
                 in_play=tuple((a, b) for a, b in t["in_play"]),
-                core_in_play_frames=t["core_in_play_frames"],
+                core_in_play_by_set={int(s): n for s, n in t["core_in_play_by_set"]},
                 split_from=tuple(t["split_from"]) if t.get("split_from") else None,
                 readings=tuple((f, n, c) for f, n, c in t.get("readings", ())),
             ) for t in data["tracks"]
@@ -363,13 +439,15 @@ class Roster:
                 id=p["id"], role=p["role"], team=p["team"], number=p["number"],
                 track_ids=tuple(p["track_ids"]),
                 start_frame=p["start_frame"], end_frame=p["end_frame"],
+                core_in_play_by_set={int(s): n for s, n in p["core_in_play_by_set"]},
+                excess=p.get("excess", False),
             ) for p in data["participants"]
         }
-        core = data.get("live_core")
         return cls(
             video=data["video"], clip_sha256=data["clip_sha256"],
             pose_run=data["pose_run"], fps=data["fps"], frame_count=data["frame_count"],
-            sides=dict(data["sides"]), live_core=tuple(core) if core else None,
+            sides=dict(data["sides"]),
+            live_cores={s: (a, b) for s, a, b in data["live_cores"]},
             tracks=tracks, participants=participants,
         )
 
@@ -393,7 +471,7 @@ class Roster:
             "fps": self.fps,
             "frame_count": self.frame_count,
             "sides": dict(self.sides),
-            "live_core": list(self.live_core) if self.live_core else None,
+            "live_cores": [[s, a, b] for s, (a, b) in sorted(self.live_cores.items())],
             "thresholds": {
                 "live_core_s": LIVE_CORE_S,
                 "player_min_core_frames": PLAYER_MIN_CORE_FRAMES,
@@ -405,14 +483,20 @@ class Roster:
                 "id": p.id, "role": p.role, "team": p.team, "number": p.number,
                 "track_ids": list(p.track_ids),
                 "start_frame": p.start_frame, "end_frame": p.end_frame,
+                "core_in_play_by_set": [[s, n] for s, n in sorted(p.core_in_play_by_set.items())],
+                "core_in_play_frames": p.core_in_play_frames,
+                "played_sets": list(p.played_sets), "played": p.played,
+                "excess": p.excess,
             } for p in sorted(self.participants.values(),
                               key=lambda p: (ROLES.index(p.role), p.team or "", p.number or "", p.id))],
             "tracks": [{
                 "id": t.id, "participant": t.participant_id, "role": t.role,
                 "team": t.team, "team_source": t.team_source,
                 "kit": t.kit, "kit_share": round(t.kit_share, 3), "number": t.number,
+                "number_source": t.number_source,
                 "start_frame": t.start_frame, "end_frame": t.end_frame,
                 "frames": t.frames, "in_play_frames": t.in_play_frames,
+                "core_in_play_by_set": [[s, n] for s, n in sorted(t.core_in_play_by_set.items())],
                 "core_in_play_frames": t.core_in_play_frames,
                 "split_from": list(t.split_from) if t.split_from else None,
                 "in_play": [list(iv) for iv in t.in_play],
@@ -442,6 +526,20 @@ class Roster:
         """Every player, or every player on one side."""
         return [p for p in self.participants.values()
                 if p.role == "player" and (team is None or p.team == team)]
+
+    def played(self, team: str | None = None, set_index: int | None = None) -> list[Participant]:
+        """Who was on the court while a set was live: any set, or one set, on one side or both.
+
+        Narrower than :meth:`players`, which also holds the bench, the queue and
+        the pre-rush crowd in team kit.
+        """
+        return [p for p in self.participants.values()
+                if p.played and (team is None or p.team == team)
+                and (set_index is None or set_index in p.played_sets)]
+
+    def excess(self) -> list[Participant]:
+        """The seventh bodies: in play on a side that already had its six."""
+        return [p for p in self.participants.values() if p.excess]
 
     def officials(self) -> list[Participant]:
         return [p for p in self.participants.values() if p.role == "official"]

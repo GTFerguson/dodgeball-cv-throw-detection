@@ -26,15 +26,56 @@ from src.ball import trace_candidates  # noqa: E402
 from src.candidates import CandidateSet  # noqa: E402
 from src.court import Court  # noqa: E402
 from src.pose import PoseRun  # noqa: E402
-from src.outcome import Thrown, count_steps, resolve  # noqa: E402
-from src.release import TIMELINE_ROOT, Timeline, decide, thresholds  # noqa: E402
+from src.outcome import Resolution, Thrown, blocks, count_steps, resolve  # noqa: E402
+from src.rebound import Sam2Tracker, follow, read_frames, window_for  # noqa: E402
+from src.rebound import thresholds as rebound_thresholds  # noqa: E402
+from src.release import CONTACT_BOX_MARGIN, TIMELINE_ROOT, Timeline, decide, thresholds  # noqa: E402
 from src.roster import Roster  # noqa: E402
+from src.setend import LastStand, SetEnd, trace_back  # noqa: E402
 from setstart import SetTimeline  # noqa: E402
+
+
+def set_end_of(sets: SetTimeline, interval) -> SetEnd | None:
+    """The end scripts/detect_set_end.py wrote for a set, as the tracer wants it."""
+    end = sets.detected_end(interval)
+    if end is None:
+        return None
+    a, b = end["last_stand"]
+    return SetEnd(frame=end["frame"], source=end["source"], flood_frame=end["flood_frame"],
+                  stand=LastStand(side=end["side"], start_frame=a, end_frame=b, total=0))
+
+
+def follow_rebounds(video: Path, decisions: list, players_at, court: Court, fps: float,
+                    skip: bool) -> list:
+    """Follow every throw's ball to the player it reached and through; see src/rebound.py."""
+    if skip:
+        return decisions
+    jobs = []
+    for i, d in enumerate(decisions):
+        if d.kind != "throw" or d.departure.seed_offset is None or len(d.departure.path) < 2:
+            continue
+        chain = [(d.frame + d.departure.seed_offset + k, p) for k, p in enumerate(d.departure.path)]
+        jobs.append((i, chain))
+    if not jobs:
+        return decisions
+    wanted = set()
+    for _, chain in jobs:
+        first, last = window_for(chain, fps)
+        wanted.update(range(first, last + 1))
+    frames_at = read_frames(video, wanted)
+    tracker = Sam2Tracker()
+    for i, chain in jobs:
+        d = decisions[i]
+        decisions[i] = replace(d, rebound=follow(chain, d.track_id, players_at, CONTACT_BOX_MARGIN,
+                                                 court.scale_at, frames_at, tracker, fps))
+    return decisions
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("video", help="clip stem or path under data/footage/")
+    ap.add_argument("--no-rebound", action="store_true",
+                    help="skip following the ball through its contact (outcomes by recency alone)")
     args = ap.parse_args()
     stem = Path(args.video).stem
     video = REPO_ROOT / "data" / "footage" / f"{stem}.mp4"
@@ -61,6 +102,7 @@ def main() -> int:
         interval = sets.interval_for(trace.candidate.frame)
         decisions.append(decide(trace, interval.start_frame if interval else None, pose.fps,
                                 players_at))
+    decisions = follow_rebounds(video, decisions, players_at, court, pose.fps, args.no_rebound)
     # Outcomes from the game state: a side's in-play count over live play,
     # its persistent steps, each attributed to the last throw at that side.
     unexplained = []
@@ -71,10 +113,21 @@ def main() -> int:
             on = roster.on_court(f)
             for team in counts:
                 counts[team].append(len(on[team]))
-        steps = count_steps(counts, interval.start_frame)
-        throws = [Thrown(i, d.frame, d.team) for i, d in enumerate(decisions)
+        steps = count_steps(counts, interval.start_frame, pose.fps)
+        throws = [Thrown(i, d.frame, d.team, d.rebound.deflected if d.rebound else None)
+                  for i, d in enumerate(decisions)
                   if d.kind == "throw" and d.team in ("near", "far") and interval.contains(d.frame)]
-        resolved, orphans = resolve(throws, steps)
+        resolved, orphans = resolve(throws, steps, pose.fps)
+        # The final elimination never steps the count - the last player is still
+        # on the paint while the floor fills - so the set end names the throw.
+        end = set_end_of(sets, interval)
+        if end is not None:
+            free = [(t.id, t.frame, t.team) for t in throws if t.id not in resolved]
+            last = trace_back(free, end)
+            if last is not None:
+                resolved[last] = Resolution(last, "hit", end.frame)
+        # A ball seen to turn that nothing claimed: blocked, the ball stayed live.
+        resolved.update(blocks(throws, resolved))
         for i, d in enumerate(decisions):
             if d.kind == "throw" and interval.contains(d.frame):
                 r = resolved.get(i)
@@ -84,7 +137,8 @@ def main() -> int:
         unexplained += [{"frame": s.frame, "team": s.team, "before": s.before, "after": s.after}
                         for s in orphans]
     timeline = Timeline(video=f"{stem}.mp4", clip_sha256=clip, pose_run=pose.dir.name,
-                        fps=pose.fps, thresholds=thresholds(), decisions=decisions,
+                        fps=pose.fps, thresholds={**thresholds(), **rebound_thresholds()},
+                        decisions=decisions,
                         unexplained_steps=unexplained)
     out = timeline.write(TIMELINE_ROOT / f"{stem}.json")
 

@@ -1,7 +1,7 @@
 ---
 title: Destination
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [architecture, event-detection, ball, pass]
 ---
 
@@ -66,11 +66,14 @@ carries `destination_source` (`contact`, `direction` or `default`) and
 
 ## What it scores
 
-On the clip, kind on the 56 matched events: **84%** — fakes 22 of 23,
-passes 5 of 6, throws 20 of 27. Six of the seven throw errors are the
+On the clip, kind on the 56 matched events: **86%** — fakes 21 of 23,
+passes 5 of 6, throws 22 of 27. Four of the five throw errors are the
 release gate's misses carried down (a throw called a fake has nowhere to
 go); the one misread is a chain that seeded on a different ball crossing
-the wrist and ended in a teammate's box. The one pass error has no chain
+the wrist and ended in a teammate's box. The fake read as a pass is the
+release gate's faint tier stepping onto a ball flying past a held one
+([[release-gate]]); its direction, away from the opponent, is what keeps
+it from being a throw. The one pass error has no chain
 at all — the annotator's "literally hands it over". Direction alone had
 scored 82%: the contact witness recovered a two-ball lob whose direction
 was diagonal but whose chain, followed further, ends in the teammate's

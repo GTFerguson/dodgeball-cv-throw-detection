@@ -142,13 +142,19 @@ so a timeline that cannot be consumed fails at the stage that wrote it.
 `SetTimeline.live_play_intervals()` turns starts into the intervals the throw
 metric is computed over, and `interval_for(frame)` answers whether a throw counts.
 
-Each interval begins at a confirmed start and ends where the balls are laid out
-for the next set - or at the clip end if there is no next layout. That end is an
-**upper bound**, not the moment play stopped: a set ends on its last elimination,
-which needs the outcome resolver this layer sits upstream of. Every interval
-carries `end_is_bound=True` to say so, rather than presenting a bound as a
-measurement. On the evaluation clip the interval runs 17.32 s -> 196.80 s, which
-overshoots the real end by the huddle between sets.
+Each interval begins at a confirmed start and ends where [[set-end]] found the
+end - or, where it found none, where the balls are laid out for the next set,
+or at the clip end if there is no next layout. Every end but a detected hit is
+an **upper bound**, not the moment play stopped, and the interval says which
+it is: `end_source` is `hit`, `floor`, `layout` or `clip`, and `end_is_bound`
+is true for all but the first. On the evaluation clip the layout bound was
+17.32 s -> 196.80 s, which overshoots the real end by the huddle between sets;
+the floor end is 186.40 s.
+
+Each interval also carries `set_index`: its set's place in the written `sets`,
+counting the layouts that never got a whistle. That is the numbering the
+tool's timeline marks use ("set 2" is index 1) and the numbering the
+[[roster]] records `played_sets` in, so a set is one name everywhere.
 
 ### In the labelling tool
 
@@ -233,10 +239,10 @@ match is dead without evidence that it is.
 
 ## Boundaries
 
-Set **end** is not detected. It is the last elimination of a set, which needs the
-throw-outcome resolver that this layer sits upstream of, so it is deferred until
-the outcome stage exists. Until then a live-play interval runs from a detected
-start to the next one.
+Set **end** is not detected here. It is the last elimination of a set, and
+[[set-end]] reads it from the floor - one side down to one, then the court
+filling - and from the hit where the outcome stage has it. This layer only
+bounds a set by the next layout when no end was found.
 
 The layout test assumes balls are laid out on the centre line, which is the WDBF
 opening. A format that starts balls elsewhere needs a different band, though

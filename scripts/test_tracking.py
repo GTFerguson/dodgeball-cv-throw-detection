@@ -13,7 +13,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.tracking import AIRBORNE_HOLD_FRAMES, Carried, Track, admit, cut_frame  # noqa: E402
+from src.tracking import (AIRBORNE_HOLD_FRAMES, SEAM_MAX_GAP_FRAMES, SEAM_MAX_SHIFT,  # noqa: E402
+                          SWAP_MAX_SHIFT, TOGETHER_MIN_IOU, Carried, Track, admit, cut_frame,
+                          swap_frame, tracks_continue, tracks_together)
 
 
 def track_over(frames: list[int], id: int = 1) -> Track:
@@ -119,3 +121,92 @@ class AdmittingToTheTracker(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class Together(unittest.TestCase):
+    """Whether two tracks were one body over the frames they share."""
+
+    def boxed(self, id: int, frames: list[int], box) -> Track:
+        return Track(id=id, frames=list(frames), points=[(0.0, 0.0)] * len(frames),
+                     detections=[{"box": list(box)} for _ in frames])
+
+    def test_tracks_on_one_box_are_together(self):
+        a = self.boxed(1, [10, 11, 12], (0, 0, 10, 20))
+        b = self.boxed(2, [11, 12, 13], (0, 0, 10, 20))
+        self.assertTrue(tracks_together(a, b))
+
+    def test_tracks_on_two_players_are_not(self):
+        a = self.boxed(1, [10, 11, 12], (0, 0, 10, 20))
+        b = self.boxed(2, [11, 12, 13], (8, 0, 18, 20))
+        self.assertFalse(tracks_together(a, b))
+
+    def test_tracks_sharing_no_frame_are_not_together(self):
+        a = self.boxed(1, [10, 11], (0, 0, 10, 20))
+        b = self.boxed(2, [12, 13], (0, 0, 10, 20))
+        self.assertFalse(tracks_together(a, b))
+
+    def test_the_median_frame_decides(self):
+        # One coincident frame out of three does not make one body of two.
+        a = self.boxed(1, [10, 11, 12], (0, 0, 10, 20))
+        b = Track(id=2, frames=[10, 11, 12], points=[(0.0, 0.0)] * 3,
+                  detections=[{"box": [0, 0, 10, 20]}, {"box": [30, 0, 40, 20]}, {"box": [30, 0, 40, 20]}])
+        self.assertFalse(tracks_together(a, b))
+        self.assertGreaterEqual(TOGETHER_MIN_IOU, 0.5)
+
+
+class Continuing(unittest.TestCase):
+    """Whether one track picks up where another left off."""
+
+    def boxed(self, id: int, frames: list[int], box) -> Track:
+        return Track(id=id, frames=list(frames), points=[(0.0, 0.0)] * len(frames),
+                     detections=[{"box": list(box)} for _ in frames])
+
+    def test_a_short_gap_in_the_same_place_continues(self):
+        a = self.boxed(1, [10, 11, 12], (0, 0, 20, 100))
+        b = self.boxed(2, [12 + SEAM_MAX_GAP_FRAMES, 40], (10, 5, 30, 105))
+        self.assertTrue(tracks_continue(a, b))
+
+    def test_a_longer_gap_does_not(self):
+        a = self.boxed(1, [10, 11, 12], (0, 0, 20, 100))
+        b = self.boxed(2, [13 + SEAM_MAX_GAP_FRAMES, 60], (0, 0, 20, 100))
+        self.assertFalse(tracks_continue(a, b))
+
+    def test_a_box_that_moved_more_than_most_of_its_height_does_not(self):
+        a = self.boxed(1, [10, 11, 12], (0, 0, 20, 100))
+        near = self.boxed(2, [20, 30], (0, 100 * SEAM_MAX_SHIFT - 1, 20, 100 * SEAM_MAX_SHIFT + 99))
+        far = self.boxed(3, [20, 30], (0, 100 * SEAM_MAX_SHIFT + 1, 20, 100 * SEAM_MAX_SHIFT + 101))
+        self.assertTrue(tracks_continue(a, near))
+        self.assertFalse(tracks_continue(a, far))
+
+    def test_only_a_track_that_starts_after_the_other_ends_continues_it(self):
+        a = self.boxed(1, [10, 11, 12], (0, 0, 20, 100))
+        b = self.boxed(2, [12, 13], (0, 0, 20, 100))
+        self.assertFalse(tracks_continue(a, b))
+        self.assertFalse(tracks_continue(b, a))
+
+
+class Crossing(unittest.TestCase):
+    """Where two tracks trading players passed through one another."""
+
+    def moving(self, id: int, xs: list[float]) -> Track:
+        frames = list(range(10, 10 + len(xs)))
+        return Track(id=id, frames=frames, points=[(x, 0.0) for x in xs],
+                     detections=[{"box": [x, 0, x + 40, 100]} for x in xs])
+
+    def test_the_closest_frame_within_the_window_is_the_swap(self):
+        a = self.moving(1, [0, 20, 40, 60, 80, 100])
+        b = self.moving(2, [100, 80, 60, 40, 20, 0])
+        # They meet at frame 12-13 (x 40/60 -> 60/40): equal at 50 between them.
+        self.assertIn(swap_frame(a, b, 10, 15), (12, 13))
+
+    def test_tracks_that_never_came_close_did_not_swap(self):
+        a = self.moving(1, [0, 0, 0, 0])
+        b = self.moving(2, [200, 200, 200, 200])
+        self.assertIsNone(swap_frame(a, b, 10, 13))
+        self.assertLessEqual(SWAP_MAX_SHIFT, 0.5)
+
+    def test_only_the_window_is_searched(self):
+        a = self.moving(1, [0, 0, 0, 100, 100, 100])
+        b = self.moving(2, [0, 0, 0, 0, 0, 0])
+        self.assertIsNone(swap_frame(a, b, 12, 15))
+        self.assertEqual(swap_frame(a, b, 9, 12), 10)

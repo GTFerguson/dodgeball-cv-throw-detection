@@ -384,14 +384,23 @@ class LivePlayInterval:
     """A stretch of a clip where a set is being played.
 
     ``end_is_bound`` says the end is an upper bound rather than the moment play
-    actually stopped. A set ends on its last elimination, which needs the throw
-    outcome resolver; until that exists the end is taken as the moment the balls
-    are laid out again, which is later by the huddle between sets.
+    actually stopped. A set ends on its last elimination, and only a detected
+    hit on the last player (``end_source == "hit"``) is that moment; the floor
+    reading the end (``"floor"``, see ``setend``) is a bound tight to the last
+    stand, and the next ball layout (``"layout"``) or the clip end (``"clip"``)
+    is a bound later by the huddle between sets.
+
+    ``set_index`` is the set's place in the clip's timeline: the index into the
+    written ``sets``, counting the layouts that never got a whistle, so that
+    the tool's "set 2", a roster's ``played_sets`` and this interval all name
+    the same set.
     """
 
     start_frame: int
     end_frame: int
     end_is_bound: bool
+    end_source: str = "layout"
+    set_index: int = 0
 
     def contains(self, frame: int) -> bool:
         return self.start_frame <= frame <= self.end_frame
@@ -459,17 +468,33 @@ class SetTimeline:
     def live_play_intervals(self) -> list[LivePlayInterval]:
         """When a set is in progress, one interval per confirmed start.
 
-        A set ends somewhere before the balls are laid out for the next one, so
-        the next layout bounds it. Where no further layout is seen the clip's own
-        end bounds it instead - still a bound, and still marked as one.
+        A set with a detected end (``scripts/detect_set_end.py``) ends there.
+        Otherwise it ends somewhere before the balls are laid out for the next
+        one, so the next layout bounds it; where no further layout is seen the
+        clip's own end bounds it instead - still a bound, and still marked as one.
         """
         layouts = sorted(s["armed"]["start_frame"] for s in self.sets)
         intervals = []
-        for start in self.starts:
-            later = [f for f in layouts if f > start]
-            end = later[0] if later else self.frame_count - 1
-            intervals.append(LivePlayInterval(start, end, end_is_bound=True))
-        return intervals
+        for index, s in enumerate(self.sets):
+            if s["status"] != "confirmed" or s["start_frame"] is None:
+                continue
+            start = s["start_frame"]
+            detected = s.get("end")
+            if detected:
+                end, source = detected["frame"], detected["source"]
+            else:
+                later = [f for f in layouts if f > start]
+                end, source = (later[0], "layout") if later else (self.frame_count - 1, "clip")
+            intervals.append(LivePlayInterval(start, end, end_is_bound=source != "hit",
+                                              end_source=source, set_index=index))
+        return sorted(intervals, key=lambda i: i.start_frame)
+
+    def detected_end(self, interval: LivePlayInterval) -> dict | None:
+        """What ``scripts/detect_set_end.py`` wrote for a set, or None."""
+        for s in self.sets:
+            if s["status"] == "confirmed" and s["start_frame"] == interval.start_frame:
+                return s.get("end")
+        return None
 
     def interval_for(self, frame: int) -> LivePlayInterval | None:
         """The set a frame belongs to, or None if it falls in dead time."""

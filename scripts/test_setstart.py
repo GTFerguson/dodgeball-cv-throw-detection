@@ -218,16 +218,37 @@ class TimelineReader(unittest.TestCase):
         self.assertEqual([(i.start_frame, i.end_frame) for i in intervals],
                          [(100, 2000), (2100, 4800)])
 
+    def test_an_interval_names_its_set_by_its_place_in_the_timeline(self):
+        """A layout that never got a whistle still counts, so "set 3" is the
+        same set to the tool, the roster and the interval."""
+        payload = a_timeline()
+        payload["sets"].insert(0, {"status": "no_whistle", "start_frame": None,
+                                   "armed": {"start_frame": 5, "end_frame": 15}})
+        first, second = self.load(payload).live_play_intervals()
+        self.assertEqual((first.set_index, second.set_index), (1, 2))
+
     def test_the_last_set_is_bounded_by_the_clip(self):
         payload = a_timeline()
         payload["sets"] = payload["sets"][:1]
         interval, = self.load(payload).live_play_intervals()
         self.assertEqual(interval.end_frame, payload["frame_count"] - 1)
 
-    def test_every_end_is_declared_a_bound(self):
-        """A set ends on its last elimination, which nothing here detects yet."""
-        for interval in self.load(a_timeline()).live_play_intervals():
-            self.assertTrue(interval.end_is_bound)
+    def test_a_layout_or_clip_end_is_declared_a_bound(self):
+        """The huddle between sets sits inside it, and the interval says so."""
+        first, last = self.load(a_timeline()).live_play_intervals()
+        self.assertEqual((first.end_is_bound, first.end_source), (True, "layout"))
+        self.assertEqual((last.end_is_bound, last.end_source), (True, "layout"))
+
+    def test_a_detected_end_replaces_the_layout_bound(self):
+        payload = a_timeline()
+        payload["sets"][0]["end"] = {"frame": 1500, "source": "floor"}
+        payload["sets"][1]["end"] = {"frame": 3900, "source": "hit"}
+        timeline = self.load(payload)
+        first, second = timeline.live_play_intervals()
+        self.assertEqual((first.end_frame, first.end_is_bound, first.end_source), (1500, True, "floor"))
+        self.assertEqual((second.end_frame, second.end_is_bound, second.end_source), (3900, False, "hit"))
+        self.assertEqual(timeline.detected_end(first)["frame"], 1500)
+        self.assertIsNone(timeline.interval_for(1600))
 
     def test_dead_time_belongs_to_no_set(self):
         timeline = self.load(a_timeline())
