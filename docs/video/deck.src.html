@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Throw-attempt detection — WDBF 2014 final</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script>if(location.hash)document.documentElement.style.scrollBehavior="auto";</script>
+<style>
+:root{
+  --bg:#0d0b0b; --panel:#171314; --panel2:#1c1718; --line:rgba(255,255,255,.09);
+  --ink:#f4efec; --soft:#d6cdc8; --mut:#a09490; --dim:#6f6562;
+  --accent:#ff3b2f; --good:#54d68a; --warn:#ffd23f; --cool:#5aa9e6;
+  --mono:'JetBrains Mono',monospace; --disp:'Rubik',sans-serif; --body:'Sora',sans-serif;
+  --t-title: clamp(2.2rem,4.8vw,4rem);
+  --t-h1:    clamp(1.55rem,3.4vw,2.7rem);
+  --t-h3:    clamp(1.1rem,1.9vw,1.5rem);
+  --t-body:  clamp(.95rem,1.4vw,1.18rem);
+  --t-small: clamp(.8rem,1.05vw,.95rem);
+  --t-metric:clamp(1.8rem,3.8vw,3.1rem);
+  --pad: clamp(1rem,2.8vw,2.4rem);
+  --gap: clamp(.7rem,1.6vh,1.15rem);
+  --ease: cubic-bezier(0.16,1,0.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow-x:hidden;background:var(--bg)}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.slide{width:100vw;height:100vh;height:100dvh;overflow:hidden;scroll-snap-align:start;
+  position:relative;display:flex;flex-direction:column;padding:var(--pad);
+  background:var(--bg);color:var(--ink);font-family:var(--body)}
+img{max-width:100%;object-fit:cover}
+@media (max-height:760px){:root{--pad:clamp(.8rem,2.2vw,1.6rem);--gap:clamp(.45rem,1.1vh,.8rem);
+  --t-title:clamp(1.6rem,4vw,2.8rem);--t-h1:clamp(1.2rem,3vw,2rem);--t-metric:clamp(1.4rem,3.2vw,2.3rem)}}
+@media (max-height:620px){:root{--t-body:clamp(.7rem,1.1vw,.88rem);--t-small:.6rem}.nav-dots,.hint{display:none}}
+@media (max-width:760px){
+  html{scroll-snap-type:none}
+  .slide{height:auto;min-height:100dvh;overflow:visible;scroll-snap-align:none;padding-bottom:clamp(1.4rem,5vh,2.4rem)}
+  .body-area{justify-content:flex-start;padding-top:.4rem}
+  .main,.two,.stats,.three,.next,.title-grid{grid-template-columns:1fr !important}
+  .fig{min-height:34vh}
+  .nav-dots,.hint{display:none}
+  .slide::before{mask-image:none;-webkit-mask-image:none;opacity:.3}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;transition-duration:.2s !important}html{scroll-behavior:auto}}
+
+/* court-line grid: the faint lines are the floor markings' colour */
+.slide::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.45;
+  background-image:linear-gradient(rgba(180,255,120,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(180,255,120,.10) 1px,transparent 1px);
+  background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse at 82% 0%,#000,transparent 72%);mask-image:radial-gradient(ellipse at 82% 0%,#000,transparent 72%)}
+
+.meta{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);
+  font-size:var(--t-small);letter-spacing:.16em;text-transform:uppercase;color:var(--mut);
+  padding-bottom:clamp(.55rem,1.4vh,1rem);border-bottom:1px solid var(--line);z-index:2;flex-shrink:0}
+.meta .l{color:var(--accent)} .meta b{color:var(--ink)} .meta .idx b{color:var(--accent)}
+
+.head{padding:clamp(.8rem,2vh,1.35rem) 0 clamp(.55rem,1.4vh,.95rem);z-index:2;flex-shrink:0}
+.kick{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:.5em}
+h1{font-family:var(--disp);font-weight:800;font-size:var(--t-h1);line-height:1.04;letter-spacing:-.02em}
+h1 .w{color:var(--warn)} h1 .a{color:var(--accent)} h1 .c{color:var(--cool)}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.slide.visible .reveal:nth-child(1){transition-delay:.04s}
+.slide.visible .reveal:nth-child(2){transition-delay:.1s}
+.slide.visible .reveal:nth-child(3){transition-delay:.16s}
+.slide.visible .reveal:nth-child(4){transition-delay:.22s}
+.slide.visible .reveal:nth-child(5){transition-delay:.28s}
+
+.panel{background:var(--panel);border:1px solid var(--line);padding:clamp(.7rem,1.7vw,1.15rem);min-height:0}
+.panel.l{border-left:3px solid var(--line)}
+.panel.l-accent{border-left:3px solid var(--accent)}
+.panel.l-warn{border-left:3px solid var(--warn)}
+.panel.l-cool{border-left:3px solid var(--cool)}
+.panel h3{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:.5em}
+.panel p{font-size:var(--t-body);line-height:1.5;color:var(--soft)}
+.panel p b{color:var(--ink)} .panel p em{font-style:normal;color:var(--accent);font-weight:600} .panel p .cm{color:var(--cool);font-weight:600}
+.panel p .y{color:var(--warn);font-weight:600}
+
+.body-area{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:var(--gap);z-index:2}
+.grid{display:grid;gap:var(--gap);min-height:0}
+.main{grid-template-columns:1.15fr .85fr}
+.two{grid-template-columns:1fr 1fr}
+.three{grid-template-columns:1fr 1fr 1fr}
+.col{display:flex;flex-direction:column;gap:var(--gap);min-height:0;justify-content:center}
+
+/* title: the poster fills the height on its own white; the headline sits in a dark bar beneath */
+.title-slide{padding:0;background:#fdfdfd;justify-content:flex-start}
+.title-slide::before{display:none}
+.title-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;font-family:var(--mono);font-size:var(--t-small);
+  letter-spacing:.16em;text-transform:uppercase;color:#6f6562;padding:clamp(.8rem,1.8vh,1.2rem) var(--pad);z-index:3}
+.title-top .l{color:var(--accent)}
+.poster{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#fdfdfd}
+.poster img{height:100%;width:auto;max-width:100%;object-fit:contain}
+.title-bar{flex-shrink:0;background:var(--bg);color:var(--ink);padding:clamp(.9rem,2.2vh,1.5rem) var(--pad);
+  display:flex;align-items:center;justify-content:space-between;gap:clamp(1rem,3vw,3rem);border-top:4px solid var(--accent);z-index:3}
+.title-bar h1{font-family:var(--disp);font-weight:900;font-size:clamp(1.4rem,2.9vw,2.5rem);line-height:1.05;letter-spacing:-.02em;max-width:24ch}
+.title-bar h1 .a{color:var(--accent)}
+.title-syn{font-size:var(--t-body);color:var(--mut);max-width:44ch;line-height:1.45}
+.title-foot{display:flex;flex-direction:column;gap:.35em;font-family:var(--mono);font-size:var(--t-small);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.title-foot b{color:var(--accent)}
+@media (max-width:760px){.title-bar{flex-direction:column;align-items:flex-start}.title-foot{white-space:normal}}
+
+.stats{grid-template-columns:repeat(3,1fr)}
+.stat{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);padding:clamp(.65rem,1.6vw,1.05rem)}
+.stat.s2{border-top-color:var(--warn)} .stat.s3{border-top-color:var(--cool)}
+.stat .v{font-family:var(--disp);font-weight:900;font-size:var(--t-metric);line-height:.85;letter-spacing:-.03em;color:var(--accent)}
+.stat.s2 .v{color:var(--warn)} .stat.s3 .v{color:var(--cool)}
+.stat .l{font-family:var(--mono);font-size:var(--t-small);color:var(--mut);margin-top:.55em;line-height:1.4}
+.stat .l b{color:var(--ink)}
+
+.fig{background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.fig img{width:100%;height:min(46vh,360px);object-fit:cover;object-position:50% 42%}
+.fig.short img{height:min(30vh,240px)}
+.fig .cap{padding:clamp(.5rem,1.2vw,.8rem) clamp(.55rem,1.3vw,.9rem);border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:var(--t-small);color:var(--mut);line-height:1.5}
+.fig .cap b{color:var(--ink)} .fig .cap .g{color:var(--good)} .fig .cap .r{color:var(--accent)} .fig .cap .y{color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:.4em .85em;padding:0 clamp(.55rem,1.3vw,.9rem) clamp(.5rem,1.2vw,.8rem)}
+.legend span{font-family:var(--mono);font-size:var(--t-small);color:var(--mut);display:flex;align-items:center;gap:.4em}
+.dot{width:.6em;height:.6em;border-radius:50%;display:inline-block}
+
+table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
+th,td{text-align:left;padding:clamp(.35rem,.9vh,.6rem) clamp(.45rem,1.1vw,.85rem);border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:var(--t-small);text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:500}
+td.r{font-family:var(--mono)}
+td.r b{color:var(--ink)}
+tr.hi td{background:rgba(255,59,47,.08)} tr.hi td:first-child{box-shadow:inset 3px 0 0 var(--accent);font-weight:600;color:var(--ink)}
+tr.dim td{color:var(--mut)}
+.pill{font-family:var(--mono);font-size:.82em;padding:.12em .55em;border-radius:2px}
+.pill.ok{background:rgba(84,214,138,.15);color:var(--good)} .pill.no{background:rgba(255,59,47,.14);color:var(--accent)} .pill.mid{background:rgba(255,210,63,.14);color:var(--warn)}
+
+.diag{background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;padding:clamp(.7rem,1.6vw,1.2rem)}
+.diag svg{width:100%;height:min(44vh,360px)}
+.diag .cap{font-family:var(--mono);font-size:var(--t-small);color:var(--mut);line-height:1.5;margin-top:.6em}
+.diag .cap b{color:var(--warn)}
+
+.dlist{list-style:none;display:flex;flex-direction:column;gap:clamp(.4rem,1vh,.8rem)}
+.dlist li{font-size:var(--t-body);line-height:1.45;color:var(--soft);padding-left:1.4em;position:relative}
+.dlist li::before{content:"";position:absolute;left:0;top:.5em;width:.65em;height:.65em;border-radius:50%;background:var(--accent)}
+.dlist.y li::before{background:var(--warn)} .dlist.c li::before{background:var(--cool)}
+.dlist li b{color:var(--ink)} .dlist li em{font-style:normal;color:var(--accent);font-weight:600}
+
+.big-line{font-family:var(--disp);font-weight:900;font-size:clamp(1.4rem,3vw,2.4rem);line-height:1.1;letter-spacing:-.02em;color:var(--ink)}
+.big-line .a{color:var(--accent)} .big-line .y{color:var(--warn)}
+.formula{font-family:var(--mono);font-size:clamp(1rem,2vw,1.6rem);color:var(--ink);padding:clamp(.6rem,1.4vw,1rem);background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn)}
+.formula .y{color:var(--warn)}
+
+/* cascade tree */
+.tree{font-family:var(--mono);font-size:clamp(.9rem,1.5vw,1.25rem);line-height:1.7;color:var(--soft);white-space:pre;background:var(--panel);border:1px solid var(--line);padding:clamp(.7rem,1.7vw,1.2rem)}
+.tree .k{color:var(--ink);font-weight:700} .tree .a{color:var(--accent)} .tree .y{color:var(--warn)} .tree .c{color:var(--cool)} .tree .m{color:var(--mut)}
+
+.funnel{grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);background:var(--panel)}
+.step{padding:clamp(.8rem,1.8vw,1.3rem) clamp(.7rem,1.4vw,1.1rem);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.35em;position:relative}
+.step:last-child{border-right:none}
+.step .q{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.step .v{font-family:var(--disp);font-weight:900;font-size:clamp(2rem,4.6vw,3.6rem);line-height:.9;letter-spacing:-.03em;color:var(--ink)}
+.step .n{font-size:var(--t-body);color:var(--soft);line-height:1.35}
+.step .e{font-family:var(--mono);font-size:var(--t-small);color:var(--mut);margin-top:auto;padding-top:.4em;line-height:1.4}
+.step.weak{background:rgba(255,210,63,.06)} .step.weak .v{color:var(--warn)}
+.step::after{content:"›";position:absolute;right:-.42em;top:38%;font-family:var(--disp);font-weight:900;font-size:1.6em;color:var(--dim);z-index:1}
+.step:last-child::after{content:none}
+.eff{grid-template-columns:1fr 1fr 1.4fr;align-items:start}
+.eff .stat .v{font-size:clamp(1.7rem,3.6vw,2.8rem)}
+.eff .stat .v small{font-size:.45em;color:var(--mut);font-weight:700;letter-spacing:0;margin-left:.3em}
+.abl{display:flex;align-items:stretch;gap:0;border:1px solid var(--line);background:var(--panel)}
+.abl div{flex:1;padding:clamp(.7rem,1.5vw,1.1rem);border-right:1px solid var(--line)} .abl div:last-child{border-right:none}
+.abl .v{font-family:var(--disp);font-weight:900;font-size:clamp(1.6rem,3.4vw,2.6rem);line-height:.9;color:var(--cool)}
+.abl .q{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:.3em}
+.abl .n{font-size:var(--t-body);color:var(--soft);line-height:1.35;margin-top:.3em}
+.next{grid-template-columns:.9fr 1.1fr 1fr}
+table.mx td,table.mx th{text-align:center;white-space:nowrap} table.mx td:first-child,table.mx th:first-child{text-align:left}
+table.mx td.r{color:var(--soft)} table.mx tr.base td{color:var(--mut)} table.mx tr.base td:first-child{color:var(--ink);font-weight:600}
+table.mx td.bad{color:var(--warn);font-weight:700;background:rgba(255,210,63,.08)}
+table.mx td.what{font-family:var(--body);text-align:left;color:var(--mut);font-size:var(--t-body);white-space:normal;min-width:14ch} table.mx td.what b{color:var(--warn)}
+table.mx td.up{color:var(--good);font-weight:700}
+.mxwrap{background:var(--panel);border:1px solid var(--line);padding:clamp(.6rem,1.4vw,1rem)}
+.mxwrap h3{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:.5em}
+.kinds{grid-template-columns:1fr 1fr 1fr;gap:var(--gap)}
+.kinds .fig img{height:min(24vh,190px)}
+.fig.tile img{height:min(22vh,180px);object-fit:cover;object-position:50% 50%}
+.fig .txt{padding:clamp(.6rem,1.4vw,1rem);font-size:var(--t-body);line-height:1.45;color:var(--soft)} .fig .txt b{color:var(--ink)}
+.fig .txt h3{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:.45em}
+.pair{grid-template-columns:1fr 1fr 1.2fr}
+.pair .fig img{height:min(22vh,180px)}
+.track{background:var(--panel);border:1px solid var(--line);padding:clamp(.85rem,2vw,1.4rem);display:flex;flex-direction:column;gap:.5em;border-top:3px solid var(--accent)}
+.track.p2{border-top-color:var(--warn)}
+.track .badge{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.track.p2 .badge{color:var(--warn)}
+.track .big{font-family:var(--disp);font-weight:900;font-size:clamp(1.8rem,4.2vw,3rem);line-height:.85;color:var(--accent)}
+.track.p2 .big{color:var(--warn)}
+.track h3{font-family:var(--disp);font-weight:700;font-size:var(--t-h3)}
+.track p{font-size:var(--t-body);color:var(--soft);line-height:1.45}
+.foot{font-family:var(--mono);font-size:var(--t-small);color:var(--mut);letter-spacing:.03em}
+
+/* demo interstitial */
+.demo-bg{position:absolute;inset:0;background-size:cover;background-position:50% 40%;opacity:.35;z-index:0}
+.demo-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,11,11,.95) 0%,rgba(13,11,11,.55) 55%,rgba(13,11,11,.2) 100%)}
+.demo-card{background:rgba(23,19,20,.85);border:1px solid var(--line);border-left:4px solid var(--accent);padding:clamp(.9rem,2vw,1.5rem);max-width:56ch;backdrop-filter:blur(4px)}
+.demo-card h3{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.6em}
+.demo-card code{font-family:var(--mono);font-size:var(--t-small);color:var(--warn)}
+
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:100;transition:width .2s}
+.nav-dots{position:fixed;right:clamp(.6rem,1.4vw,1.3rem);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:.6rem;z-index:100}
+.nav-dots button{width:9px;height:9px;border-radius:50%;border:1px solid var(--dim);background:transparent;cursor:pointer;padding:0;transition:all .25s}
+.nav-dots button.active{background:var(--accent);border-color:var(--accent);transform:scale(1.35)}
+.hint{position:fixed;bottom:clamp(.5rem,1.4vh,1rem);left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);z-index:100}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<nav class="nav-dots" id="navDots"></nav>
+<audio id="snd-thud" preload="auto" src="__SND_THUD__"></audio>
+<audio id="snd-whistle" preload="auto" src="__SND_WHISTLE__"></audio>
+
+<!-- ===== 1 · TITLE ===== -->
+<section class="slide title-slide" id="s1" data-sound="thud">
+  <div class="title-top"><span><span class="l">AirPLAi</span> · CV trial · Gary Ferguson</span><span>Dodgeball · WDBF 2014 men's final</span></div>
+  <div class="poster"><img src="__IMG_POSTER__" alt="DodgeBall: A True Underdog Story"></div>
+  <div class="title-bar">
+    <h1 class="reveal">Dodge. Duck. Dip. Dive. <span class="a">Detect.</span></h1>
+    <p class="title-syn reveal">Every throw in a world final, from one camera: who threw it, whether it left the hand, whether it landed. And one number a coach would use.</p>
+    <div class="title-foot reveal"><span><b>60</b> labelled events · <b>1</b> set</span><span>1080p · 25 fps · <b>20 px</b> ball</span></div>
+  </div>
+</section>
+
+<!-- ===== 2 · THE EVENT ===== -->
+<section class="slide" id="s2">
+  <div class="meta"><span><span class="l">The event</span> · what we're detecting</span><span>Throw attempt → outcome</span><span class="idx">0<b>2</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">A throw attempt is a motion. What it <span class="w">becomes</span> is up to the ball.</h1></div>
+  <div class="body-area">
+    <div class="grid main">
+      <div class="col">
+        <div class="tree reveal"><span class="k">throw attempt</span>   <span class="m">a player winds up to throw</span>
+├─ <span class="y">fake</span>        <span class="m">the ball never leaves the hand</span>
+├─ <span class="c">pass</span>        <span class="m">it leaves, but stays on their side</span>
+└─ <span class="a">throw</span>       <span class="m">it leaves and crosses the centre line</span>
+   └─ <span class="k">outcome</span>  <span class="a">hit</span> · <span class="c">catch</span> · <span class="m">block · miss</span></div>
+        <div class="grid kinds">
+          <div class="fig reveal"><img src="__IMG_KIND_FAKE__" alt="A fake: the arm goes, the ball stays"><div class="cap"><span class="y">fake</span> · 1:22 · 44 cocks it, sells the throw, keeps the ball</div></div>
+          <div class="fig reveal"><img src="__IMG_KIND_PASS__" alt="A pass: the ball reaches a teammate"><div class="cap"><span style="color:var(--cool)">pass</span> · 2:45 · 10 lobs it across to 44, same side of the line</div></div>
+          <div class="fig reveal"><img src="__IMG_KIND_THROW__" alt="A throw: the ball crosses the centre line"><div class="cap"><span class="r">throw</span> · 0:42.7 · 10 fires it across the line at the far team</div></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="formula reveal"><span class="y">throw efficiency</span> = eliminations ÷ throws<br><span style="font-size:.75em;color:var(--mut)">per team, per set. Fakes and passes don't count</span></div>
+        <div class="panel l-accent reveal"><h3>Why this one</h3>
+          <ul class="dlist">
+            <li><b>The rulebook only sees the ball.</b> A fake is the same arm as a throw, so the body alone can't decide. You have to find the ball.</li>
+            <li><b>It's dense and it's hard.</b> 60 attempts in one set: 29 throws, 25 fakes, 6 passes. The ball is 20 pixels, there are six of them, and the hit itself usually can't be seen.</li>
+          </ul></div>
+        <div class="panel l-warn reveal"><h3>The metric</h3>
+          <p><b>Dodgeball's shooting percentage.</b> How often a throw takes someone off the court. Per team, per set, and per player once identity holds.</p></div>
+        <div class="panel l reveal"><h3>Ground truth</h3>
+          <p>One set labelled by hand with a purpose-built tool: <b>60 events</b>, anchored on the release frame, thrower and target clicked, ambiguous cases flagged. <span class="y">3 flagged uncertain</span>, every flag with a note.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3 · PIPELINE ===== -->
+<section class="slide" id="s3">
+  <div class="meta"><span><span class="l">Pipeline</span> · footage in, timeline out</span><span>Seven stages, each one scored</span><span class="idx">0<b>3</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Pose finds the arm. Colour finds the ball. <span class="a">The game tells us the outcome.</span></h1></div>
+  <div class="body-area">
+    <div class="grid main">
+      <div class="col">
+        <div class="diag reveal">
+          <svg viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet" aria-label="Pipeline: video to pose, court, audio; roster; wind-up; release gate; destination; rebound; outcome; timeline; metric">
+            <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#a09490"/></marker></defs>
+            <style>.b{fill:#171314;stroke:#3a3133;stroke-width:1.5}.t{font-family:'JetBrains Mono',monospace;font-size:12px;fill:#f4efec}.s{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#a09490}.e{stroke:#a09490;stroke-width:1.4;fill:none;marker-end:url(#ar)}.hl{stroke:#ff3b2f}</style>
+            <rect class="b" x="8" y="20" width="96" height="36" rx="3"/><text class="t" x="56" y="35" text-anchor="middle">video</text><text class="s" x="56" y="49" text-anchor="middle">1080p · 25 fps</text>
+            <rect class="b" x="134" y="20" width="120" height="36" rx="3"/><text class="t" x="194" y="35" text-anchor="middle">pose</text><text class="s" x="194" y="49" text-anchor="middle">every frame</text>
+            <rect class="b" x="134" y="72" width="120" height="36" rx="3"/><text class="t" x="194" y="87" text-anchor="middle">court</text><text class="s" x="194" y="101" text-anchor="middle">pixels → metres</text>
+            <rect class="b" x="134" y="124" width="120" height="36" rx="3"/><text class="t" x="194" y="139" text-anchor="middle">audio</text><text class="s" x="194" y="153" text-anchor="middle">the whistle</text>
+            <path class="e" d="M104,38 L134,38"/><path class="e" d="M104,38 C119,38 119,90 134,90"/><path class="e" d="M104,38 C119,38 119,142 134,142"/>
+            <rect class="b" x="284" y="46" width="130" height="36" rx="3"/><text class="t" x="349" y="61" text-anchor="middle">roster</text><text class="s" x="349" y="75" text-anchor="middle">who plays, which side</text>
+            <path class="e" d="M254,38 C269,38 269,64 284,64"/><path class="e" d="M254,90 C269,90 269,64 284,64"/>
+            <rect class="b" x="284" y="124" width="130" height="36" rx="3"/><text class="t" x="349" y="139" text-anchor="middle">set start / end</text><text class="s" x="349" y="153" text-anchor="middle">balls on the line</text>
+            <path class="e" d="M254,142 L284,142"/>
+            <rect class="b hl" x="454" y="8" width="218" height="34" rx="3"/><text class="t" x="563" y="22" text-anchor="middle">wind-up</text><text class="s" x="563" y="35" text-anchor="middle">wrist speed, arm past the shoulder</text>
+            <rect class="b hl" x="454" y="56" width="218" height="34" rx="3"/><text class="t" x="563" y="70" text-anchor="middle">release gate</text><text class="s" x="563" y="83" text-anchor="middle">ball at the wrist, then seen leaving</text>
+            <rect class="b hl" x="454" y="104" width="218" height="34" rx="3"/><text class="t" x="563" y="118" text-anchor="middle">destination</text><text class="s" x="563" y="131" text-anchor="middle">who it reached, or which way it went</text>
+            <rect class="b hl" x="454" y="152" width="218" height="34" rx="3"/><text class="t" x="563" y="166" text-anchor="middle">rebound</text><text class="s" x="563" y="179" text-anchor="middle">follow it through the player</text>
+            <rect class="b hl" x="454" y="200" width="218" height="34" rx="3"/><text class="t" x="563" y="214" text-anchor="middle">outcome</text><text class="s" x="563" y="227" text-anchor="middle">someone leaves the court</text>
+            <path class="e" d="M414,64 C434,64 434,25 454,25"/>
+            <path class="e" d="M563,42 L563,56"/><path class="e" d="M563,90 L563,104"/><path class="e" d="M563,138 L563,152"/><path class="e" d="M563,186 L563,200"/>
+            <path class="e" d="M414,142 C434,142 434,217 454,217"/>
+            <rect class="b" x="454" y="252" width="100" height="34" rx="3"/><text class="t" x="504" y="273" text-anchor="middle">timeline</text>
+            <rect class="b" x="572" y="252" width="100" height="34" rx="3"/><text class="t" x="622" y="273" text-anchor="middle">efficiency</text>
+            <path class="e" d="M563,234 L515,252"/><path class="e" d="M554,269 L572,269"/>
+            <rect class="b" x="284" y="252" width="130" height="34" rx="3"/><text class="t" x="349" y="266" text-anchor="middle">labels</text><text class="s" x="349" y="280" text-anchor="middle">scored level by level</text>
+            <path class="e" d="M414,269 L454,269"/>
+            <text class="s" x="8" y="296" fill="#ff3b2f">red: the cascade. Each level is its own decision with its own score</text>
+          </svg>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel l-accent reveal"><h3>Three decisions that shaped it</h3>
+          <ul class="dlist">
+            <li><b>The body can't tell a fake from a throw.</b> Every pose feature we tried was a coin flip. So we look for the ball at the wrist and watch it leave.</li>
+            <li><b>Pass or throw: where the ball went, not where it was aimed.</b> Follow it until it reaches someone, or check which way it's heading.</li>
+            <li><b>The count says someone left. The ball says whose.</b> When a body leaves the court a throw gets the credit. To pick which, we follow the ball through the player it reached: a ball that comes back off him struck him, a ball that carries on didn't. A ball that turned and put nobody out was blocked.</li>
+          </ul></div>
+        <div class="fig short reveal"><img src="__IMG_PIPELINE__" alt="One frame as the pipeline sees it: court fit, pose skeletons, jersey numbers"><div class="cap">One frame as the pipeline sees it: the court fit in green, a skeleton on every body, and the jersey numbers it read. Players are stitched by <b>number and side</b>, not track id.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 4 · DEMO ===== -->
+<section class="slide" id="s4">
+  <div class="demo-bg" style="background-image:url('__IMG_HERO__')"></div>
+  <div class="meta"><span><span class="l">Demo</span> · live</span><span>Footage in, timeline out</span><span class="idx">0<b>4</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Let's run it.</h1></div>
+  <div class="body-area" style="justify-content:flex-end">
+    <div class="demo-card reveal">
+      <h3>What you're about to see</h3>
+      <ul class="dlist">
+        <li><code>run.py</code> on the clip: set end, every throw attempt, outcomes, the score, in about a minute.</li>
+        <li>The labelling tool over the same footage: rings on each thrower, ball path drawn, one key per decision.</li>
+        <li>One throw's evidence, opened up: how much ball was at the wrist, how far it travelled, who it reached.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5 · RESULTS ===== -->
+<section class="slide" id="s5">
+  <div class="meta"><span><span class="l">Results</span> · one set, 60 events, ±0.25 s</span><span>Scored against 60 labelled events</span><span class="idx">0<b>5</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Finds the throw. Knows if it left. <span class="w">Knows who it got, 18 times in 22.</span></h1></div>
+  <div class="body-area">
+    <div class="grid funnel reveal">
+      <div class="step"><span class="q">1 · Is that a throw?</span><span class="v">88%</span><span class="n">F1 on 60 throwing motions</span><span class="e">11 false alarms · 4 missed</span></div>
+      <div class="step"><span class="q">2 · Did it leave the hand?</span><span class="v">88%</span><span class="n">right on 56 matched</span><span class="e">5 throws called fake · 2 fakes called released</span></div>
+      <div class="step"><span class="q">3 · Fake, pass or throw?</span><span class="v">86%</span><span class="n">right on 56 matched</span><span class="e">8 wrong kind</span></div>
+      <div class="step"><span class="q">4 · Throw, end to end</span><span class="v">75%</span><span class="n">F1 on 29 true throws</span><span class="e">8 spurious · 7 missed</span></div>
+      <div class="step weak"><span class="q">5 · Who did it get?</span><span class="v">82%</span><span class="n">right on 22 throws · 59% before the ball was followed</span><span class="e">4 wrong · 2 the roster's · 1 graze · 1 lost track</span></div>
+    </div>
+    <div class="grid eff">
+      <div class="stat reveal"><div class="v">29%<small>truth 27%</small></div><div class="l"><b>Canada (near) throw efficiency</b></div></div>
+      <div class="stat s2 reveal"><div class="v">8%<small>truth 14%</small></div><div class="l"><b>USA (far) throw efficiency</b></div></div>
+      <div class="panel l-warn reveal"><h3>The catch</h3>
+        <p><b>Canada's number is right for the wrong reasons.</b> Five spurious throws in the denominator and two invented hits in the numerator cancel to within two points. Team attribution is 100%; the per-player numbers are where the error lives.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 6 · STRESS & ABLATION ===== -->
+<section class="slide" id="s6">
+  <div class="meta"><span><span class="l">Break it</span> · stress test and ablation</span><span>Same clip, same labels, same scoring</span><span class="idx">0<b>6</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Degrade the footage, or remove a stage, <span class="a">and watch which score falls</span></h1></div>
+  <div class="body-area">
+    <div class="mxwrap reveal"><h3>Stress test · the footage degraded, every stage rerun</h3>
+      <table class="mx">
+        <thead><tr><th>Footage</th><th>Throw motion F1</th><th>Left the hand</th><th>Fake / pass / throw</th><th>Throw F1</th><th>Who it got</th><th>Efficiency near · far<br><span style="letter-spacing:0;text-transform:none">truth 27 · 14</span></th><th style="text-align:left">What broke</th></tr></thead>
+        <tbody>
+          <tr class="base"><td>1080p source</td><td class="r">88</td><td class="r">88</td><td class="r">86</td><td class="r">75</td><td class="r">82</td><td class="r">29 · 8</td><td class="what">—</td></tr>
+          <tr><td>480p</td><td class="r bad">66</td><td class="r">90</td><td class="r">82</td><td class="r">67</td><td class="r bad">47</td><td class="r">25 · 20</td><td class="what"><b>the ball</b> · 8 px of colour, and the bounce with it</td></tr>
+          <tr><td>Heavy compression (CRF 40)</td><td class="r bad">51</td><td class="r">76</td><td class="r">76</td><td class="r bad">55</td><td class="r">67</td><td class="r">38 · 14</td><td class="what"><b>pose</b> · blocks look like arms</td></tr>
+          <tr><td>Half the frames (12.5 fps)</td><td class="r bad">60</td><td class="r">93</td><td class="r">85</td><td class="r">64</td><td class="r bad">50</td><td class="r">22 · 8</td><td class="what"><b>the wind-up</b> · whip under 100 ms</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mxwrap reveal"><h3>Ablation · the stages switched on one at a time, same clip</h3>
+      <table class="mx">
+        <thead><tr><th>What's running</th><th>Throw precision</th><th>Throw recall</th><th>Throw F1</th><th>Fake / pass / throw</th><th>Who it got</th></tr></thead>
+        <tbody>
+          <tr><td>Pose only · every wind-up counts as a throw</td><td class="r">28</td><td class="r">97</td><td class="r">43</td><td class="r">47</td><td class="r">—</td></tr>
+          <tr><td>+ ball gate · only if the ball left the hand</td><td class="r up">61</td><td class="r bad">79</td><td class="r up">69</td><td class="r up">79</td><td class="r">—</td></tr>
+          <tr><td>+ destination · only if it crossed the line</td><td class="r up">73</td><td class="r">76</td><td class="r up">75</td><td class="r up">86</td><td class="r">59</td></tr>
+          <tr><td>+ rebound · follow the ball through the player</td><td class="r">73</td><td class="r">76</td><td class="r">75</td><td class="r">86</td><td class="r up">82</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel l reveal"><p class="foot">Top: resolution takes the ball, compression takes pose, frame rate takes the wind-up. Bottom: the ball gate buys 33 points of precision for 18 of recall; the rebound only touches the last question (slide 8 has that stage's own ablation).</p></div>
+  </div>
+</section>
+
+<!-- ===== 7 · UNCERTAINTY ===== -->
+<section class="slide" id="s7">
+  <div class="meta"><span><span class="l">Uncertainty</span> · how far off could the number be, and why</span><span>Model · labels · footage</span><span class="idx">0<b>7</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">When the number's wrong, it's one of three things</h1></div>
+  <div class="body-area">
+    <div class="grid three">
+      <div class="panel l-accent reveal"><h3>The system got it wrong</h3>
+        <div class="big-line"><span class="a">±25</span> points</div>
+        <p style="margin-top:.5em">Mostly the last step. Who gets credit for a walk-off now comes from the ball's bounce, and the bounce threshold was set by eye on this clip from six hits. The ball is found by colour, and colour is lost against the red team at the far end.</p></div>
+      <div class="panel l-warn reveal"><h3>The label was wrong</h3>
+        <div class="big-line"><span class="y">±4</span> points</div>
+        <p style="margin-top:.5em">I labelled the set myself. Three calls I wasn't sure of are flagged; if all three went the other way, efficiency moves four points.</p></div>
+      <div class="panel l-cool reveal"><h3>Nobody can tell</h3>
+        <div class="big-line"><span style="color:var(--cool)">no frame</span></div>
+        <p style="margin-top:.5em">At 25 fps and 20 px there is no frame where the ball touches anyone. A clean hit bounces off and the ball shows it; a graze barely bends the flight and looks like a miss. Below is one.</p></div>
+    </div>
+    <div class="grid pair">
+      <div class="fig reveal"><img src="__IMG_CONTACT1__" alt="0:58.5, the ball arrives at the player"><div class="cap"><b>0:58.5</b> · the ball arrives</div></div>
+      <div class="fig reveal"><img src="__IMG_CONTACT3__" alt="0:58.6, the ball is past him"><div class="cap"><b>0:58.6</b> · it's past him</div></div>
+      <div class="panel l-cool reveal"><h3>Hit, or a narrow miss?</h3><p>My note on it says "could be a super narrow miss or a hit". Nobody left the court, so it went down as a miss. That's the game deciding, not the picture.</p>
+        <p style="margin-top:.6em;color:var(--mut)">And with fifteen throws a side, one set says little about a team either way. The metric wants a match.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 8 · WHAT THE BALL ADDED ===== -->
+<section class="slide" id="s8" data-sound="whistle">
+  <div class="meta"><span><span class="l">The last stage</span> · outcome 59% → 82%</span><span>Following the ball through the player</span><span class="idx">0<b>8</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Player 10 hits. Player 7 was getting the credit. <span class="a">The bounce says it was 10.</span></h1></div>
+  <div class="body-area">
+    <div class="fig reveal"><img src="__IMG_REBOUND_HIT__" alt="Eight frames: player 10's ball reaches the far player and bounces back off him" style="height:auto;object-fit:contain;background:#000"><div class="cap"><b>0:43.0–0:43.3</b> · 10's ball, followed frame by frame: into the player at the 3rd frame, back off him at 77°. 7's ball, half a second later, goes straight through the man next to him at 1.5°.</div></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr 1.3fr">
+      <div class="panel l-accent reveal"><h3>The rule</h3><p>Someone walks off; two throws could have done it. Before: whoever threw last. Now: whoever's ball <b>came back off him</b>. A ball that carries on didn't hit anyone. A ball that came back and put nobody out was blocked.</p>
+        <p style="margin-top:.6em"><b>Fixed 5 of the 9 wrong:</b> this pair, two blocks the count could never see, and a hit on a player already walking off.</p></div>
+      <div class="panel l-warn reveal"><h3>How</h3><p>A segmenter (SAM 2) is shown the ball on one frame and finds it again after it disappears behind the body. The colour tracker couldn't: it predicts where the ball is going next, and a hit breaks that by definition.</p>
+        <p style="margin-top:.6em">The bounce threshold was set by eye on this clip from six hits. That's the whole sample; slide 10.</p></div>
+      <div class="mxwrap reveal"><h3>Getting there · same 22 throws</h3>
+        <table class="mx">
+          <thead><tr><th>How who-it-got is decided</th><th>Right</th></tr></thead>
+          <tbody>
+            <tr><td>Whoever threw last</td><td class="r">13 · 59%</td></tr>
+            <tr><td>Colour tracker read past the player, 3 ways</td><td class="r" style="color:var(--dim)">no split</td></tr>
+            <tr><td>SAM 2 as tie-break, where the tracker reached him</td><td class="r">15 · 68%</td></tr>
+            <tr><td>SAM 2, one big crop, first box the ball enters</td><td class="r bad">12 · 55%</td></tr>
+            <tr><td>SAM 2, moving crop, the box the ball <b>turns</b> in</td><td class="r up">18 · 82%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 9 · THE FAILURE ===== -->
+<section class="slide" id="s9">
+  <div class="meta"><span><span class="l">One failure</span> · 1:47 in the clip</span><span>Two catches in two seconds, one player counted back</span><span class="idx">0<b>9</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Two catches. The roster saw one player come back. <span class="w">So one catch became a miss.</span></h1></div>
+  <div class="body-area">
+    <div class="grid three">
+      <div class="fig short reveal"><img src="__IMG_CATCH1__" alt="1:47.2, far player 2 throws and near 44 catches it"><div class="cap"><b>1:47.2</b> · far 2 throws, <span class="y">44 catches it</span>. 2 is out and one Canada player gets to come back on.</div></div>
+      <div class="fig short reveal"><img src="__IMG_CATCH2__" alt="1:49.0, far player 13 throws and near 18 catches it"><div class="cap"><b>1:49.0</b> · far 13 throws, <span class="y">18 catches it</span>. Same again: 13 out, another player back on.</div></div>
+      <div class="panel l-warn reveal"><h3>What the count saw</h3><p>Two USA players walk off. Two Canada players should walk on; <b>the roster registered one</b>. A walk-off with nobody coming back is a hit by the count's rules, so the first catch is scored a miss and the hit lands on a throw that came later.</p></div>
+    </div>
+    <div class="grid two">
+      <div class="panel l-accent reveal"><h3>Why the ball can't help here</h3><p>A caught ball just stops in the hands. Its flight barely bends, same as a ball that sails past. The bounce tells hits from misses; it says nothing about catches.</p></div>
+      <div class="panel l reveal"><h3>Whose fault</h3><p>Identity. Tracks fragment when players cross the sideline, and the second returning player was never stitched back to a number. The fix is upstream of everything on the previous slide.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 10 · NEXT MOVE ===== -->
+<section class="slide" id="s10" data-sound="thud">
+  <div class="meta"><span><span class="l">Next move</span></span><span>What I'd do next</span><span class="idx"><b>10</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Label a second set and score the bounce blind</h1></div>
+  <div class="body-area">
+    <div class="grid next">
+      <div class="fig reveal"><img src="__IMG_WITNESS__" alt="Player 10's ball tracked into the target's box"><div class="cap">The bounce threshold sits between six visible hits and the misses on this clip. That is the whole sample.</div></div>
+      <div class="track reveal">
+        <span class="badge">Next</span>
+        <div class="big">A second set, scored blind</div>
+        <p>The rebound stage was built and tuned on the set it is scored on. A second labelled set, about an hour and a half with the tool, doubles the throws, halves the error band, and says whether the one threshold holds. The set's last hit is a 34° graze that reads as a miss; the second set says whether grazes are the exception.</p>
+      </div>
+      <div class="track p2 reveal">
+        <span class="badge">Then, from what it shows</span>
+        <div class="big">Two patches waiting</div>
+        <p>Tracks that die behind a body (one block on this clip has no answer): reseed from the colour mask at the feet. Fast far-side throws where the tracker leaves the ball before it arrives: bridge the lost frames from the last good position. Neither cost anything here; a faster clip will tell.</p>
+      </div>
+    </div>
+    <div class="panel l reveal"><p class="foot">Further out: a second venue is a config change, not a rewrite. Code, labels, labelling guide, design doc and this deck are in the repo.</p></div>
+  </div>
+</section>
+
+<script>
+class Deck{
+  constructor(){this.s=[...document.querySelectorAll('.slide')];this.i=0;this.lock=false;this.muted=false;this.played=new Set();this.gesture=false;
+    this.dots();this.observe();this.keys();this.wheel();this.touch();this.prog();
+    const h=location.hash.match(/^#s(\d+)$/);if(h){const k=+h[1]-1;requestAnimationFrame(()=>setTimeout(()=>{
+      this.i=k;this.s[k].scrollIntoView({behavior:'instant',block:'start'});this.prog();this.sync();setTimeout(()=>document.documentElement.style.scrollBehavior='',300);},80));}
+    // browsers only allow audio after a gesture: the first key or click arms it
+    const arm=()=>{this.gesture=true;this.sound(this.s[this.i]);};
+    addEventListener('keydown',arm,{once:true});addEventListener('pointerdown',arm,{once:true});}
+  sound(sl){if(this.muted||!this.gesture)return;const k=sl.dataset.sound;if(!k)return;const key=sl.id;if(this.played.has(key))return;
+    const a=document.getElementById('snd-'+k);if(!a)return;this.played.add(key);a.currentTime=0;a.volume=k==='whistle'?.6:.9;a.play().catch(()=>{});}
+  go(n){n=Math.max(0,Math.min(this.s.length-1,n));this.i=n;this.s[n].scrollIntoView({behavior:'smooth'});}
+  observe(){const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');
+    this.i=this.s.indexOf(e.target);this.prog();this.sync();this.sound(e.target);}}),{threshold:.55});this.s.forEach(s=>io.observe(s));}
+  dots(){const n=document.getElementById('navDots');this.s.forEach((_,k)=>{const b=document.createElement('button');
+    b.setAttribute('aria-label','Slide '+(k+1));b.onclick=()=>this.go(k);n.appendChild(b);});this.d=[...n.children];this.sync();}
+  sync(){this.d.forEach((d,k)=>d.classList.toggle('active',k===this.i));}
+  prog(){document.getElementById('progress').style.width=(this.i/(this.s.length-1)*100)+'%';}
+  keys(){addEventListener('keydown',e=>{if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();this.go(this.i+1);}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();this.go(this.i-1);}
+    else if(e.key==='Home'){this.go(0);}else if(e.key==='End'){this.go(this.s.length-1);}
+    else if(e.key==='m'){this.muted=!this.muted;}
+    else if(e.key==='r'){this.played.clear();}});}   // r: re-arm sounds for another take
+  wheel(){addEventListener('wheel',e=>{if(this.lock||Math.abs(e.deltaY)<24)return;this.lock=true;
+    this.go(this.i+(e.deltaY>0?1:-1));setTimeout(()=>this.lock=false,750);},{passive:true});}
+  touch(){let y=null;addEventListener('touchstart',e=>y=e.touches[0].clientY,{passive:true});
+    addEventListener('touchend',e=>{if(y===null)return;const d=y-e.changedTouches[0].clientY;
+      if(Math.abs(d)>45)this.go(this.i+(d>0?1:-1));y=null;},{passive:true});}
+}
+addEventListener('DOMContentLoaded',()=>{document.querySelector('.slide').classList.add('visible');new Deck();});
+</script>
+</body>
+</html>

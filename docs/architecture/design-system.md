@@ -351,6 +351,38 @@ fill — never a colour.
 
 Flag glyphs are terse and consistent: `!` uncertain, `◌` not visible, `§` referee signal seen.
 
+### Players list
+
+The panel's second view. The event stream is *what happened at frames*; the players list is
+*who was in it* — a different question, so it is a second tab on the rail rather than a filter
+on the stream. The strip is two eyebrow-weight tabs with a count each; the open one carries a
+rule in ink, and nothing on the strip is coloured.
+
+One row per person the identity pass saw on the court while a set was live, from the roster's
+`played_sets`: the numbered players first, then the fragments it could not name, because
+"this person played" is true of them even when "who" has no answer — a fragment reads
+`no number read` in `--ink-mute`, never a made-up name. Filters are three selects — which set
+(indices match the timeline's "set N" marks), which side, and what to rank by — and the default
+is everyone who played any set. Nothing here is edited: a wrong join is a rule to fix in the
+identity pass, so the list is display. Pieces the roster marked excess — in play while the side
+already had six on the floor — are not rows, but they are not hidden either: a footnote under
+the list says how many and why, because a count that silently drops something reads as complete.
+
+Row: `key #number Name` · side · floor span in clip time (mono) · `on screen` when their track
+holds the frame; at the right, what the labels have them throwing, with the hit rate's scope
+beside it (`1/5 hit`). **The name is a button and the row is another.** The name takes the stage
+to them — their box drawn in ink and labelled with their name, on this frame if they are on it,
+at their first frame in play if not; asking again clears it, as does `Esc`. The rest of the row
+opens the record.
+
+The record keeps *threw* and *thrown at* apart, because they are two records of one player, and
+states every number with its scope: throws as a count, outcomes as the same pills the stream
+uses with the count inside, then every event they were in as a frame-first line that selects it
+and returns to the stream — the card is where an event is read. The tally is assembled at read
+time through the roster (`src/lib/tally.ts`): labels never store identity, so a re-run of the
+identity pass changes every player's record and not one label. A box the roster cannot place
+is left out rather than credited to the wrong person.
+
 ### In-flight chip
 
 An open throw, with the soft open fill, an ink-weight left border and the word `open`. Pinned
@@ -402,7 +434,9 @@ Each of these was either tried and corrected, or is the generic default for this
 - **No decorative colour.** If it does not encode data, it is ink or paper.
 - **No warm grey below the near-whites.** Brown at mid lightness reads as dirt.
 - **No abstract chart device without a legend and named axes.**
-- **No feature tabs in the panel.** One list, one source switch.
+- **No feature tabs on the event stream.** One list, one source switch; labels and the model
+  are sources, not views. The players list is a different question — who, not what — and is the
+  one other view the rail carries.
 - **No centred max-width column**, and no zero-gutter full bleed. Gutters clamp.
 - **No card-with-accent-rail, no `rounded-lg`, no gradients, no glassmorphism.**
 - **No emoji in the interface.** Glyphs and typography only.

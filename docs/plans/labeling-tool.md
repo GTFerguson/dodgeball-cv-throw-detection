@@ -190,6 +190,11 @@ pass its own file. Label files are committed, footage and pose runs are not.
     hit from the roster, the selected card opening into the editor~~ — `src/lib/stream.ts`,
     `src/lib/roster.ts`, `src/components/Stream.tsx`, `src/components/EventEditor.tsx`;
     design in [[design-system#Event stream]]
+11. ~~Players list as the panel's second tab: everyone who played a set from the roster,
+    filtered by set and side, ranked by what the labels say they did, each row opening into
+    their record and its name taking the stage to them~~ — `src/lib/tally.ts`,
+    `src/components/Roster.tsx`; design in [[design-system#Players list]], the per-set
+    `played_sets` it filters on in [[roster#Player against played]]
 
 ## Resolved
 
