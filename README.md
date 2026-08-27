@@ -20,6 +20,7 @@ so that the failures can be read rather than averaged away.
 | **[docs/design.pdf](docs/design.pdf)** | The design document — pipeline, signal strategy, models and methods, data and labels, evaluation, compute, failure modes. Source `docs/design.tex`, rebuild with `make design` |
 | **[docs/report.pdf](docs/report.pdf)** | The report — what the build changed from the design and why, results, what went wrong, error budget, stress, ablation, the metric at scale, next experiment. Source `docs/report.tex`, `make report` |
 | **[docs/video/](docs/video/README.md)** | The recorded walkthrough: [script.md](docs/video/script.md) is the beat-by-beat narration, `deck.html` the self-contained 10-slide deck (open it in a browser) |
+| **[docs/architecture/](docs/architecture/README.md)** | How each shipped stage works and why it was built that way — one doc per system, indexed below |
 | **[Results](#results)** | The scores, level by level, and every failure behind them |
 | **[Reproducing](#reproducing)** | Prerequisites, the clip, the whole half, one stage at a time |
 | **The labels** | `cd tools/labeler && npm install && npm run dev`, then open **`wdbf2014_final_h2_set2.mp4`** — the 3.5-minute clip is the only labelled footage, and the picker shows each clip's event count. See [tools/labeler/README.md](tools/labeler/README.md) |
@@ -125,6 +126,33 @@ shaped the result:
   centre line, a whistle while they are, both teams breaking for them. End:
   one side down to a single player, then the court flooding with bodies.
   → [set-start.md](docs/architecture/set-start.md), [set-end.md](docs/architecture/set-end.md)
+
+### Where each system is written up
+
+The decisions above are the short version. One doc per stage, in the order the
+pipeline runs them ([full index](docs/architecture/README.md)):
+
+| Stage | Doc |
+|---|---|
+| The run as a whole — stage order, the clip-hash contract, time in seconds, the venue file | [pipeline.md](docs/architecture/pipeline.md) |
+| Court fit and the homography to metres | [court-geometry.md](docs/architecture/court-geometry.md) |
+| One shared pose run per clip, on disk | [pose-precompute.md](docs/architecture/pose-precompute.md) |
+| Set start — balls on the line, whistle, sprint | [set-start.md](docs/architecture/set-start.md) |
+| Set end — one side down to one, then the floor fills | [set-end.md](docs/architecture/set-end.md) |
+| Tracking and jersey numbers | [player-identity.md](docs/architecture/player-identity.md) |
+| Who is a player, who is an official, which side | [roster.md](docs/architecture/roster.md) |
+| Candidate throwing motions from pose | [throw-candidates.md](docs/architecture/throw-candidates.md) |
+| Release — ball in hand, then a chain of blobs leaving | [release-gate.md](docs/architecture/release-gate.md) |
+| Pass or throw, from where the ball went | [destination.md](docs/architecture/destination.md) |
+| The rebound witness — did the ball turn at the player | [rebound.md](docs/architecture/rebound.md) |
+| Outcome from steps in each side's on-court count | [outcome.md](docs/architecture/outcome.md) |
+| Scoring a timeline against the truth set, level by level | [evaluation.md](docs/architecture/evaluation.md) |
+| The labelling tool's visual language | [design-system.md](docs/architecture/design-system.md) |
+
+Evidence behind the rules and the thresholds — the WDBF ruleset quoted by rule
+number, the jersey-reading measurements, prior work on player-impact metrics —
+is in [docs/reference/](docs/reference/README.md). The intent that came before
+the code is in [docs/plans/](docs/plans/README.md).
 
 ## Results
 
