@@ -23,9 +23,9 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+import setstart as ss  # noqa: E402
 from court import CENTRE_LINE_M, Court  # noqa: E402
 from pose import PoseRun  # noqa: E402
-import setstart as ss  # noqa: E402
 
 FITTED = REPO_ROOT / "data" / "court" / "wdbf2014_final_h2_set2.json"
 CLIP = REPO_ROOT / "data" / "footage" / "wdbf2014_final_h2_set2.mp4"
@@ -275,7 +275,7 @@ class OnTheClip(unittest.TestCase):
         try:
             cls.pose = PoseRun.for_video(CLIP)
         except (FileNotFoundError, ValueError) as exc:
-            raise unittest.SkipTest(f"no usable pose run: {exc}")
+            raise unittest.SkipTest(f"no usable pose run: {exc}") from exc
         cls.results = ss.detect_set_starts(CLIP, cls.court, cls.pose)
 
     def test_finds_both_ball_layouts(self):

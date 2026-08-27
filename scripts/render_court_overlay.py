@@ -29,7 +29,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from court import (  # noqa: E402
-    COURT_LENGTH_M, COURT_WIDTH_M, CENTRE_LINE_M, MARGIN_M, Court, foot_point,
+    CENTRE_LINE_M,
+    COURT_LENGTH_M,
+    COURT_WIDTH_M,
+    MARGIN_M,
+    Court,
+    foot_point,
 )
 from overlay import WIRE_OFF, bgr, casing_for, wire_for  # noqa: E402
 from pose import PoseRun  # noqa: E402

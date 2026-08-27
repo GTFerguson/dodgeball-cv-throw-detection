@@ -15,8 +15,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.evaluate import (LABELS_ROOT, MIN_IOU, TOLERANCE_FRAMES, Prediction,  # noqa: E402
-                          TruthEvent, TruthSet, efficiency, evaluate, iou, match)
+from src.evaluate import (  # noqa: E402
+    LABELS_ROOT,
+    MIN_IOU,
+    TOLERANCE_FRAMES,
+    Prediction,
+    TruthEvent,
+    TruthSet,
+    efficiency,
+    evaluate,
+    iou,
+    match,
+)
 
 CLIP = "wdbf2014_final_h2_set2"
 

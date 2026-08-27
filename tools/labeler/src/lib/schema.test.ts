@@ -7,6 +7,7 @@ import { LABEL_SCHEMA_VERSION, labelKey, newLabelFile, upgradeLabels, videoStem 
 
 const info: VideoInfo = {
   name: 'clip.mp4', fps: 25, width: 1920, height: 1080, frames: 5250, duration: 210,
+  labelled: null,
 }
 
 const manifest = {

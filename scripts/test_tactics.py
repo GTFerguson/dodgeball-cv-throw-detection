@@ -13,8 +13,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.tactics import (COORDINATION_S, FAKE_WINDOW_S, Event, attacks, coordinated,  # noqa: E402
-                         fakes_before, split)
+from src.tactics import (  # noqa: E402
+    COORDINATION_S,
+    FAKE_WINDOW_S,
+    Event,
+    attacks,
+    coordinated,
+    fakes_before,
+    split,
+)
 
 FPS = 25.0
 

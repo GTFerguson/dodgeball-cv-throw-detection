@@ -28,10 +28,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.roster import Roster  # noqa: E402
-from src.setend import (FLOOD_MIN_RISE, FLOOD_MIN_S, FLOOD_WINDOW_S, LAST_STAND_MIN_S,  # noqa: E402
-                        Hit, SetEnd, detect_set_end)
 from setstart import SETS_ROOT, SetTimeline  # noqa: E402
+from src.roster import Roster  # noqa: E402
+from src.setend import (  # noqa: E402
+    FLOOD_MIN_RISE,
+    FLOOD_MIN_S,
+    FLOOD_WINDOW_S,
+    LAST_STAND_MIN_S,
+    Hit,
+    SetEnd,
+    detect_set_end,
+)
 
 TIMELINE_ROOT = REPO_ROOT / "data" / "timeline"
 

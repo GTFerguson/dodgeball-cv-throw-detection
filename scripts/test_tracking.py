@@ -13,9 +13,20 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.tracking import (AIRBORNE_HOLD_FRAMES, SEAM_MAX_GAP_FRAMES, SEAM_MAX_SHIFT,  # noqa: E402
-                          SWAP_MAX_SHIFT, TOGETHER_MIN_IOU, Carried, Track, admit, cut_frame,
-                          swap_frame, tracks_continue, tracks_together)
+from src.tracking import (  # noqa: E402
+    AIRBORNE_HOLD_FRAMES,
+    SEAM_MAX_GAP_FRAMES,
+    SEAM_MAX_SHIFT,
+    SWAP_MAX_SHIFT,
+    TOGETHER_MIN_IOU,
+    Carried,
+    Track,
+    admit,
+    cut_frame,
+    swap_frame,
+    tracks_continue,
+    tracks_together,
+)
 
 
 def track_over(frames: list[int], id: int = 1) -> Track:

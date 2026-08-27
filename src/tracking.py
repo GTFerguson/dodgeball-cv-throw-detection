@@ -19,9 +19,9 @@ ones tracked.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import SimpleNamespace
-from typing import Callable
 
 import numpy as np
 
@@ -210,7 +210,7 @@ class Track:
         except ValueError:
             return None
 
-    def split(self, frame: int, new_id: int) -> tuple["Track", "Track"]:
+    def split(self, frame: int, new_id: int) -> tuple[Track, Track]:
         """This track up to `frame` (exclusive), and from it on under a new id."""
         i = next((k for k, f in enumerate(self.frames) if f >= frame), len(self.frames))
         head = Track(id=self.id, frames=self.frames[:i], points=self.points[:i],
@@ -228,7 +228,7 @@ def cut_frame(track: Track, after: int, before: int) -> int:
     with no gap there is cut at the first frame the new player was read.
     """
     best_gap, best_frame = 1, before
-    for a, b in zip(track.frames, track.frames[1:]):
+    for a, b in zip(track.frames, track.frames[1:], strict=False):
         if a >= after and b <= before and b - a > best_gap:
             best_gap, best_frame = b - a, b
     return best_frame
@@ -250,7 +250,7 @@ class _Detections:
     def __len__(self) -> int:
         return len(self.conf)
 
-    def __getitem__(self, mask) -> "_Detections":
+    def __getitem__(self, mask) -> _Detections:
         # ByteTrack splits its input into high- and low-confidence subsets by
         # boolean mask, so the view has to slice like the results object it
         # stands in for.

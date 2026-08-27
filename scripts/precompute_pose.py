@@ -39,7 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Bumped when the on-disk chunk or manifest shape changes, so a stale run is
@@ -263,7 +263,7 @@ def run(args: argparse.Namespace) -> int:
     write_json(manifest_path, {
         "schema_version": SCRIPT_VERSION,
         "run_id": run_id,
-        "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created": datetime.now(UTC).isoformat(timespec="seconds"),
         "video": video.name,
         "clip_sha256": clip_sha256(video),
         "fps": fps,

@@ -35,20 +35,54 @@ sys.path.insert(0, str(REPO_ROOT))
 # setstart imports its siblings bare, the rest of src by package; serve both.
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.court import Court  # noqa: E402
-from src.jersey import (Crop, CropKeeper, JerseyReader, Reading, confirm,  # noqa: E402
-                        in_time_order, needs_review, shortlist, switch,
-                        torso_crop, unobstructed)
-from src.players import (CLAIM_MIN_READINGS, clash, fold_by_occupancy, join, swaps_between,  # noqa: E402
-                         worn_at_once)
-from src.pose import PoseRun  # noqa: E402
-from src.roster import (PLAYER_MIN_CORE_FRAMES, Participant, Roster, TrackRecord, assign_role,  # noqa: E402
-                        assign_team, chest_region, core_of, intervals_of,
-                        kit_fractions, live_cores, participant_id, sides_from,
-                        vote_kit)
 from setstart import SetTimeline  # noqa: E402
-from src.tracking import (cut_frame, held_in_play, swap_frame, tracks_continue,  # noqa: E402
-                          tracks_together, track as track_players)
+from src.court import Court  # noqa: E402
+from src.jersey import (  # noqa: E402
+    Crop,
+    CropKeeper,
+    JerseyReader,
+    Reading,
+    confirm,
+    in_time_order,
+    needs_review,
+    shortlist,
+    switch,
+    torso_crop,
+    unobstructed,
+)
+from src.players import (  # noqa: E402
+    CLAIM_MIN_READINGS,
+    clash,
+    fold_by_occupancy,
+    join,
+    swaps_between,
+    worn_at_once,
+)
+from src.pose import PoseRun  # noqa: E402
+from src.roster import (  # noqa: E402
+    PLAYER_MIN_CORE_FRAMES,
+    Participant,
+    Roster,
+    TrackRecord,
+    assign_role,
+    assign_team,
+    chest_region,
+    core_of,
+    intervals_of,
+    kit_fractions,
+    live_cores,
+    participant_id,
+    sides_from,
+    vote_kit,
+)
+from src.tracking import (  # noqa: E402
+    cut_frame,
+    held_in_play,
+    swap_frame,
+    tracks_continue,
+    tracks_together,
+)
+from src.tracking import track as track_players
 
 # A track shorter than this is a detection artefact rather than a player, and
 # naming one spends an identity on noise.
@@ -108,7 +142,7 @@ def main() -> int:
     wanted: dict[int, list] = defaultdict(list)
     kit_wanted: dict[int, list] = defaultdict(list)
     for t in tracks:
-        for i, (f, on) in enumerate(zip(t.frames, playing[t.id])):
+        for i, (f, on) in enumerate(zip(t.frames, playing[t.id], strict=True)):
             if on and i % SAMPLE_EVERY == 0:
                 wanted[f].append(t)
             if i % KIT_SAMPLE_EVERY == 0:
@@ -275,7 +309,7 @@ def main() -> int:
     for t in tracks:
         halves = Counter()
         core = Counter()
-        for (cx, cy), f, on in zip(t.points, t.frames, playing[t.id]):
+        for (_cx, cy), f, on in zip(t.points, t.frames, playing[t.id], strict=True):
             if on:
                 halves[str(court.half(cy))] += 1
                 inside = core_of(f, cores)
@@ -363,7 +397,7 @@ def main() -> int:
     records: dict[int, TrackRecord] = {}
     for t in tracks:
         detections = []
-        for f, det in zip(t.frames, t.detections):
+        for f, det in zip(t.frames, t.detections, strict=True):
             index = next(i for i, d in enumerate(frames[f]) if d is det)
             detections.append((f, index))
         kit, share = kits[t.id]
@@ -439,7 +473,7 @@ def write_sheet(path: Path, tracks, numbers, evidence, shortlists, review) -> No
     row_h = cell + caption + 14
     sheet = np.full((row_h * len(rows) + 10, max(width, 400), 3), 250, np.uint8)
     y = 6
-    for t, number, by_frame, shortlist in rows:
+    for t, number, by_frame, crops in rows:
         label = f"#{number}" if number is not None else "?"
         cv2.putText(sheet, label, (8, y + 34), cv2.FONT_HERSHEY_SIMPLEX,
                     0.9, (20, 20, 20), 2)
@@ -449,7 +483,7 @@ def write_sheet(path: Path, tracks, numbers, evidence, shortlists, review) -> No
         cv2.putText(sheet, dict(counts).__repr__()[:22], (8, y + 74),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.34, (90, 90, 90), 1)
         x = 120
-        for crop in shortlist:
+        for crop in crops:
             up = cv2.resize(crop.image, (int(crop.image.shape[1] * cell / crop.height), cell),
                             interpolation=cv2.INTER_AREA)
             if x + up.shape[1] >= sheet.shape[1]:

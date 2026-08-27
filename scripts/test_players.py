@@ -13,9 +13,18 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.players import (CLAIM_MIN_READINGS, JOIN_MAX_OVERLAP,  # noqa: E402
-                         MAX_WEARERS, Player, Swap, clash, fold_by_occupancy, join, swaps_between,
-                         worn_at_once)
+from src.players import (  # noqa: E402
+    CLAIM_MIN_READINGS,
+    JOIN_MAX_OVERLAP,
+    MAX_WEARERS,
+    Player,
+    Swap,
+    clash,
+    fold_by_occupancy,
+    join,
+    swaps_between,
+    worn_at_once,
+)
 
 
 class Joining(unittest.TestCase):

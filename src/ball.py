@@ -27,8 +27,16 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from src.candidates import (LEFT_HIP, LEFT_WRIST, RIGHT_HIP, RIGHT_WRIST, Candidate, _kp,
-                            shoulders, torso_up)
+from src.candidates import (
+    LEFT_HIP,
+    LEFT_WRIST,
+    RIGHT_HIP,
+    RIGHT_WRIST,
+    Candidate,
+    _kp,
+    shoulders,
+    torso_up,
+)
 from src.court import foot_point
 from src.timing import REFERENCE_FPS, frames
 from src.venue import VENUE

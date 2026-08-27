@@ -24,8 +24,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from court import (  # noqa: E402
-    CENTRE_LINE_M, COURT_LENGTH_M, COURT_WIDTH_M,
-    LEFT_ANKLE, RIGHT_ANKLE, MARGIN_M, MAX_BOUNDARY_SLACK_M, SCHEMA_VERSION, Court, foot_point,
+    CENTRE_LINE_M,
+    COURT_LENGTH_M,
+    COURT_WIDTH_M,
+    LEFT_ANKLE,
+    MARGIN_M,
+    MAX_BOUNDARY_SLACK_M,
+    RIGHT_ANKLE,
+    SCHEMA_VERSION,
+    Court,
+    foot_point,
 )
 
 FITTED = REPO_ROOT / "data" / "court" / "wdbf2014_final_h2_set2.json"
@@ -39,7 +47,7 @@ def a_court() -> Court:
 
 def detection(box, ankle_conf=(0.9, 0.9), ankle_xy=((900.0, 700.0), (940.0, 704.0))):
     kpts = [[0.0, 0.0, 0.0] for _ in range(17)]
-    for i, xy, c in zip((LEFT_ANKLE, RIGHT_ANKLE), ankle_xy, ankle_conf):
+    for i, xy, c in zip((LEFT_ANKLE, RIGHT_ANKLE), ankle_xy, ankle_conf, strict=True):
         kpts[i] = [xy[0], xy[1], c]
     return {"box": list(box), "conf": 0.9, "kpts": kpts}
 
@@ -58,7 +66,7 @@ class Transforms(unittest.TestCase):
 
     def test_corners_map_to_court_corners(self):
         truth = [(0, 0), (COURT_WIDTH_M, 0), (COURT_WIDTH_M, COURT_LENGTH_M), (0, COURT_LENGTH_M)]
-        for (x, y), (cx, cy) in zip(self.court.corners_image, truth):
+        for (x, y), (cx, cy) in zip(self.court.corners_image, truth, strict=True):
             gx, gy = self.court.to_court(x, y)
             self.assertAlmostEqual(gx, cx, places=3)
             self.assertAlmostEqual(gy, cy, places=3)

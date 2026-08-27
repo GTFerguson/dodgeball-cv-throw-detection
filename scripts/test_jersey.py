@@ -19,10 +19,25 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from jersey import (MAX_PRINT_LENGTH, MIN_AGREEMENT_SPAN,  # noqa: E402
-                    MIN_CROP_HEIGHT, READ_BIN_FRAMES, Crop, CropKeeper, Reading, as_number,
-                    confirm, conflicts, in_time_order, largest_crops,
-                    needs_review, shortlist, switch, torso_crop, unobstructed)
+from jersey import (  # noqa: E402
+    MAX_PRINT_LENGTH,
+    MIN_AGREEMENT_SPAN,
+    MIN_CROP_HEIGHT,
+    READ_BIN_FRAMES,
+    Crop,
+    CropKeeper,
+    Reading,
+    as_number,
+    confirm,
+    conflicts,
+    in_time_order,
+    largest_crops,
+    needs_review,
+    shortlist,
+    switch,
+    torso_crop,
+    unobstructed,
+)
 
 
 def readings(*pairs: tuple[int, int], spread: int = MIN_AGREEMENT_SPAN) -> list[Reading]:

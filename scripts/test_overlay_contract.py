@@ -28,8 +28,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import overlay  # noqa: E402
-from court import (ANKLE_MIN_CONF, ANKLE_SLACK_PX,  # noqa: E402
-                   IN_PLAY_HOLD_FRAMES, MAX_BOUNDARY_SLACK_M)
+from court import (  # noqa: E402
+    ANKLE_MIN_CONF,
+    ANKLE_SLACK_PX,
+    IN_PLAY_HOLD_FRAMES,
+    MAX_BOUNDARY_SLACK_M,
+)
 
 LABELER = REPO_ROOT / "tools" / "labeler" / "src"
 CSS = LABELER / "index.css"
@@ -149,10 +153,11 @@ def distance(a: str, b: str) -> float:
         x = (0.4124 * r + 0.3576 * g + 0.1805 * bl) / 0.95047
         y = 0.2126 * r + 0.7152 * g + 0.0722 * bl
         z = (0.0193 * r + 0.1192 * g + 0.9505 * bl) / 1.08883
-        f = lambda t: t ** (1 / 3) if t > (6 / 29) ** 3 else t / (3 * (6 / 29) ** 2) + 4 / 29
+        def f(t):
+            return t ** (1 / 3) if t > (6 / 29) ** 3 else t / (3 * (6 / 29) ** 2) + 4 / 29
         fx, fy, fz = f(x), f(y), f(z)
         return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
-    return sum((p - q) ** 2 for p, q in zip(lab(a), lab(b))) ** 0.5
+    return sum((p - q) ** 2 for p, q in zip(lab(a), lab(b), strict=True)) ** 0.5
 
 
 if __name__ == "__main__":

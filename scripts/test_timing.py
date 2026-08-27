@@ -19,8 +19,13 @@ sys.path.insert(0, str(REPO_ROOT))
 from src.ball import TRACE_AFTER_S, TRACE_BEFORE_S  # noqa: E402
 from src.candidates import MIN_SEPARATION_S, WINDUP_LOOKBACK_S  # noqa: E402
 from src.outcome import ELIMINATION_WINDOW_S, HOLD_S, HOLD_SLACK_S, RETURN_WINDOW_S  # noqa: E402
-from src.release import (BALL_BEFORE_WINDOW_S, CHAIN_MAX_S, FIRST_STEP_NORM_PER_S,  # noqa: E402
-                         SEED_WINDOW_S, WINDUP_WINDOW_S)
+from src.release import (  # noqa: E402
+    BALL_BEFORE_WINDOW_S,
+    CHAIN_MAX_S,
+    FIRST_STEP_NORM_PER_S,
+    SEED_WINDOW_S,
+    WINDUP_WINDOW_S,
+)
 from src.timing import REFERENCE_FPS, frames, window  # noqa: E402
 
 

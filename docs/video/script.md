@@ -33,7 +33,7 @@ Thud on entry.
 
 ## 3 · Pipeline (1:25–2:35)
 
-- Left to right. Pose on every frame finds the players and their arms. The court fit turns pixels into metres. The whistle on the audio finds the start of the set.
+- Top to bottom, the figure from the design doc. Pose on every frame finds the players and their arms. The court fit turns pixels into metres. The whistle on the audio finds the start of the set.
 - The roster stitches broken tracks back into people by jersey number and side. It also decides who's a player, because the referee's stripes read like a jersey.
 - Then the cascade, in red. Each box is a separate decision with its own score.
   - Wind-up: wrist speed against the torso, arm past the shoulder. Finds the motion.
@@ -55,7 +55,7 @@ Slide 4 is a marker. Switch to the screen.
 ## 5 · Results (4:05–4:55) ★
 
 - Five questions, scored one at a time, at a quarter-second tolerance, against the sixty labelled events.
-- Is that a throw? 88%. Did the ball leave the hand? 88%. Fake, pass or throw? 86%. Is it a throw, end to end? 75%.
+- Is there a throw attempt here at all, a wind-up, fakes included? Found 56 of the 60, 88% F1. Of those 56: did the ball leave the hand? 88%. Fake, pass or throw? 86%. And does a real throw come out the far end labelled throw, with all three steps compounded? 75%: seven real ones lost on the way, eight called throw where nothing was labelled.
 - Who did it get? 82%, eighteen of twenty-two. Fifty-nine before the ball was followed through the player; that's slide 8.
 - Efficiency: Canada 29% against a true 27%. USA 8% against 14%. And the Canada number is right for the wrong reasons. Five spurious throws and two invented hits cancel.
 
@@ -85,7 +85,7 @@ Whistle on entry.
 
 ## 9 · One failure (6:45–7:20)
 
-- 1:47. Far player 2 throws, 44 catches it. Two seconds later far 13 throws, 18 catches it. A catch puts the thrower out and brings one of your own back on.
+- 1:47. Far player 2 throws, 44 catches it. A second later 18 throws and hits 2, who's already out and walking off, so that moves nobody. A second after that far 13 throws, 18 catches it. Catch, hit, catch on one player in two seconds. A catch puts the thrower out and brings one of your own back on.
 - Two USA players walk off. Two Canada players should walk on. The roster registered one. A walk-off with nobody coming back is a hit by the count's rules, so the first catch is scored a miss and the hit lands on a later throw.
 - The ball can't help: a caught ball just stops in the hands, its flight barely bends, same as a ball that sails past. This one is identity's. Tracks fragment when players cross the sideline, and the second returning player was never stitched back to a number.
 

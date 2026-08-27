@@ -17,9 +17,19 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.ball import (BALL_FAINT_SAT_MIN, BALL_HSV_HI, BALL_HSV_LO, BLOB_DIAMETER_NORM,  # noqa: E402
-                      DISC_RADIUS_NORM, ball_mask, ball_masks, blobs_in, disc_count,
-                      wrist_frame, wrist_height)
+from src.ball import (  # noqa: E402
+    BALL_FAINT_SAT_MIN,
+    BALL_HSV_HI,
+    BALL_HSV_LO,
+    BLOB_DIAMETER_NORM,
+    DISC_RADIUS_NORM,
+    ball_mask,
+    ball_masks,
+    blobs_in,
+    disc_count,
+    wrist_frame,
+    wrist_height,
+)
 
 
 def canvas(h: int = 300, w: int = 400) -> np.ndarray:

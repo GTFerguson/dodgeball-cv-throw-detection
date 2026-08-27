@@ -22,8 +22,12 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fit_court import (  # noqa: E402
-    COURT_LENGTH_M, COURT_WIDTH_M, HELD_OUT_MARKINGS_M,
-    _fit_robust, _runs, fit_plate,
+    COURT_LENGTH_M,
+    COURT_WIDTH_M,
+    HELD_OUT_MARKINGS_M,
+    _fit_robust,
+    _runs,
+    fit_plate,
 )
 
 FLOOR_BGR = (110, 116, 116)
@@ -92,7 +96,7 @@ class SyntheticCourt(unittest.TestCase):
         # Row order differs from the rendering order; compare as point sets.
         found = sorted(map(tuple, np.round(result["corners_image"], 0).tolist()))
         truth = sorted(map(tuple, CORNERS_IMAGE.round(0).tolist()))
-        for (fx, fy), (tx, ty) in zip(found, truth):
+        for (fx, fy), (tx, ty) in zip(found, truth, strict=True):
             self.assertLess(abs(fx - tx), 4.0)
             self.assertLess(abs(fy - ty), 4.0)
 

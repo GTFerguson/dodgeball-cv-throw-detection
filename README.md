@@ -73,6 +73,8 @@ flowchart LR
 The design — pipeline, signal strategy, models and methods, data and labels,
 evaluation, compute and latency, failure modes — is
 **[docs/design.pdf](docs/design.pdf)** (source `docs/design.tex`, `make design`).
+What the build changed and why, with the measurements, is
+**[docs/report.pdf](docs/report.pdf)** (`make report`).
 What each stage does and why it was built that way is in
 [docs/architecture/](docs/architecture/README.md). The decisions that
 shaped the result:
@@ -101,7 +103,7 @@ shaped the result:
   the ball to the player it reaches and through, on a crop that moves with
   it; contact is the box the ball *turns* in, not the first it crosses. A
   ball that comes back off the player struck them (77–130° on the clip),
-  one that carries on past did not (under 20°). The one that turned takes
+  one that carries on past did not (under 40°). The one that turned takes
   the departure; one that turned and put nobody out was blocked.
   → [rebound.md](docs/architecture/rebound.md)
 - **Identity is a roster, not a track id.** ByteTrack fragments are joined
@@ -321,9 +323,9 @@ Three readings, all with the outcome level's 82% accuracy attached:
   direction. Both are the questions to ask of a tournament, and the pipeline
   now asks them of any footage it is given.
 
-The half also shows the pipeline's limits at scale: 37 count steps no throw
+The half also shows the pipeline's limits at scale: 36 count steps no throw
 explains (eliminations whose throw the cascade missed or called fake), and
-identity fragmenting over 1,401 tracks — the far team's numbers are read on
+identity fragmenting over 1,402 tracks — the far team's numbers are read on
 some sets and not others — which the outcome fold survives because it counts
 bodies, not names.
 
@@ -384,7 +386,7 @@ limit — the far baseline at 480p, or a venue whose kit shares the ball's hue.
 
 - **Amount:** one clip, 3.5 min (5250 frames at 25 fps), one complete set;
   60 closed events — 25 fakes (2 with no ball), 6 passes, 29 throws (7 hits,
-  2 catches, 5 blocks, 15 misses); 103 proposal reviews with notes.
+  2 catches, 5 blocks, 15 misses); 105 proposal reviews, 18 with notes.
 - **Rule:** [docs/labeling-guide.md](docs/labeling-guide.md) — the exact rule, written
   to be handed to a second person; grounded in the plan's
   [event definition](docs/plans/throw-attempt-detection.md#event-definition-fixed-2026-08-26-after-the-clip-was-labelled).
@@ -401,24 +403,60 @@ limit — the far baseline at 480p, or a venue whose kit shares the ball's hue.
   of detector.
 - **Tool:** `tools/labeler/` — proposals shown as rings, one keypress to
   accept / reject / classify, player keys mapped through the roster, every
-  box snapped to the same pose run the pipeline reads.
+  box snapped to the same pose run the pipeline reads. To read the labels
+  rather than the JSON: `cd tools/labeler && npm install && npm run dev`, then
+  open **`wdbf2014_final_h2_set2.mp4`** — the picker shows each clip's event
+  count, and the full half is deliberately unlabelled.
 
 ## Reproducing
 
-Python 3.12, `ffmpeg`/`ffprobe` and `yt-dlp` on PATH, a CUDA GPU for pose
-(CPU works, slowly — see `requirements.txt` for the CPU torch index).
+### What you need
+
+| | Needed for | |
+|---|---|---|
+| Python 3.12 | everything | the version the pins in `requirements.txt` resolve against |
+| `ffmpeg`, `ffprobe` | cutting the clip, the stress encodes, probing frame rates | on PATH |
+| `yt-dlp` | fetching the footage | on PATH |
+| A CUDA GPU | pose, jersey OCR, the rebound witness | CPU works, slowly — see `requirements.txt` for the CPU torch index |
+| `node` + `npm` | `tools/labeler/` only | not needed to run or score the pipeline |
+| `pdflatex` (TeX Live) | `make design`, `make report` only | uses `charter`, `microtype`, `geometry`, `booktabs`, `tabularx`, `xltabular`, `xcolor`, `enumitem`, `titlesec`, `footmisc`, `caption`, `float`, `tikz`, `hyperref` |
+| `ruff` | `make lint` only | `.venv/bin/pip install ruff` |
+
+Disk: about 790 MB for the clip run (weights 541 MB, footage 174 MB, pose
+71 MB), a further 960 MB for the whole half (footage 474 MB, pose 485 MB),
+and 390 MB more if the stress conditions are run (three re-encodes, three
+pose runs).
+
+### The clip — the evaluation set
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python scripts/download_weights.py          # yolo11x-pose (~113 MB), sam2_l (~224 MB)
+.venv/bin/python scripts/download_weights.py          # yolo11x-pose (~113 MB), sam2_l (~428 MB)
 scripts/download_footage.sh && scripts/make_clip.sh   # WDBF 2014 final, 2nd half → 6:00–9:30 clip
 
 .venv/bin/python scripts/run.py data/footage/wdbf2014_final_h2_set2.mp4 --offset 360
 ```
 
 `scripts/run.py` is the front door: every stage in order, footage in,
-timeline and metric out, scored where labels exist. The stages it runs, for
-rerunning one at a time:
+timeline and metric out, scored where labels exist. `--offset` is the clip's
+start within the match, and only sets the timecodes printed beside each set;
+the clip was cut at 6:00, so 360 makes them match the broadcast.
+
+### The whole half — the scale table
+
+The 240-throw table above is the same pipeline on the full 23-minute half,
+unlabelled. `scripts/download_footage.sh` already fetched it, so it is one
+command (about 70 min, nearly all of it pose):
+
+```bash
+.venv/bin/python scripts/run.py data/footage/wdbf2014_final_h2.mp4
+```
+
+Set boundaries, roster and outcomes are all re-derived; there are no labels,
+so `run.py` skips scoring and writes the set-up split to
+`output/wdbf2014_final_h2/tactics.md`.
+
+### One stage at a time
 
 ```bash
 .venv/bin/python scripts/fit_court.py        data/footage/wdbf2014_final_h2_set2.mp4
@@ -430,24 +468,29 @@ rerunning one at a time:
 .venv/bin/python scripts/detect_events.py    wdbf2014_final_h2_set2   # timeline + outcomes
 .venv/bin/python scripts/evaluate.py         wdbf2014_final_h2_set2   # every level
 .venv/bin/python scripts/error_budget.py     wdbf2014_final_h2_set2
+.venv/bin/python scripts/tactics.py          wdbf2014_final_h2_set2   # add --truth for the labels
 .venv/bin/python scripts/ablate.py           wdbf2014_final_h2_set2   # output/ablation/summary.md
 .venv/bin/python scripts/stress.py 480p crf40 drop2                   # output/stress/summary.md
 make test                                                            # every suite (21)
 ```
 
-`make` wraps the same commands (`make run CLIP=data/footage/x.mp4`, `make evaluate`,
-`make stress`, `make ablate`, `make budget`, `make tactics`, `make lint`).
+`make` wraps the same commands: `make run` (the clip, with `--offset 360`),
+`make half`, `make evaluate`, `make stress`, `make ablate`, `make budget`,
+`make tactics`, `make test`, `make lint`, `make design`, `make report`. Another
+clip is `make run CLIP=data/footage/x.mp4 OFFSET=0`.
 
 Footage and pose runs are never committed (licensing, size); labels, court
-fit, set timeline, roster, candidates and the timeline are. Every derived file
-records the clip hash and refuses a different cut. What the pipeline assumes
-about the venue — the ball's colour window, the court's dimensions, the kit
-colours — is one file, `config/venue.toml`; every window in time is a
-duration converted at the clip's own frame rate
+fit, set timeline, roster, candidates and the timeline are, for the clip and
+for the half. Every derived file records the clip hash and refuses a different
+cut. What the pipeline assumes about the venue — the ball's colour window, the
+court's dimensions, the kit colours — is one file, `config/venue.toml`; every
+window in time is a duration converted at the clip's own frame rate
 ([pipeline.md](docs/architecture/pipeline.md)).
 
 **Compute.** Batch, not real time. Pose is the cost: YOLO11x-pose at 1920 px
-on a laptop RTX 4080, ~9 fps → 10 min for the clip. Identity (tracking + OCR) 24 s. Everything after it is
+on a laptop RTX 4080, ~9 fps → 10 min for the 5,250-frame clip, ~70 min for the
+34,500-frame half, and ~25 min for the three stress conditions together.
+Identity (tracking + OCR) 24 s. Everything after it is
 seconds: candidates 3 s, the release gate 52 s (it reads the clip once around
 every proposal), the rebound witness ~3 s per throw that reached a player
 (SAM2-large on a moving crop, a model load a segment), evaluation 1 s. Nothing is trained.
@@ -457,11 +500,14 @@ every proposal), the rebound witness ~3 s per throw that reached a player
 ```
 docs/design.pdf      the design document — pipeline, signals, methods, data, evaluation,
                      compute, failure modes (source design.tex, `make design`)
+docs/report.pdf      the report — what changed from the design and why, results, failures,
+                     error budget, stress, ablation, compute, next experiment (`make report`)
 docs/labeling-guide.md  the annotation rule, written to be handed to a second person
 docs/architecture/   how each shipped stage works and why (start at README.md)
 docs/reference/      the WDBF rules and jersey-reading evidence, cited
 docs/plans/          intent before code — selection, event definition, work log
-data/                labels, court, sets, roster, candidates, timeline (committed); footage, pose (not)
+data/                labels, court, sets, roster, candidates, timeline for the clip and the
+                     whole half (committed); footage, pose, stress artefacts (not)
 scripts/             one script per stage, a test file per module
 src/                 the modules
 tools/labeler/       the labelling tool (Node)

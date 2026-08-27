@@ -243,7 +243,7 @@ def whistle_prominence(video: str | Path) -> tuple[np.ndarray, np.ndarray]:
     decoded = subprocess.run(
         ["ffmpeg", "-v", "error", "-i", str(video), "-ac", "1",
          "-ar", str(WHISTLE_SAMPLE_RATE), "-f", "s16le", "-"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        capture_output=True)
     audio = np.frombuffer(decoded.stdout, np.int16).astype(np.float32) / 32768.0
     # A clip cut without an audio track is a silent failure otherwise: every set
     # would come back unconfirmed with nothing saying why.
@@ -425,7 +425,7 @@ class SetTimeline:
     sets: list[dict]
 
     @classmethod
-    def load(cls, path: str | Path) -> "SetTimeline":
+    def load(cls, path: str | Path) -> SetTimeline:
         data = json.loads(Path(path).read_text())
         if data.get("schema_version") != SCHEMA_VERSION:
             raise ValueError(
@@ -441,7 +441,7 @@ class SetTimeline:
         )
 
     @classmethod
-    def for_video(cls, video: str | Path) -> "SetTimeline":
+    def for_video(cls, video: str | Path) -> SetTimeline:
         path = SETS_ROOT / f"{Path(video).stem}.json"
         if not path.exists():
             raise FileNotFoundError(

@@ -198,7 +198,7 @@ coaching term, not a rule term, so what counts as one is ours to fix.
 \changed{Not built. Every decision is a threshold on a named quantity and that quantity is
 written to the timeline (wind-up score, ball mass at the wrist, departure distance, how long
 the count step held), so a confidence would be a mapping from those margins; it was not done
-in the budget. Report \S2.}
+in the budget. Report \S2.4.}
 
 Two things follow from the rules. A candidate needs no ball: an empty-handed wind-up is
 still a move meant to draw the opponent, and the same motion to a stage that looks for
@@ -278,7 +278,7 @@ check on all of it, since only a throw resolving can move it.
 \changed{The outcome is read from the count, not the ball. At 25\,fps and twenty pixels the
 frame where the ball meets someone is the frame the trajectory is lost, so a dodge and a hit
 look the same; a persistent step in a side's on-court count is the outcome, attributed to the
-last throw at that side. Blocks move no count and are not claimed. Report \S4.}
+last throw at that side. Blocks move no count and are not claimed. Report \S2.1.}
 
 \textbf{Possession} in the team sense does not exist in dodgeball, both sides hold balls at
 once. Per player it does, and the release check covers the one case that matters: is there a
@@ -433,7 +433,7 @@ Global multi-ball tracking & Ball possession counts & Six near-identical balls i
 \changed{Two of these did not hold. Pose at the peak does not separate a feint from a
 throw, every feature tried sits near chance, so the ball alone decides release. The whistle
 band fires far too often during play to mean anything without other signals, so audio is
-used only at the set start, where the ball line-up gives it a window. Report \S3.}
+used only at the set start, where the ball line-up gives it a window. Report \S2.2.}
 
 \subsection{Primary approach}
 
@@ -447,7 +447,7 @@ departure vector in pixels into a side of the centre line.
 
 \changed{Direction is taken in the image, not in court metres, plus contact with a player's
 box where the trajectory reaches one. The floor homography cannot place a ball in the air.
-Report \S3.}
+Report \S2.3.}
 
 The trajectory decides outcome, checked against the count: the ball after release says
 which side it went to and roughly where it ended, and what happened to the player it reached
@@ -731,8 +731,8 @@ Three decisions above are marked
 rather than the ball's trajectory. Audio is used at the set start only. Pass versus throw is
 decided by the ball's direction in the image and by contact with a player, not by direction
 in court metres. Two things were planned and not done: the per-event confidence, and the
-blind second labelling pass. Each of these has its measurement and its reasoning in the report,
-and the shipped design of each stage is in \texttt{docs/architecture/}.
+blind second labelling pass. Each of these has its measurement and its reasoning in the
+report (\texttt{docs/report.pdf}, \S2), and the shipped design of each stage is in \texttt{docs/architecture/}.
 
 %=====================================================================
 \section*{Bibliography}
@@ -755,11 +755,11 @@ software, 2024, $<$\url{https://github.com/ultralytics/ultralytics}$>$, accessed
 \item Nojima, T., Phuong, N., Kai, T., Sato, T. and Koike, H., `Augmented dodgeball', in
 \emph{Proceedings of the 6th Augmented Human International Conference} (AH~'15),
 Singapore, 2015, pp.\ 137--140.
-\item World Dodgeball Federation, \emph{WDBF Dodgeball Rules 2024} (2024),
-$<$\url{https://worlddodgeballfederation.com/wdbf-content/uploads/2024/03/WDBF-Dodgeball-Rules-2024.pdf}$>$,
-accessed 27 August 2026.
 \item World Dodgeball Federation, \emph{2014 World Dodgeball Championship, Men's Final:
 Canada v USA} [video], YouTube, $<$\url{https://www.youtube.com/watch?v=Spu6OlAZHUo}$>$,
+accessed 27 August 2026.
+\item World Dodgeball Federation, \emph{WDBF Dodgeball Rules 2024} (2024),
+$<$\url{https://worlddodgeballfederation.com/wdbf-content/uploads/2024/03/WDBF-Dodgeball-Rules-2024.pdf}$>$,
 accessed 27 August 2026.
 \item Zhang, Y., Sun, P., Jiang, Y., Yu, D., Weng, F., Yuan, Z., Luo, P., Liu, W. and
 Wang, X., `ByteTrack: Multi-Object Tracking by Associating Every Detection Box', in

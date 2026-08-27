@@ -20,7 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -28,12 +28,18 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from court import Court  # noqa: E402
-from src.hashing import clip_sha256  # noqa: E402
 from pose import PoseRun  # noqa: E402
 from setstart import (  # noqa: E402
-    ARMED_MIN_BALLS, ARMED_MIN_SPREAD_M, SCHEMA_VERSION, SETS_ROOT,
-    SPRINT_MIN_PLAYERS, WHISTLE_MIN_PROMINENCE_DB, SetTimeline, detect_set_starts,
+    ARMED_MIN_BALLS,
+    ARMED_MIN_SPREAD_M,
+    SCHEMA_VERSION,
+    SETS_ROOT,
+    SPRINT_MIN_PLAYERS,
+    WHISTLE_MIN_PROMINENCE_DB,
+    SetTimeline,
+    detect_set_starts,
 )
+from src.hashing import clip_sha256  # noqa: E402
 
 
 def timecode(seconds: float) -> str:
@@ -68,7 +74,7 @@ def main() -> int:
 
     payload = {
         "schema_version": SCHEMA_VERSION,
-        "created": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "created": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "video": args.video.name,
         "clip_sha256": digest,
         "pose_run": pose.manifest["run_id"],

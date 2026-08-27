@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "created": "2026-08-27T14:11:45+00:00",
+  "video": "wdbf2014_final_h2.mp4",
+  "clip_sha256": "69baf4f64792677887c213d1e161ae298793eeec59ccca713abd166dd569f10c",
+  "pose_run": "yolo11x-pose-1920-013c4354",
+  "fps": 25.0,
+  "frame_count": 35146,
+  "clip_offset_s": 0.0,
+  "thresholds": {
+    "armed_min_balls": 4,
+    "armed_min_spread_m": 5.0,
+    "whistle_min_prominence_db": 20.0,
+    "sprint_min_players": 3,
+    "last_stand_min_s": 2.0,
+    "flood_min_rise": 2,
+    "flood_min_s": 0.4,
+    "flood_window_s": 10.0
+  },
+  "sets": [
+    {
+      "status": "confirmed",
+      "start_frame": 832,
+      "start_s": 33.28,
+      "whistle_prominence_db": 44.3,
+      "sprint_frame": 858,
+      "first_ball_moves_frame": 894,
+      "armed": {
+        "start_frame": 0,
+        "end_frame": 890,
+        "max_balls": 6,
+        "max_spread_m": 8.14
+      },
+      "notes": [],
+      "end": {
+        "frame": 6264,
+        "end_s": 250.56,
+        "source": "floor",
+        "side": "near",
+        "last_stand": [
+          5770,
+          6264
+        ],
+        "flood_frame": 6275,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 6874,
+      "start_s": 274.96,
+      "whistle_prominence_db": 39.0,
+      "sprint_frame": 6902,
+      "first_ball_moves_frame": 6925,
+      "armed": {
+        "start_frame": 6630,
+        "end_frame": 6930,
+        "max_balls": 6,
+        "max_spread_m": 8.17
+      },
+      "notes": [],
+      "end": {
+        "frame": 8677,
+        "end_s": 347.08,
+        "source": "floor",
+        "side": "near",
+        "last_stand": [
+          8607,
+          8677
+        ],
+        "flood_frame": 8798,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 9433,
+      "start_s": 377.32,
+      "whistle_prominence_db": 37.3,
+      "sprint_frame": 9456,
+      "first_ball_moves_frame": 9492,
+      "armed": {
+        "start_frame": 9135,
+        "end_frame": 9490,
+        "max_balls": 6,
+        "max_spread_m": 7.97
+      },
+      "notes": [],
+      "end": {
+        "frame": 13660,
+        "end_s": 546.4,
+        "source": "floor",
+        "side": "far",
+        "last_stand": [
+          13052,
+          13660
+        ],
+        "flood_frame": 13718,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 14307,
+      "start_s": 572.28,
+      "whistle_prominence_db": 36.8,
+      "sprint_frame": 14331,
+      "first_ball_moves_frame": 14370,
+      "armed": {
+        "start_frame": 13920,
+        "end_frame": 14365,
+        "max_balls": 6,
+        "max_spread_m": 8.14
+      },
+      "notes": [],
+      "end": {
+        "frame": 19402,
+        "end_s": 776.08,
+        "source": "floor",
+        "side": "far",
+        "last_stand": [
+          18597,
+          19402
+        ],
+        "flood_frame": 19423,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 20044,
+      "start_s": 801.76,
+      "whistle_prominence_db": 43.7,
+      "sprint_frame": 20069,
+      "first_ball_moves_frame": 19626,
+      "armed": {
+        "start_frame": 19625,
+        "end_frame": 20100,
+        "max_balls": 7,
+        "max_spread_m": 8.35
+      },
+      "notes": [],
+      "end": {
+        "frame": 22430,
+        "end_s": 897.2,
+        "source": "floor",
+        "side": "near",
+        "last_stand": [
+          22344,
+          22430
+        ],
+        "flood_frame": 22461,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 22972,
+      "start_s": 918.88,
+      "whistle_prominence_db": 41.6,
+      "sprint_frame": 22998,
+      "first_ball_moves_frame": 22746,
+      "armed": {
+        "start_frame": 22680,
+        "end_frame": 23025,
+        "max_balls": 6,
+        "max_spread_m": 9.25
+      },
+      "notes": [],
+      "end": {
+        "frame": 27366,
+        "end_s": 1094.64,
+        "source": "floor",
+        "side": "far",
+        "last_stand": [
+          26251,
+          27366
+        ],
+        "flood_frame": 27417,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 27933,
+      "start_s": 1117.32,
+      "whistle_prominence_db": 47.2,
+      "sprint_frame": 27958,
+      "first_ball_moves_frame": 27629,
+      "armed": {
+        "start_frame": 27625,
+        "end_frame": 27990,
+        "max_balls": 6,
+        "max_spread_m": 8.13
+      },
+      "notes": []
+    },
+    {
+      "status": "confirmed",
+      "start_frame": 32597,
+      "start_s": 1303.88,
+      "whistle_prominence_db": 44.6,
+      "sprint_frame": 32628,
+      "first_ball_moves_frame": 32661,
+      "armed": {
+        "start_frame": 32215,
+        "end_frame": 32660,
+        "max_balls": 6,
+        "max_spread_m": 8.46
+      },
+      "notes": [],
+      "end": {
+        "frame": 34703,
+        "end_s": 1388.12,
+        "source": "floor",
+        "side": "near",
+        "last_stand": [
+          34598,
+          34703
+        ],
+        "flood_frame": 34707,
+        "hit_frame": null
+      }
+    },
+    {
+      "status": "no_whistle",
+      "start_frame": null,
+      "start_s": null,
+      "whistle_prominence_db": null,
+      "sprint_frame": null,
+      "first_ball_moves_frame": null,
+      "armed": {
+        "start_frame": 35070,
+        "end_frame": 35145,
+        "max_balls": 6,
+        "max_spread_m": 8.24
+      },
+      "notes": [
+        "balls laid out but no whistle before the layout broke or the clip ended"
+      ]
+    }
+  ]
+}

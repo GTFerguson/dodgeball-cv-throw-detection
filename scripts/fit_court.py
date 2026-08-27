@@ -39,7 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import cv2
@@ -49,11 +49,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.hashing import clip_sha256  # noqa: E402
 from court import (  # noqa: E402
-    CENTRE_LINE_M, COURT_LENGTH_M, COURT_ROOT, COURT_WIDTH_M, HELD_OUT_MARKINGS_M,
-    MARGIN_M, MARKING_TOLERANCE_M, SCHEMA_VERSION,
+    CENTRE_LINE_M,
+    COURT_LENGTH_M,
+    COURT_ROOT,
+    COURT_WIDTH_M,
+    HELD_OUT_MARKINGS_M,
+    MARGIN_M,
+    MARKING_TOLERANCE_M,
+    SCHEMA_VERSION,
 )
+from src.hashing import clip_sha256  # noqa: E402
 
 # Odd, so the median is an actual sample rather than an average of two. Enough
 # samples that a player standing still for several seconds cannot survive it.
@@ -296,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     inverse = np.linalg.inv(result["homography"])
     payload = {
         "schema_version": SCHEMA_VERSION,
-        "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created": datetime.now(UTC).isoformat(timespec="seconds"),
         "video": video.name,
         "clip_sha256": clip_sha256(video),
         "frame_size": [int(result["plate"].shape[1]), int(result["plate"].shape[0])],

@@ -21,10 +21,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+from setstart import SetTimeline  # noqa: E402
 from src.evaluate import ELIMINATING, TruthSet  # noqa: E402
 from src.release import TIMELINE_ROOT  # noqa: E402
 from src.tactics import Event, format_table, split  # noqa: E402
-from setstart import SetTimeline  # noqa: E402
 
 
 def from_timeline(stem: str) -> tuple[list[Event], list[tuple[int, int | None]], float, str]:

@@ -101,6 +101,12 @@ function Picker({ videos, annotator }: { videos: VideoInfo[] | null; annotator: 
         Add <code className="font-mono text-ink">?annotator=name</code> for a separate file, which
         is how a blind second pass keeps clear of the first.
       </p>
+      <p className="text-[13px] text-ink-mute mb-5 leading-relaxed">
+        The labelled evaluation set is the 3.5-minute clip
+        <code className="font-mono text-ink"> wdbf2014_final_h2_set2.mp4</code> — open that one to
+        see the 60 events behind the reported scores. The other footage has no labels: opening it
+        starts an empty file, which is a blank tool rather than lost work.
+      </p>
       {videos == null ? (
         <p className="text-ink-mute text-[13px]">Scanning data/footage…</p>
       ) : videos.length === 0 ? (
@@ -118,6 +124,9 @@ function Picker({ videos, annotator }: { videos: VideoInfo[] | null; annotator: 
                 <span className="font-medium">{v.name}</span>
                 <span className="ml-2.5 text-[11px] text-ink-mute font-mono">
                   {v.width}×{v.height} · {v.fps.toFixed(2)} fps · {v.frames ?? '?'} frames
+                </span>
+                <span className={`ml-2.5 text-[11px] ${v.labelled ? 'text-ink' : 'text-ink-mute'}`}>
+                  {v.labelled ? `${v.labelled} labelled events` : 'no labels yet'}
                 </span>
               </a>
             </li>
@@ -137,6 +146,9 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   const noteRef = useRef<HTMLInputElement>(null)
 
   const [file, setFile] = useState<LabelFile | null>(null)
+  // Whether the file on screen is one the tool just started because the clip
+  // has none: an empty list then reads as untouched footage, not lost labels.
+  const [isNewFile, setIsNewFile] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('clean')
   const [frame, setFrame] = useState(0)
@@ -193,7 +205,10 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   // ── load / autosave ──────────────────────────────────────────────────────
 
   useEffect(() => {
-    loadLabels(key).then((f) => setFile(f ?? newLabelFile(info, annotator)))
+    loadLabels(key).then((f) => {
+      setIsNewFile(f == null)
+      setFile(f ?? newLabelFile(info, annotator))
+    })
   }, [key, info, annotator])
 
   useEffect(() => { loadCourt(stem).then(setCourt).catch(() => setCourt(null)) }, [stem])
@@ -773,6 +788,14 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
           <span className="font-mono">{fps.toFixed(2)} fps</span>
           <span className="w-px h-3 bg-rule-strong" />
           <span>annotator <span className="font-mono text-ink">{annotator}</span></span>
+          {isNewFile && (
+            <>
+              <span className="w-px h-3 bg-rule-strong" />
+              <span className="text-open" title={`data/labels/${key}.json does not exist yet`}>
+                no labels for this clip — starting a new file
+              </span>
+            </>
+          )}
         </div>
 
         <select

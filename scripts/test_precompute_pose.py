@@ -18,7 +18,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from precompute_pose import (  # noqa: E402
-    CHUNK_FRAMES, chunk_bounds, chunk_filename, chunk_index, chunk_indices,
+    CHUNK_FRAMES,
+    chunk_bounds,
+    chunk_filename,
+    chunk_index,
+    chunk_indices,
 )
 
 

@@ -22,17 +22,23 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+from setstart import SetTimeline  # noqa: E402
 from src.ball import trace_candidates  # noqa: E402
 from src.candidates import CandidateSet  # noqa: E402
 from src.court import Court  # noqa: E402
-from src.pose import PoseRun  # noqa: E402
 from src.outcome import Resolution, Thrown, blocks, count_steps, resolve  # noqa: E402
+from src.pose import PoseRun  # noqa: E402
 from src.rebound import Sam2Tracker, follow, read_frames, window_for  # noqa: E402
 from src.rebound import thresholds as rebound_thresholds  # noqa: E402
-from src.release import CONTACT_BOX_MARGIN, TIMELINE_ROOT, Timeline, decide, thresholds  # noqa: E402
+from src.release import (  # noqa: E402
+    CONTACT_BOX_MARGIN,
+    TIMELINE_ROOT,
+    Timeline,
+    decide,
+    thresholds,
+)
 from src.roster import Roster  # noqa: E402
 from src.setend import LastStand, SetEnd, trace_back  # noqa: E402
-from setstart import SetTimeline  # noqa: E402
 
 
 def set_end_of(sets: SetTimeline, interval) -> SetEnd | None:

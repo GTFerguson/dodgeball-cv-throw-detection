@@ -14,8 +14,19 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import src.rebound as rb  # noqa: E402
-from src.rebound import (DEFLECT_MIN_TURN_DEG, Contact, Rebound, at_the_feet, box_entries,  # noqa: E402
-                         cut_at_jump, follow, on_chain, turn, velocity_into, window_for)
+from src.rebound import (  # noqa: E402
+    DEFLECT_MIN_TURN_DEG,
+    Contact,
+    Rebound,
+    at_the_feet,
+    box_entries,
+    cut_at_jump,
+    follow,
+    on_chain,
+    turn,
+    velocity_into,
+    window_for,
+)
 
 
 def straight(start: tuple[float, float], step: tuple[float, float], n: int, first_frame: int = 100):

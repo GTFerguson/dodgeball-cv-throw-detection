@@ -17,9 +17,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.candidates import (CANDIDATES_ROOT, MIN_SCORE, MIN_SEPARATION_S,  # noqa: E402
-                            Candidate, CandidateSet, detect, peaks,
-                            relative_wrist_speed, wound_up)
+from src.candidates import (  # noqa: E402
+    CANDIDATES_ROOT,
+    MIN_SCORE,
+    MIN_SEPARATION_S,
+    Candidate,
+    CandidateSet,
+    detect,
+    peaks,
+    relative_wrist_speed,
+    wound_up,
+)
 from src.timing import frames as to_frames  # noqa: E402
 
 CLIP = "wdbf2014_final_h2_set2"
@@ -239,8 +247,8 @@ class OnTheClip(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from src.roster import Roster
         from setstart import SetTimeline
+        from src.roster import Roster
         cls.roster = Roster.for_video(CLIP)
         cls.found = CandidateSet.for_video(CLIP)
         cls.found.check_clip(cls.roster.clip_sha256)
@@ -267,7 +275,7 @@ class OnTheClip(unittest.TestCase):
         for c in self.found.candidates:
             by_track.setdefault(c.track_id, []).append(c.frame)
         for track, frames in by_track.items():
-            gaps = [b - a for a, b in zip(sorted(frames), sorted(frames)[1:])]
+            gaps = [b - a for a, b in zip(sorted(frames), sorted(frames)[1:], strict=False)]
             self.assertTrue(all(g >= to_frames(MIN_SEPARATION_S) for g in gaps), (track, gaps))
 
 

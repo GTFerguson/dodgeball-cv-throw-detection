@@ -17,8 +17,15 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from src.court import Court  # noqa: E402
 from src.evaluate import TOLERANCE_FRAMES  # noqa: E402
-from src.stress import (CONDITIONS, Condition, derive_court, derive_labels,  # noqa: E402
-                        derive_sets, read_json, remap, tolerance_for)
+from src.stress import (  # noqa: E402
+    CONDITIONS,
+    derive_court,
+    derive_labels,
+    derive_sets,
+    read_json,
+    remap,
+    tolerance_for,
+)
 
 SOURCE_STEM = "wdbf2014_final_h2_set2"
 HALF = CONDITIONS["480p"]
@@ -112,7 +119,7 @@ class OnTheClip(unittest.TestCase):
     def test_labels_keep_every_closed_event(self):
         derived = derive_labels(self.labels, DROP, DROP.stem_for(SOURCE_STEM))
         self.assertEqual(len(derived["events"]), len(self.labels["events"]))
-        for a, b in zip(self.labels["events"], derived["events"]):
+        for a, b in zip(self.labels["events"], derived["events"], strict=True):
             self.assertEqual(b["release_frame"], a["release_frame"] // 2)
             self.assertEqual(b["thrower"]["box"], a["thrower"]["box"])
         self.assertEqual(derived["fps"], 12.5)

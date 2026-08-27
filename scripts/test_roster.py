@@ -9,10 +9,10 @@ are only meaningful against real footage.
 from __future__ import annotations
 
 import json
-from dataclasses import replace
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -20,10 +20,25 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.roster import (KIT_MIN_SAMPLES, PLAYER_MIN_CORE_FRAMES, ROSTER_ROOT,  # noqa: E402
-                        Participant, Roster, TrackRecord, assign_role, assign_team,
-                        chest_region, core_of, crop_vote, in_core, intervals_of, kit_fractions,
-                        participant_id, sides_from, vote_kit)
+from src.roster import (  # noqa: E402
+    KIT_MIN_SAMPLES,
+    PLAYER_MIN_CORE_FRAMES,
+    ROSTER_ROOT,
+    Participant,
+    Roster,
+    TrackRecord,
+    assign_role,
+    assign_team,
+    chest_region,
+    core_of,
+    crop_vote,
+    in_core,
+    intervals_of,
+    kit_fractions,
+    participant_id,
+    sides_from,
+    vote_kit,
+)
 
 CLIP = "wdbf2014_final_h2_set2"
 

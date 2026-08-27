@@ -22,12 +22,17 @@ sys.path.insert(0, str(REPO_ROOT))
 # setstart imports its siblings bare, the rest of src by package; serve both.
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.candidates import (MIN_SCORE, MIN_SEPARATION_S,  # noqa: E402
-                            WINDUP_LOOKBACK_S, CandidateSet, detect)
+from setstart import SetTimeline  # noqa: E402
+from src.candidates import (  # noqa: E402
+    MIN_SCORE,
+    MIN_SEPARATION_S,
+    WINDUP_LOOKBACK_S,
+    CandidateSet,
+    detect,
+)
 from src.court import Court  # noqa: E402
 from src.pose import PoseRun  # noqa: E402
 from src.roster import Roster  # noqa: E402
-from setstart import SetTimeline  # noqa: E402
 
 
 def main() -> int:

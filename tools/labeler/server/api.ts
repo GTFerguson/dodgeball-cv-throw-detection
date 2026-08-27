@@ -105,6 +105,20 @@ function poseRuns(stem: string): unknown[] {
     .map((m) => JSON.parse(fs.readFileSync(m, 'utf8')))
 }
 
+// How many events the default annotator has on a clip, so the picker can say
+// which footage carries the truth set. A clip with no label file reads null and
+// is offered as empty rather than looking like labels that vanished.
+function labelledCount(videoName: string): number | null {
+  const stem = videoName.replace(/\.[^.]+$/, '')
+  try {
+    const raw = fs.readFileSync(path.join(LABELS_DIR, `${stem}.json`), 'utf8')
+    const events = JSON.parse(raw).events
+    return Array.isArray(events) ? events.length : null
+  } catch {
+    return null
+  }
+}
+
 export function labelApi(): Plugin {
   return {
     name: 'label-api',
@@ -117,7 +131,9 @@ export function labelApi(): Plugin {
         if (seg[1] === 'footage' && seg.length === 2 && req.method === 'GET') {
           fs.mkdirSync(FOOTAGE_DIR, { recursive: true })
           const files = fs.readdirSync(FOOTAGE_DIR).filter((f) => VIDEO_EXT.test(f)).sort()
-          return json(res, files.map((name) => ({ name, ...probe(path.join(FOOTAGE_DIR, name)) })))
+          return json(res, files.map((name) => ({
+            name, ...probe(path.join(FOOTAGE_DIR, name)), labelled: labelledCount(name),
+          })))
         }
 
         if (seg[1] === 'labels' && seg.length === 3) {

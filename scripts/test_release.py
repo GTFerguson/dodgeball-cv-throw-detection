@@ -19,9 +19,18 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from src.ball import Blob, Trace, WristFrame  # noqa: E402
 from src.candidates import Candidate, CandidateSet  # noqa: E402
-from src.release import (BALL_BEFORE_MIN, DEPART_MIN_NORM, PASS_MIN_ANGLE_DEG, RUSH_S,  # noqa: E402
-                         TIMELINE_ROOT, WINDUP_MIN_HEIGHT, ball_before, decide, departure,
-                         wound_up_with_ball)
+from src.release import (  # noqa: E402
+    BALL_BEFORE_MIN,
+    DEPART_MIN_NORM,
+    PASS_MIN_ANGLE_DEG,
+    RUSH_S,
+    TIMELINE_ROOT,
+    WINDUP_MIN_HEIGHT,
+    ball_before,
+    decide,
+    departure,
+    wound_up_with_ball,
+)
 
 CLIP = "wdbf2014_final_h2_set2"
 SCALE = 500.0

@@ -19,11 +19,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+from setstart import SETS_ROOT, SetTimeline  # noqa: E402
 from src.evaluate import TruthSet  # noqa: E402
 from src.roster import ROSTER_ROOT, Roster  # noqa: E402
-from src.setend import (FLOOD_MIN_RISE, LAST_STAND_MIN_S, Hit, SetEnd, detect_set_end,  # noqa: E402
-                        end_from_counts, flood_after, last_stands, trace_back)
-from setstart import SETS_ROOT, SetTimeline  # noqa: E402
+from src.setend import (  # noqa: E402
+    LAST_STAND_MIN_S,
+    Hit,
+    detect_set_end,
+    end_from_counts,
+    flood_after,
+    last_stands,
+    trace_back,
+)
 
 CLIP = "wdbf2014_final_h2_set2"
 FPS = 25.0

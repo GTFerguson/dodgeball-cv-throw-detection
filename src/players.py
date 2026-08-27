@@ -19,8 +19,8 @@ way the number cannot say which later fragment is whose.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 # Two tracks of one player can overlap briefly: when a tracker swap is cut, the
 # player's own starved track lingers a second on stray detections after the

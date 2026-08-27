@@ -42,9 +42,9 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass, field, replace
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 from src.ball import Trace, WristFrame
 from src.rebound import Rebound
@@ -251,7 +251,8 @@ def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, flo
     def step(path, pos, vel, offset, gaps, faint_run):
         nonlocal nodes
         nodes += 1
-        allowed = lambda opts: [o for o in opts if not o[3] or faint_run < FAINT_MAX_RUN]
+        def allowed(opts):
+            return [o for o in opts if not o[3] or faint_run < FAINT_MAX_RUN]
         found = [(o, gaps) for o in allowed(options(pos, vel, offset, 1))]
         # The bridge over a dropped frame is tried whenever nothing strict
         # continues the chain: a faint blob on the next frame is a guess at the
@@ -298,7 +299,7 @@ def departure(trace: Trace) -> Departure:
                 if links < CHAIN_MIN_LINKS:
                     continue
                 dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p, _, _ in chain]
-                if any(b <= a for a, b in zip(dists, dists[1:])):
+                if any(b <= a for a, b in zip(dists, dists[1:], strict=False)):
                     continue
                 far = dists[-1] / trace.scale
                 if (far, links) > (best.distance, best.links):

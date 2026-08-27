@@ -11,6 +11,18 @@ npm run test           # domain logic
 npm run typecheck
 ```
 
+**Open the labelled clip.** The truth set is on
+`wdbf2014_final_h2_set2.mp4` — the 3.5-minute clip, 60 events. That is the one
+to open to see the labels behind the reported scores. The picker lists every
+file in `data/footage/` with its event count beside it, and the full half reads
+*no labels yet*: opening it starts an empty file, so a blank tool there is
+untouched footage rather than labels that went missing. The header says so too
+whenever the file on screen is one the tool has just started.
+
+The same applies to `?annotator=name`, which is a *different file* by design
+(that is how a blind second pass keeps clear of the first). A name with no file
+behind it opens empty for the same reason.
+
 Requires `ffprobe` on PATH — the frame rate is probed server-side because the browser
 cannot read it, and every frame index in the labels depends on it.
 

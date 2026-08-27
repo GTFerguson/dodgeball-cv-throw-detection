@@ -35,8 +35,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.evaluate import (ELIMINATING, MIN_IOU, TOLERANCE_FRAMES, Prediction,  # noqa: E402
-                          TruthEvent, TruthSet, match)
+from src.evaluate import (  # noqa: E402
+    ELIMINATING,
+    MIN_IOU,
+    TOLERANCE_FRAMES,
+    Prediction,
+    TruthEvent,
+    TruthSet,
+    match,
+)
 from src.pose import PoseRun  # noqa: E402
 from src.release import TIMELINE_ROOT  # noqa: E402
 from src.roster import Roster  # noqa: E402

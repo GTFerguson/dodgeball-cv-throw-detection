@@ -8,7 +8,12 @@ def uri(name, mime):
 import re
 for key in sorted(set(re.findall(r"__(IMG|SND)_([A-Z0-9_]+)__", html))):
     kind, name = key
-    ext, mime = ("jpg", "image/jpeg") if kind == "IMG" else ("mp3", "audio/mpeg")
+    if kind == "SND":
+        ext, mime = "mp3", "audio/mpeg"
+    elif (assets / f"{name.lower()}.png").exists():
+        ext, mime = "png", "image/png"
+    else:
+        ext, mime = "jpg", "image/jpeg"
     html = html.replace(f"__{kind}_{name}__", uri(f"{name.lower()}.{ext}", mime))
 left = re.findall(r"__(?:IMG|SND)_[A-Z0-9_]+__", html)
 assert not left, f"unresolved placeholders: {left}"

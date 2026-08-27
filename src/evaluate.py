@@ -116,11 +116,11 @@ class Prediction:
     outcome: str | None = None
 
     @classmethod
-    def from_candidate(cls, c) -> "Prediction":
+    def from_candidate(cls, c) -> Prediction:
         return cls(frame=c.frame, box=tuple(c.box), team=c.team)
 
     @classmethod
-    def load_timeline(cls, path: str | Path) -> list["Prediction"]:
+    def load_timeline(cls, path: str | Path) -> list[Prediction]:
         """Every event a timeline file claims, as the harness scores it."""
         data = json.loads(Path(path).read_text())
         return [cls(frame=int(e["frame"]), box=tuple(e["box"]), team=e.get("team"),
@@ -136,7 +136,7 @@ class TruthSet:
     live_play: list[tuple[int, int | None]]
 
     @classmethod
-    def load(cls, path: str | Path) -> "TruthSet":
+    def load(cls, path: str | Path) -> TruthSet:
         data = json.loads(Path(path).read_text())
         if data.get("schema_version") != LABEL_SCHEMA_VERSION:
             raise ValueError(f"{path} is label schema {data.get('schema_version')}, "
@@ -157,7 +157,7 @@ class TruthSet:
         return cls(video=data["video"], fps=float(data["fps"]), events=events, live_play=live)
 
     @classmethod
-    def for_video(cls, video: str | Path) -> "TruthSet":
+    def for_video(cls, video: str | Path) -> TruthSet:
         return cls.load(LABELS_ROOT / f"{Path(video).stem}.json")
 
     def set_intervals(self) -> list[tuple[int, int | None]]:
@@ -179,7 +179,7 @@ class TruthSet:
     def in_play(self, frame: int) -> bool:
         return any(s <= frame and (e is None or frame <= e) for s, e in self.set_intervals())
 
-    def anchored(self, roster, pose, window: int = TOLERANCE_FRAMES) -> "TruthSet":
+    def anchored(self, roster, pose, window: int = TOLERANCE_FRAMES) -> TruthSet:
         """The same truth with each thrower's box known on every frame near the release.
 
         The annotator's box is snapped on one frame, and a throwing player's
@@ -390,7 +390,7 @@ def _pct(x: float) -> str:
 
 def _confusion_lines(name: str, c: dict, labels: tuple[str, ...]) -> list[str]:
     lines = [f"{name}: {_pct(c['accuracy'])} on {c['n']} matched",
-             "  truth \\ predicted  " + "  ".join(f"{l:>8}" for l in labels)]
+             "  truth \\ predicted  " + "  ".join(f"{lab:>8}" for lab in labels)]
     for t in labels:
         if not any(c["table"][t].values()):
             continue

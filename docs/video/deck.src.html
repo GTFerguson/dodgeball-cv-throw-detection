@@ -153,7 +153,7 @@ tr.dim td{color:var(--mut)}
 .funnel{grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);background:var(--panel)}
 .step{padding:clamp(.8rem,1.8vw,1.3rem) clamp(.7rem,1.4vw,1.1rem);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.35em;position:relative}
 .step:last-child{border-right:none}
-.step .q{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.step .q{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);min-height:2.7em;line-height:1.3}
 .step .v{font-family:var(--disp);font-weight:900;font-size:clamp(2rem,4.6vw,3.6rem);line-height:.9;letter-spacing:-.03em;color:var(--ink)}
 .step .n{font-size:var(--t-body);color:var(--soft);line-height:1.35}
 .step .e{font-family:var(--mono);font-size:var(--t-small);color:var(--mut);margin-top:auto;padding-top:.4em;line-height:1.4}
@@ -177,6 +177,15 @@ table.mx td.up{color:var(--good);font-weight:700}
 .mxwrap{background:var(--panel);border:1px solid var(--line);padding:clamp(.6rem,1.4vw,1rem)}
 .mxwrap h3{font-family:var(--mono);font-size:var(--t-small);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:.5em}
 .kinds{grid-template-columns:1fr 1fr 1fr;gap:var(--gap)}
+.fig.paper{background:#fff;border-color:#ddd} .fig.paper img{background:#fff;object-fit:contain;width:100%;height:auto}
+.fig.paper .cap{background:var(--panel2)}
+.pipe{display:grid;grid-template-columns:auto 1fr;gap:var(--gap);height:100%;min-height:0;align-items:stretch}
+.fig.tall{height:100%;min-height:0;display:block;width:auto}
+.fig.tall img{height:100%;width:auto;max-width:none;display:block;object-fit:unset}
+.pipe .col{justify-content:flex-start;min-height:0}
+.pipe .fig.short img{height:min(28vh,250px)}
+.pipe .panel h3{margin-bottom:.35em} .pipe .dlist{gap:clamp(.3rem,.8vh,.6rem)}
+@media (max-width:760px){.pipe{grid-template-columns:1fr}.fig.tall{max-width:100%;width:100%;height:auto}.fig.tall img{width:100%;height:auto}}
 .kinds .fig img{height:min(24vh,190px)}
 .fig.tile img{height:min(22vh,180px);object-fit:cover;object-position:50% 50%}
 .fig .txt{padding:clamp(.6rem,1.4vw,1rem);font-size:var(--t-body);line-height:1.45;color:var(--soft)} .fig .txt b{color:var(--ink)}
@@ -231,11 +240,7 @@ table.mx td.up{color:var(--good);font-weight:700}
   <div class="body-area">
     <div class="grid main">
       <div class="col">
-        <div class="tree reveal"><span class="k">throw attempt</span>   <span class="m">a player winds up to throw</span>
-├─ <span class="y">fake</span>        <span class="m">the ball never leaves the hand</span>
-├─ <span class="c">pass</span>        <span class="m">it leaves, but stays on their side</span>
-└─ <span class="a">throw</span>       <span class="m">it leaves and crosses the centre line</span>
-   └─ <span class="k">outcome</span>  <span class="a">hit</span> · <span class="c">catch</span> · <span class="m">block · miss</span></div>
+        <div class="fig paper reveal"><img src="__IMG_CASCADE_FIG__" alt="The event cascade: candidate, then feint or released; released splits into pass or throw; a throw ends in hit, catch, block or miss"></div>
         <div class="grid kinds">
           <div class="fig reveal"><img src="__IMG_KIND_FAKE__" alt="A fake: the arm goes, the ball stays"><div class="cap"><span class="y">fake</span> · 1:22 · 44 cocks it, sells the throw, keeps the ball</div></div>
           <div class="fig reveal"><img src="__IMG_KIND_PASS__" alt="A pass: the ball reaches a teammate"><div class="cap"><span style="color:var(--cool)">pass</span> · 2:45 · 10 lobs it across to 44, same side of the line</div></div>
@@ -263,38 +268,8 @@ table.mx td.up{color:var(--good);font-weight:700}
   <div class="meta"><span><span class="l">Pipeline</span> · footage in, timeline out</span><span>Seven stages, each one scored</span><span class="idx">0<b>3</b> / 10</span></div>
   <div class="head"><h1 class="reveal">Pose finds the arm. Colour finds the ball. <span class="a">The game tells us the outcome.</span></h1></div>
   <div class="body-area">
-    <div class="grid main">
-      <div class="col">
-        <div class="diag reveal">
-          <svg viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet" aria-label="Pipeline: video to pose, court, audio; roster; wind-up; release gate; destination; rebound; outcome; timeline; metric">
-            <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#a09490"/></marker></defs>
-            <style>.b{fill:#171314;stroke:#3a3133;stroke-width:1.5}.t{font-family:'JetBrains Mono',monospace;font-size:12px;fill:#f4efec}.s{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#a09490}.e{stroke:#a09490;stroke-width:1.4;fill:none;marker-end:url(#ar)}.hl{stroke:#ff3b2f}</style>
-            <rect class="b" x="8" y="20" width="96" height="36" rx="3"/><text class="t" x="56" y="35" text-anchor="middle">video</text><text class="s" x="56" y="49" text-anchor="middle">1080p · 25 fps</text>
-            <rect class="b" x="134" y="20" width="120" height="36" rx="3"/><text class="t" x="194" y="35" text-anchor="middle">pose</text><text class="s" x="194" y="49" text-anchor="middle">every frame</text>
-            <rect class="b" x="134" y="72" width="120" height="36" rx="3"/><text class="t" x="194" y="87" text-anchor="middle">court</text><text class="s" x="194" y="101" text-anchor="middle">pixels → metres</text>
-            <rect class="b" x="134" y="124" width="120" height="36" rx="3"/><text class="t" x="194" y="139" text-anchor="middle">audio</text><text class="s" x="194" y="153" text-anchor="middle">the whistle</text>
-            <path class="e" d="M104,38 L134,38"/><path class="e" d="M104,38 C119,38 119,90 134,90"/><path class="e" d="M104,38 C119,38 119,142 134,142"/>
-            <rect class="b" x="284" y="46" width="130" height="36" rx="3"/><text class="t" x="349" y="61" text-anchor="middle">roster</text><text class="s" x="349" y="75" text-anchor="middle">who plays, which side</text>
-            <path class="e" d="M254,38 C269,38 269,64 284,64"/><path class="e" d="M254,90 C269,90 269,64 284,64"/>
-            <rect class="b" x="284" y="124" width="130" height="36" rx="3"/><text class="t" x="349" y="139" text-anchor="middle">set start / end</text><text class="s" x="349" y="153" text-anchor="middle">balls on the line</text>
-            <path class="e" d="M254,142 L284,142"/>
-            <rect class="b hl" x="454" y="8" width="218" height="34" rx="3"/><text class="t" x="563" y="22" text-anchor="middle">wind-up</text><text class="s" x="563" y="35" text-anchor="middle">wrist speed, arm past the shoulder</text>
-            <rect class="b hl" x="454" y="56" width="218" height="34" rx="3"/><text class="t" x="563" y="70" text-anchor="middle">release gate</text><text class="s" x="563" y="83" text-anchor="middle">ball at the wrist, then seen leaving</text>
-            <rect class="b hl" x="454" y="104" width="218" height="34" rx="3"/><text class="t" x="563" y="118" text-anchor="middle">destination</text><text class="s" x="563" y="131" text-anchor="middle">who it reached, or which way it went</text>
-            <rect class="b hl" x="454" y="152" width="218" height="34" rx="3"/><text class="t" x="563" y="166" text-anchor="middle">rebound</text><text class="s" x="563" y="179" text-anchor="middle">follow it through the player</text>
-            <rect class="b hl" x="454" y="200" width="218" height="34" rx="3"/><text class="t" x="563" y="214" text-anchor="middle">outcome</text><text class="s" x="563" y="227" text-anchor="middle">someone leaves the court</text>
-            <path class="e" d="M414,64 C434,64 434,25 454,25"/>
-            <path class="e" d="M563,42 L563,56"/><path class="e" d="M563,90 L563,104"/><path class="e" d="M563,138 L563,152"/><path class="e" d="M563,186 L563,200"/>
-            <path class="e" d="M414,142 C434,142 434,217 454,217"/>
-            <rect class="b" x="454" y="252" width="100" height="34" rx="3"/><text class="t" x="504" y="273" text-anchor="middle">timeline</text>
-            <rect class="b" x="572" y="252" width="100" height="34" rx="3"/><text class="t" x="622" y="273" text-anchor="middle">efficiency</text>
-            <path class="e" d="M563,234 L515,252"/><path class="e" d="M554,269 L572,269"/>
-            <rect class="b" x="284" y="252" width="130" height="34" rx="3"/><text class="t" x="349" y="266" text-anchor="middle">labels</text><text class="s" x="349" y="280" text-anchor="middle">scored level by level</text>
-            <path class="e" d="M414,269 L454,269"/>
-            <text class="s" x="8" y="296" fill="#ff3b2f">red: the cascade. Each level is its own decision with its own score</text>
-          </svg>
-        </div>
-      </div>
+    <div class="pipe">
+        <div class="fig paper tall reveal"><img src="__IMG_PIPELINE_FIG__" alt="The pipeline: clip to pose, court fit and audio; roster and set boundaries; the cascade of candidates, release, destination, rebound, outcome; timeline, efficiency and evaluation"></div>
       <div class="col">
         <div class="panel l-accent reveal"><h3>Three decisions that shaped it</h3>
           <ul class="dlist">
@@ -331,10 +306,10 @@ table.mx td.up{color:var(--good);font-weight:700}
   <div class="head"><h1 class="reveal">Finds the throw. Knows if it left. <span class="w">Knows who it got, 18 times in 22.</span></h1></div>
   <div class="body-area">
     <div class="grid funnel reveal">
-      <div class="step"><span class="q">1 · Is that a throw?</span><span class="v">88%</span><span class="n">F1 on 60 throwing motions</span><span class="e">11 false alarms · 4 missed</span></div>
-      <div class="step"><span class="q">2 · Did it leave the hand?</span><span class="v">88%</span><span class="n">right on 56 matched</span><span class="e">5 throws called fake · 2 fakes called released</span></div>
-      <div class="step"><span class="q">3 · Fake, pass or throw?</span><span class="v">86%</span><span class="n">right on 56 matched</span><span class="e">8 wrong kind</span></div>
-      <div class="step"><span class="q">4 · Throw, end to end</span><span class="v">75%</span><span class="n">F1 on 29 true throws</span><span class="e">8 spurious · 7 missed</span></div>
+      <div class="step"><span class="q">1 · Is there a throw attempt here?</span><span class="v">88%</span><span class="n">found the wind-up: F1 on all 60 events, fakes included</span><span class="e">4 missed · 11 fired where nothing was labelled</span></div>
+      <div class="step"><span class="q">2 · Did the ball leave the hand?</span><span class="v">88%</span><span class="n">right on the 56 found</span><span class="e">5 throws called fake · 2 fakes called released</span></div>
+      <div class="step"><span class="q">3 · Fake, pass or throw?</span><span class="v">86%</span><span class="n">right on the 56 found</span><span class="e">8 wrong kind</span></div>
+      <div class="step"><span class="q">4 · Comes out labelled "throw"?</span><span class="v">75%</span><span class="n">F1 on the 29 real throws, steps 1–3 compounded</span><span class="e">7 real throws lost on the way · 8 called throw with no event there</span></div>
       <div class="step weak"><span class="q">5 · Who did it get?</span><span class="v">82%</span><span class="n">right on 22 throws · 59% before the ball was followed</span><span class="e">4 wrong · 2 the roster's · 1 graze · 1 lost track</span></div>
     </div>
     <div class="grid eff">
@@ -404,8 +379,8 @@ table.mx td.up{color:var(--good);font-weight:700}
 
 <!-- ===== 8 · WHAT THE BALL ADDED ===== -->
 <section class="slide" id="s8" data-sound="whistle">
-  <div class="meta"><span><span class="l">The last stage</span> · outcome 59% → 82%</span><span>Following the ball through the player</span><span class="idx">0<b>8</b> / 10</span></div>
-  <div class="head"><h1 class="reveal">Player 10 hits. Player 7 was getting the credit. <span class="a">The bounce says it was 10.</span></h1></div>
+  <div class="meta"><span><span class="l">What SAM 2 fixed</span> · outcome 59% → 82%</span><span>Following the ball through the player</span><span class="idx">0<b>8</b> / 10</span></div>
+  <div class="head"><h1 class="reveal">Player 10 hits, and 7 was getting the credit. <span class="a">Following the ball fixed it.</span></h1></div>
   <div class="body-area">
     <div class="fig reveal"><img src="__IMG_REBOUND_HIT__" alt="Eight frames: player 10's ball reaches the far player and bounces back off him" style="height:auto;object-fit:contain;background:#000"><div class="cap"><b>0:43.0–0:43.3</b> · 10's ball, followed frame by frame: into the player at the 3rd frame, back off him at 77°. 7's ball, half a second later, goes straight through the man next to him at 1.5°.</div></div>
     <div class="grid" style="grid-template-columns:1fr 1fr 1.3fr">
@@ -431,13 +406,13 @@ table.mx td.up{color:var(--good);font-weight:700}
 
 <!-- ===== 9 · THE FAILURE ===== -->
 <section class="slide" id="s9">
-  <div class="meta"><span><span class="l">One failure</span> · 1:47 in the clip</span><span>Two catches in two seconds, one player counted back</span><span class="idx">0<b>9</b> / 10</span></div>
+  <div class="meta"><span><span class="l">One failure</span> · 1:47 in the clip</span><span>Catch, hit, catch on one player in two seconds</span><span class="idx">0<b>9</b> / 10</span></div>
   <div class="head"><h1 class="reveal">Two catches. The roster saw one player come back. <span class="w">So one catch became a miss.</span></h1></div>
   <div class="body-area">
     <div class="grid three">
       <div class="fig short reveal"><img src="__IMG_CATCH1__" alt="1:47.2, far player 2 throws and near 44 catches it"><div class="cap"><b>1:47.2</b> · far 2 throws, <span class="y">44 catches it</span>. 2 is out and one Canada player gets to come back on.</div></div>
       <div class="fig short reveal"><img src="__IMG_CATCH2__" alt="1:49.0, far player 13 throws and near 18 catches it"><div class="cap"><b>1:49.0</b> · far 13 throws, <span class="y">18 catches it</span>. Same again: 13 out, another player back on.</div></div>
-      <div class="panel l-warn reveal"><h3>What the count saw</h3><p>Two USA players walk off. Two Canada players should walk on; <b>the roster registered one</b>. A walk-off with nobody coming back is a hit by the count's rules, so the first catch is scored a miss and the hit lands on a throw that came later.</p></div>
+      <div class="panel l-warn reveal"><h3>What the count saw</h3><p>In between, at <b>1:48.0</b>, 18 hits far 2 as he walks off: already out, so it moves nobody. Three things on one player in two seconds.</p><p style="margin-top:.6em">Two USA players walk off. Two Canada players should walk on; <b>the roster registered one</b>. A walk-off with nobody coming back is a hit by the count's rules, so the first catch is scored a miss and the hit lands on a throw that came later.</p></div>
     </div>
     <div class="grid two">
       <div class="panel l-accent reveal"><h3>Why the ball can't help here</h3><p>A caught ball just stops in the hands. Its flight barely bends, same as a ball that sails past. The bounce tells hits from misses; it says nothing about catches.</p></div>

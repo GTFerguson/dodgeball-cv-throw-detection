@@ -26,11 +26,21 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
+from run import PYTHON, SCRIPTS, run, run_stages  # noqa: E402
+
 from src.evaluate import TOLERANCE_FRAMES  # noqa: E402
 from src.hashing import clip_sha256  # noqa: E402
-from src.stress import (CONDITIONS, FOOTAGE_ROOT, Condition, derive_court,  # noqa: E402
-                        derive_labels, derive_sets, read_json, tolerance_for, write_json)
-from run import PYTHON, SCRIPTS, run, run_stages  # noqa: E402
+from src.stress import (  # noqa: E402
+    CONDITIONS,
+    FOOTAGE_ROOT,
+    Condition,
+    derive_court,
+    derive_labels,
+    derive_sets,
+    read_json,
+    tolerance_for,
+    write_json,
+)
 
 OUTPUT = REPO_ROOT / "output" / "stress"
 SOURCE_STEM = "wdbf2014_final_h2_set2"
@@ -137,7 +147,7 @@ def report() -> Path:
         eff = r["efficiency"].get("predicted", {})
         truth = r["efficiency"]["truth"]
 
-        def e(team):
+        def e(team, eff=eff, truth=truth):
             p = eff.get(team)
             return "—" if not p else (f"{p['eliminations']}/{p['throws']} "
                                       f"(truth {truth[team]['eliminations']}/{truth[team]['throws']})")

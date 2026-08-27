@@ -307,6 +307,8 @@ export interface VideoInfo {
   height: number
   frames: number | null
   duration: number | null
+  /** Events already labelled for this clip, or null when it has no label file. */
+  labelled: number | null
 }
 
 export interface LabelFile {

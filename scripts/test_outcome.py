@@ -13,8 +13,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.outcome import (ELIMINATION_WINDOW_S, HOLD_S, HOLD_SLACK_S, Step, blocks,  # noqa: E402
-                         Thrown, count_steps, fold, resolve)
+from src.outcome import (  # noqa: E402
+    ELIMINATION_WINDOW_S,
+    HOLD_S,
+    HOLD_SLACK_S,
+    Step,
+    Thrown,
+    blocks,
+    count_steps,
+    fold,
+    resolve,
+)
 from src.timing import frames  # noqa: E402
 
 HOLD_FRAMES = frames(HOLD_S)

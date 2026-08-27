@@ -112,7 +112,7 @@ class Court:
     held_out_error_m: dict[str, float]
 
     @classmethod
-    def load(cls, path: str | Path) -> "Court":
+    def load(cls, path: str | Path) -> Court:
         data = json.loads(Path(path).read_text())
         if data.get("schema_version") != SCHEMA_VERSION:
             raise ValueError(
@@ -131,7 +131,7 @@ class Court:
         )
 
     @classmethod
-    def for_video(cls, video: str | Path) -> "Court":
+    def for_video(cls, video: str | Path) -> Court:
         return cls.load(COURT_ROOT / f"{Path(video).stem}.json")
 
     def _apply(self, h: np.ndarray, a, b):

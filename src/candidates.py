@@ -196,7 +196,7 @@ class CandidateSet:
     candidates: list[Candidate]
 
     @classmethod
-    def load(cls, path: str | Path) -> "CandidateSet":
+    def load(cls, path: str | Path) -> CandidateSet:
         data = json.loads(Path(path).read_text())
         if data.get("schema_version") != SCHEMA_VERSION:
             raise ValueError(f"{path} is schema {data.get('schema_version')}, "
@@ -211,7 +211,7 @@ class CandidateSet:
         )
 
     @classmethod
-    def for_video(cls, video: str | Path) -> "CandidateSet":
+    def for_video(cls, video: str | Path) -> CandidateSet:
         return cls.load(CANDIDATES_ROOT / f"{Path(video).stem}.json")
 
     def check_clip(self, clip_sha256: str) -> None:

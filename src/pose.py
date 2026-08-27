@@ -35,7 +35,7 @@ class PoseRun:
         self._cache: dict[int, dict] = {}
 
     @classmethod
-    def for_video(cls, video: str | Path, run_id: str | None = None) -> "PoseRun":
+    def for_video(cls, video: str | Path, run_id: str | None = None) -> PoseRun:
         root = POSE_ROOT / Path(video).stem
         if not root.is_dir():
             raise FileNotFoundError(f"no pose runs for {Path(video).stem}; "

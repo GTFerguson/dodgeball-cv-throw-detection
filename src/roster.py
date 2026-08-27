@@ -383,7 +383,7 @@ class Presence:
 def intervals_of(frames: list[int], flags: list[bool]) -> list[tuple[int, int]]:
     """Run-length encode the frames where a flag holds, as inclusive intervals."""
     out: list[tuple[int, int]] = []
-    for f, on in zip(frames, flags):
+    for f, on in zip(frames, flags, strict=True):
         if not on:
             continue
         if out and out[-1][1] == f - 1:
@@ -415,7 +415,7 @@ class Roster:
     # -- reading -----------------------------------------------------------
 
     @classmethod
-    def load(cls, path: str | Path) -> "Roster":
+    def load(cls, path: str | Path) -> Roster:
         data = json.loads(Path(path).read_text())
         if data.get("schema_version") not in READABLE_SCHEMAS:
             raise ValueError(f"{path} is schema {data.get('schema_version')}, "
@@ -452,7 +452,7 @@ class Roster:
         )
 
     @classmethod
-    def for_video(cls, video: str | Path) -> "Roster":
+    def for_video(cls, video: str | Path) -> Roster:
         return cls.load(ROSTER_ROOT / f"{Path(video).stem}.json")
 
     def check_clip(self, clip_sha256: str) -> None:
