@@ -30,19 +30,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.timing import REFERENCE_FPS, frames, window
+
 # A change in a side's count must hold this long to be a step: a track that
 # drops out and comes back within two seconds is the tracker, not a player.
-HOLD_FRAMES = 50
-# A step may be missed for this many frames inside the hold.
-HOLD_SLACK_FRAMES = 4
+HOLD_S = 2.0
+# A step may be missed for this long inside the hold.
+HOLD_SLACK_S = 0.16
 # How long after a throw its elimination may show. The slowest departure on
-# the evaluation clip is 141 frames after the hit; a return after a catch
-# came 220 frames after the ball was caught.
-ELIMINATION_WINDOW = 240
+# the evaluation clip is 5.6 s after the hit; a return after a catch came
+# 8.8 s after the ball was caught.
+ELIMINATION_WINDOW_S = 9.6
 # A return on one side this close to a drop on the other makes the drop a
 # catch. The return can precede the drop: the catcher's teammate walks on
 # while the thrower is still walking off.
-RETURN_WINDOW = (-120, 240)
+RETURN_WINDOW_S = (-4.8, 9.6)
 
 TEAMS = ("near", "far")
 
@@ -66,13 +68,14 @@ class Step:
 
 
 def count_steps(counts: dict[str, list[int]], start_frame: int,
-                hold: int = HOLD_FRAMES, slack: int = HOLD_SLACK_FRAMES) -> list[Step]:
-    """Every step in each side's count that holds for `hold` frames.
+                fps: float = REFERENCE_FPS) -> list[Step]:
+    """Every step in each side's count that holds for HOLD_S.
 
     `counts[team][i]` is the side's in-play count on frame `start_frame + i`.
     A value is a step when it differs from the current level and the next
-    `hold` frames sit at it with at most `slack` exceptions.
+    HOLD_S of frames sit at it with at most HOLD_SLACK_S of exceptions.
     """
+    hold, slack = frames(HOLD_S, fps), frames(HOLD_SLACK_S, fps)
     steps: list[Step] = []
     for team, seq in counts.items():
         if not seq:
@@ -114,16 +117,19 @@ class Resolution:
         return self.step_frame
 
 
-def resolve(throws: list[Thrown], steps: list[Step]) -> tuple[dict[int, Resolution], list[Step]]:
+def resolve(throws: list[Thrown], steps: list[Step],
+            fps: float = REFERENCE_FPS) -> tuple[dict[int, Resolution], list[Step]]:
     """Attribute every drop to a throw; return the outcomes and the drops no throw explains.
 
     Drops are taken in order. A drop on side X is a catch if an unused rise
-    on the other side falls inside RETURN_WINDOW of it, and then belongs to
+    on the other side falls inside RETURN_WINDOW_S of it, and then belongs to
     the latest throw *by* X before the earlier of the two; otherwise it is a
     hit and belongs to the latest throw *at* X - by the other side - before
-    it. Either way the throw must be within ELIMINATION_WINDOW, and a throw
+    it. Either way the throw must be within ELIMINATION_WINDOW_S, and a throw
     resolves once.
     """
+    elimination_window = frames(ELIMINATION_WINDOW_S, fps)
+    return_lo, return_hi = window(RETURN_WINDOW_S, fps)
     by_team = {t: sorted((x for x in throws if x.team == t), key=lambda x: x.frame)
                for t in TEAMS}
     rises = [s for s in steps if s.delta > 0]
@@ -134,14 +140,14 @@ def resolve(throws: list[Thrown], steps: list[Step]) -> tuple[dict[int, Resoluti
 
     def latest(team: str, before: int) -> Thrown | None:
         for x in reversed(by_team.get(team, [])):
-            if x.frame <= before and x.id not in taken and before - x.frame <= ELIMINATION_WINDOW:
+            if x.frame <= before and x.id not in taken and before - x.frame <= elimination_window:
                 return x
         return None
 
     for drop in (s for s in steps if s.delta < 0):
         for _ in range(-drop.delta):
             rise = next((r for r in rises if r.team == other(drop.team) and r.frame not in used_rises
-                         and RETURN_WINDOW[0] <= r.frame - drop.frame <= RETURN_WINDOW[1]), None)
+                         and return_lo <= r.frame - drop.frame <= return_hi), None)
             if rise is not None:
                 thrown = latest(drop.team, min(drop.frame, rise.frame))
                 if thrown is not None:

@@ -17,9 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.candidates import (CANDIDATES_ROOT, MIN_SCORE, MIN_SEPARATION_FRAMES,  # noqa: E402
+from src.candidates import (CANDIDATES_ROOT, MIN_SCORE, MIN_SEPARATION_S,  # noqa: E402
                             Candidate, CandidateSet, detect, peaks,
                             relative_wrist_speed, wound_up)
+from src.timing import frames as to_frames  # noqa: E402
 
 CLIP = "wdbf2014_final_h2_set2"
 
@@ -123,6 +124,8 @@ class FakeCourt:
 
 
 class FakePose:
+    fps = 25.0
+
     def __init__(self, frames):
         self._frames = frames
 
@@ -265,7 +268,7 @@ class OnTheClip(unittest.TestCase):
             by_track.setdefault(c.track_id, []).append(c.frame)
         for track, frames in by_track.items():
             gaps = [b - a for a, b in zip(sorted(frames), sorted(frames)[1:])]
-            self.assertTrue(all(g >= MIN_SEPARATION_FRAMES for g in gaps), (track, gaps))
+            self.assertTrue(all(g >= to_frames(MIN_SEPARATION_S) for g in gaps), (track, gaps))
 
 
 if __name__ == "__main__":

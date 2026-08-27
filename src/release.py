@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Callable
 
 from src.ball import Trace, WristFrame
+from src.timing import frames, window
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TIMELINE_ROOT = REPO_ROOT / "data" / "timeline"
@@ -62,7 +63,7 @@ RUSH_S = 2.0
 # The window stops short of the peak: at the whip the ball is a streak that
 # the disc may or may not catch, and a release before the peak has already
 # emptied the hand.
-BALL_BEFORE_WINDOW = (-12, -3)
+BALL_BEFORE_WINDOW_S = (-0.48, -0.12)
 # Mean ball-sized orange inside the wrist disc over that window, in units of
 # the squared perspective scale. Set low on purpose: on the evaluation clip's
 # 105 reviewed proposals it keeps every event with a ball that the tolerance
@@ -75,20 +76,21 @@ BALL_BEFORE_MIN = 0.00002
 # lengths along the body; a block or a raised catch peaks just below it, a
 # throw goes past it. Raising the bar past zero starts losing sidearm
 # throws, which reach the line only at the whip.
-WINDUP_WINDOW = (-10, 0)
+WINDUP_WINDOW_S = (-0.40, 0.0)
 WINDUP_MIN_HEIGHT = 0.0
 # A blob within this of the wrist keypoint is in the hand.
 HAND_NORM = 0.08
 # Offsets around the peak at which a chain may begin: a release comes as
-# early as eight frames before the wrist-speed peak (the peak is the whip or
-# the follow-through, not the release) and rarely more than three after.
-SEED_WINDOW = (-8, 3)
+# early as a third of a second before the wrist-speed peak (the peak is the
+# whip or the follow-through, not the release) and rarely more than an
+# eighth after.
+SEED_WINDOW_S = (-0.32, 0.12)
 # The first step of a chain has no velocity to predict from. A hard throw
-# moves the ball a fifth of the perspective scale in a frame at most on the
-# clip; a ball that has not moved a fiftieth of it is still in the hand.
-# A looser cap (0.45) let chains hop to other balls: two thirds of fakes
-# then had a chain leaving the hand.
-FIRST_STEP_NORM = (0.02, 0.20)
+# moves the ball five perspective scales a second at most on the clip; a
+# ball that has not moved half a scale a second is still in the hand. A
+# looser cap (0.45 per frame at 25 fps) let chains hop to other balls: two
+# thirds of fakes then had a chain leaving the hand.
+FIRST_STEP_NORM_PER_S = (0.5, 5.0)
 # A step may skip this many frames when no blob continues the chain: at the
 # whip the ball is a streak the mask drops for a frame. Over a skipped frame
 # the predicted position and the tolerances scale with the frames covered.
@@ -104,8 +106,8 @@ LINK_SLACK_NORM = 0.06
 LINK_VELOCITY_FRACTION = 0.6
 MAX_TURN_DEG = 50.0
 # Long enough to reach the contact: every labelled outcome settles within
-# 21 frames of release. The release claim itself is made in the first few.
-CHAIN_MAX_LINKS = 30
+# 0.85 s of release. The release claim itself is made in the first few links.
+CHAIN_MAX_S = 1.2
 # Each link tries at most this many blobs, nearest first, and one proposal's
 # search stops after this many nodes: a hall of orange must not make the
 # depth-first walk exponential.
@@ -116,8 +118,15 @@ CHAIN_MAX_NODES = 4000
 # size each way, reached that player. Boxes are the pose run's.
 CONTACT_BOX_MARGIN = 0.10
 
+# The faint mask may carry a chain across the whip, where the ball is a
+# blurred streak the strict mask loses for a frame or two - but never for
+# longer: a run of faint links beyond this is dull floor, not a ball.
+FAINT_MAX_RUN = 2
+
 # A chain is a release when it carries the ball this far from the hand with
-# at least this many links. A hand cannot move a ball a quarter of the scale
+# at least this many links - strict sightings, since the claim of a release
+# rests on the ball seen properly on both sides of the blur; faint blobs
+# bridge and do not count. A hand cannot move a ball a quarter of the scale
 # in two frames; a ball in flight does it in one. Accuracy on the evaluation
 # clip is flat from 0.20 to 0.25 and falls either side.
 DEPART_MIN_NORM = 0.25
@@ -167,11 +176,12 @@ class Departure:
 NO_DEPARTURE = Departure(None, 0.0, 0, None)
 
 
-def ball_before(trace: Trace, window: tuple[int, int] = BALL_BEFORE_WINDOW) -> float:
+def ball_before(trace: Trace, window_s: tuple[float, float] = BALL_BEFORE_WINDOW_S) -> float:
     """The most ball either wrist held before the peak."""
     best = 0.0
+    lo, hi = window(window_s, trace.fps)
     for wrist in ("L", "R"):
-        counts = [wf.disc for o in range(window[0], window[1] + 1)
+        counts = [wf.disc for o in range(lo, hi + 1)
                   if (wf := trace.at(o, wrist)) is not None]
         if counts:
             best = max(best, sum(counts) / len(counts))
@@ -190,13 +200,14 @@ def ball_heights(trace: Trace, window: tuple[int, int]) -> list[float]:
 
 
 def wound_up_with_ball(trace: Trace) -> bool:
-    heights = ball_heights(trace, WINDUP_WINDOW)
+    heights = ball_heights(trace, window(WINDUP_WINDOW_S, trace.fps))
     return bool(heights) and max(heights) >= WINDUP_MIN_HEIGHT
 
 
 def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, float]):
     """Every consistent chain from a blob at the hand, depth-first."""
     scale = trace.scale
+    max_links = frames(CHAIN_MAX_S, trace.fps)
     out: list[list[tuple[float, float]]] = []
 
     def options(pos, vel, offset, covered):
@@ -206,15 +217,22 @@ def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, flo
         found = []
         if wf is None:
             return found
-        for blob in wf.blobs:
-            if previous is not None and any(
+        # A faint blob continues a chain: at the whip the ball is a blurred
+        # streak the strict mask loses for a frame or two. It never seeds one.
+        for blob in wf.blobs + wf.faint:
+            # Standing still is judged against the previous frame's blobs of
+            # the same kind: dull floor is faint on every frame, and a strict
+            # ball is not still because a faint patch lay under its path.
+            resting = () if previous is None else (previous.faint if blob.faint else previous.blobs)
+            if any(
                     math.hypot(q.x - blob.x, q.y - blob.y) / scale
-                    <= STATIC_TOLERANCE_DIAMETERS * blob.diameter_norm for q in previous.blobs):
+                    <= STATIC_TOLERANCE_DIAMETERS * blob.diameter_norm for q in resting):
                 continue
             mv = (blob.x - pos[0], blob.y - pos[1])
             length = math.hypot(*mv)
             if vel is None:
-                if not FIRST_STEP_NORM[0] * covered <= length / scale <= FIRST_STEP_NORM[1] * covered:
+                lo, hi = (v * covered / trace.fps for v in FIRST_STEP_NORM_PER_S)
+                if not lo <= length / scale <= hi:
                     continue
             else:
                 px, py = pos[0] + vel[0] * covered, pos[1] + vel[1] * covered
@@ -224,25 +242,28 @@ def _chains(trace: Trace, wrist: str, seed_offset: int, origin: tuple[float, flo
                 cos = (mv[0] * vel[0] + mv[1] * vel[1]) / (length * math.hypot(*vel) + 1e-9)
                 if math.degrees(math.acos(max(-1.0, min(1.0, cos)))) > MAX_TURN_DEG:
                     continue
-            found.append(((blob.x, blob.y), (mv[0] / covered, mv[1] / covered), offset))
+            found.append(((blob.x, blob.y), (mv[0] / covered, mv[1] / covered), offset, blob.faint))
         return found
 
     nodes = 0
 
-    def step(path, pos, vel, offset, gaps):
+    def step(path, pos, vel, offset, gaps, faint_run):
         nonlocal nodes
         nodes += 1
-        found = options(pos, vel, offset, 1)
-        if not found and gaps < LINK_GAP_FRAMES:
-            found = options(pos, vel, offset + 1, 2)
-            gaps += 1
-        if not found or len(path) > CHAIN_MAX_LINKS or nodes > CHAIN_MAX_NODES:
+        allowed = lambda opts: [o for o in opts if not o[3] or faint_run < FAINT_MAX_RUN]
+        found = [(o, gaps) for o in allowed(options(pos, vel, offset, 1))]
+        # The bridge over a dropped frame is tried whenever nothing strict
+        # continues the chain: a faint blob on the next frame is a guess at the
+        # ball, not a reason to stop looking for it properly a frame later.
+        if all(o[3] for o, _ in found) and gaps < LINK_GAP_FRAMES:
+            found += [(o, gaps + 1) for o in allowed(options(pos, vel, offset + 1, 2))]
+        if not found or len(path) > max_links or nodes > CHAIN_MAX_NODES:
             out.append(path)
             return
-        for p, v, at in found[:BRANCH]:
-            step(path + [(p, at)], p, v, at + 1, gaps)
+        for (p, v, at, faint), g in found[:BRANCH]:
+            step(path + [(p, at, faint)], p, v, at + 1, g, faint_run + 1 if faint else 0)
 
-    step([(origin, seed_offset)], origin, None, seed_offset + 1, 0)
+    step([(origin, seed_offset, False)], origin, None, seed_offset + 1, 0, 0)
     return out
 
 
@@ -256,8 +277,9 @@ def departure(trace: Trace) -> Departure:
     and the pose's faster wrist at the peak is not reliably the throwing one.
     """
     best = NO_DEPARTURE
+    seed_lo, seed_hi = window(SEED_WINDOW_S, trace.fps)
     for wrist in ("L", "R"):
-        for seed_offset in range(SEED_WINDOW[0], SEED_WINDOW[1] + 1):
+        for seed_offset in range(seed_lo, seed_hi + 1):
             wf = trace.at(seed_offset, wrist)
             if wf is None or wf.wrist is None:
                 continue
@@ -267,16 +289,20 @@ def departure(trace: Trace) -> Departure:
                 continue
             origin = (at_hand[0].x, at_hand[0].y)
             for chain in _chains(trace, wrist, seed_offset, origin):
-                links = len(chain) - 1
+                # The chain is cut back to its last strict sighting: what the
+                # faint mask saw beyond it is a bridge to nowhere.
+                while len(chain) > 1 and chain[-1][2]:
+                    chain = chain[:-1]
+                links = sum(1 for _, _, faint in chain[1:] if not faint)
                 if links < CHAIN_MIN_LINKS:
                     continue
-                dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p, _ in chain]
+                dists = [math.hypot(p[0] - origin[0], p[1] - origin[1]) for p, _, _ in chain]
                 if any(b <= a for a, b in zip(dists, dists[1:])):
                     continue
                 far = dists[-1] / trace.scale
                 if (far, links) > (best.distance, best.links):
                     best = Departure(wrist, round(far, 4), links, seed_offset,
-                                     tuple((round(x, 1), round(y, 1)) for (x, y), _ in chain),
+                                     tuple((round(x, 1), round(y, 1)) for (x, y), _, _ in chain),
                                      chain[-1][1])
     return best
 
@@ -462,11 +488,12 @@ class Timeline:
 
 def thresholds() -> dict:
     return {
-        "rush_s": RUSH_S, "ball_before_window": list(BALL_BEFORE_WINDOW),
+        "rush_s": RUSH_S, "ball_before_window_s": list(BALL_BEFORE_WINDOW_S),
         "ball_before_min": BALL_BEFORE_MIN,
-        "windup_window": list(WINDUP_WINDOW), "windup_min_height": WINDUP_MIN_HEIGHT,
+        "windup_window_s": list(WINDUP_WINDOW_S), "windup_min_height": WINDUP_MIN_HEIGHT,
         "hand_norm": HAND_NORM,
-        "seed_window": list(SEED_WINDOW), "first_step_norm": list(FIRST_STEP_NORM),
+        "seed_window_s": list(SEED_WINDOW_S), "first_step_norm_per_s": list(FIRST_STEP_NORM_PER_S),
+        "chain_max_s": CHAIN_MAX_S,
         "link_gap_frames": LINK_GAP_FRAMES,
         "static_tolerance_diameters": STATIC_TOLERANCE_DIAMETERS,
         "link_slack_norm": LINK_SLACK_NORM, "link_velocity_fraction": LINK_VELOCITY_FRACTION,

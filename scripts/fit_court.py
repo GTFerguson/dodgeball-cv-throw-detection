@@ -37,7 +37,6 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from datetime import datetime, timezone
@@ -47,8 +46,10 @@ import cv2
 import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+from src.hashing import clip_sha256  # noqa: E402
 from court import (  # noqa: E402
     CENTRE_LINE_M, COURT_LENGTH_M, COURT_ROOT, COURT_WIDTH_M, HELD_OUT_MARKINGS_M,
     MARGIN_M, MARKING_TOLERANCE_M, SCHEMA_VERSION,
@@ -82,14 +83,6 @@ COURT_Y_PAD = 30
 
 # Sampled well inside the sidelines so the ridge profile never picks them up.
 PROFILE_INSET = 0.20
-
-
-def file_sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for block in iter(lambda: fh.read(1 << 20), b""):
-            h.update(block)
-    return h.hexdigest()
 
 
 def build_plate(video: Path, samples: int) -> tuple[np.ndarray, dict]:
@@ -305,7 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         "schema_version": SCHEMA_VERSION,
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "video": video.name,
-        "clip_sha256": file_sha256(video),
+        "clip_sha256": clip_sha256(video),
         "frame_size": [int(result["plate"].shape[1]), int(result["plate"].shape[0])],
         "fps": result["meta"]["fps"],
         "plate_samples": args.samples,

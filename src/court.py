@@ -20,15 +20,23 @@ from pathlib import Path
 
 import numpy as np
 
+# setstart and the court scripts import this module bare off src/; the rest
+# of the pipeline imports it as a package. The config must load either way.
+try:
+    from src.venue import VENUE
+except ImportError:  # pragma: no cover - the bare-path import
+    from venue import VENUE
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 COURT_ROOT = REPO_ROOT / "data" / "court"
 
 SCHEMA_VERSION = 1
 
 # A regulation volleyball court, which is what this venue's floor is. Asserted by
-# the fit rather than assumed: see docs/architecture/court-calibration.md.
-COURT_WIDTH_M = 9.0
-COURT_LENGTH_M = 18.0
+# the fit rather than assumed: see docs/architecture/court-geometry.md. The
+# dimensions are the venue's (config/venue.toml), not the pipeline's.
+COURT_WIDTH_M = float(VENUE["court"]["width_m"])
+COURT_LENGTH_M = float(VENUE["court"]["length_m"])
 
 # The line teams may not cross, which is the net line on this floor.
 CENTRE_LINE_M = COURT_LENGTH_M / 2
@@ -41,7 +49,7 @@ MARKING_TOLERANCE_M = 0.25
 # How far outside the boundary still counts as court-adjacent: wide enough that a
 # player leaving is seen crossing it over several frames rather than appearing to
 # teleport out, narrow enough to leave the benches and crowd outside.
-MARGIN_M = 1.5
+MARGIN_M = float(VENUE["court"]["margin_m"])
 
 # Slack on the boundary test, as a budget of ankle-keypoint error in *pixels*.
 #

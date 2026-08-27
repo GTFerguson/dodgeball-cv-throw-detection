@@ -1,7 +1,7 @@
 ---
 title: Throw Candidates
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [architecture, event-detection, labelling, pose]
 ---
 
@@ -51,7 +51,7 @@ the shoulders' own motion, those go quiet and throws do not: raw speed gave
 relative speed gave 31 a minute with about half.
 
 **The wrist has been up.** A throw is wound up first, with the wrist past the
-shoulder line within `WINDUP_LOOKBACK_FRAMES` of the peak. Of eight fast peaks
+shoulder line within `WINDUP_LOOKBACK_S` of the peak. Of eight fast peaks
 without a wind-up sampled on the clip, none was a throw (a sprint, standing up
 from a dive, walking with a ball, a referee, the huddle). "Up" is along the
 torso — hips to shoulders — rather than up the image, so that a player lying
@@ -62,7 +62,7 @@ recall where a spurious flick costs a keypress.
 
 Speed is divided by the court fit's perspective scale at the feet, so one
 threshold serves a near player at 280 px and a far one at 150 px. Peaks on one
-track closer than `MIN_SEPARATION_FRAMES` are one motion.
+track closer than `MIN_SEPARATION_S` are one motion.
 
 ```mermaid
 flowchart LR

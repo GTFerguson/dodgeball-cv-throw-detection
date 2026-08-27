@@ -13,8 +13,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from src.outcome import (ELIMINATION_WINDOW, HOLD_FRAMES, HOLD_SLACK_FRAMES, Step,  # noqa: E402
+from src.outcome import (ELIMINATION_WINDOW_S, HOLD_S, HOLD_SLACK_S, Step,  # noqa: E402
                          Thrown, count_steps, fold, resolve)
+from src.timing import frames  # noqa: E402
+
+HOLD_FRAMES = frames(HOLD_S)
+HOLD_SLACK_FRAMES = frames(HOLD_SLACK_S)
+ELIMINATION_WINDOW = frames(ELIMINATION_WINDOW_S)
 
 
 def series(levels: list[tuple[int, int]]) -> list[int]:
@@ -48,6 +53,23 @@ class Steps(unittest.TestCase):
         self.assertEqual(count_steps({"far": seq, "near": []}, 0), [])
         seq = series([(6, 100), (5, HOLD_FRAMES - HOLD_SLACK_FRAMES), (6, 100)])
         self.assertEqual(len(count_steps({"far": seq, "near": []}, 0)), 2)
+
+
+class AtAnotherRate(unittest.TestCase):
+
+    def test_the_hold_is_a_duration(self):
+        # Half the rate: a drop that holds 25 frames is the same two seconds.
+        counts = {"far": series([(6, 50), (5, 50)]), "near": []}
+        self.assertEqual(count_steps(counts, 0, fps=12.5), [Step(50, "far", 6, 5)])
+        short = {"far": series([(6, 50), (5, HOLD_FRAMES // 2 - HOLD_SLACK_FRAMES // 2 - 1), (6, 50)]),
+                 "near": []}
+        self.assertEqual(count_steps(short, 0, fps=12.5), [])
+
+    def test_the_elimination_window_is_a_duration(self):
+        throws = [Thrown(1, 100, "near")]
+        late = 100 + ELIMINATION_WINDOW // 2 + 1
+        self.assertNotIn(1, resolve(throws, [Step(late, "far", 6, 5)], fps=12.5)[0])
+        self.assertIn(1, resolve(throws, [Step(late - 1, "far", 6, 5)], fps=12.5)[0])
 
 
 class Resolve(unittest.TestCase):

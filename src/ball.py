@@ -30,13 +30,25 @@ import numpy as np
 from src.candidates import (LEFT_HIP, LEFT_WRIST, RIGHT_HIP, RIGHT_WRIST, Candidate, _kp,
                             shoulders, torso_up)
 from src.court import foot_point
+from src.timing import REFERENCE_FPS, frames
+from src.venue import VENUE
 
 # Hue floor above the set-start mask's 5: red jersey pixels lie at hue 4-10 and
 # ball pixels at 6-14 on the evaluation clip. Saturation and value floors are
 # the set-start mask's own.
-BALL_HUE_MIN = 9
-BALL_HSV_LO = (BALL_HUE_MIN, 120, 90)
-BALL_HSV_HI = (22, 255, 255)
+# The window is the venue's (config/venue.toml): this match ball, this kit.
+BALL_HSV_LO = tuple(int(v) for v in VENUE["ball"]["hsv_lo"])
+BALL_HSV_HI = tuple(int(v) for v in VENUE["ball"]["hsv_hi"])
+BALL_HUE_MIN = BALL_HSV_LO[0]
+# A ball in flight at the whip is a motion-blurred streak, and blur mixes
+# the orange with the floor until its saturation falls under the floor above:
+# on the evaluation clip's final throw the streak read a median saturation of
+# 70-75 on the two frames after release (0 of 309 pixels above 120) against
+# 118-157 for the same ball at rest. A second mask with this floor sees the
+# streak; the floor and the shirts it lets in are held off by shape and by
+# the chain, since a faint blob may continue a chain and never start one.
+BALL_FAINT_SAT_MIN = 60
+BALL_HSV_FAINT_LO = (BALL_HUE_MIN, BALL_FAINT_SAT_MIN, BALL_HSV_LO[2])
 
 # A ball on the floor spans 0.020-0.036 of the perspective scale (set-start's
 # measurement). In flight it blurs into a streak several times longer, so the
@@ -52,11 +64,11 @@ BLOBS_PER_WRIST = 12
 # joint and the ball in the palm is a hand's length beyond it.
 DISC_RADIUS_NORM = 0.05
 
-# Frames traced either side of the proposal. Every labelled outcome on the
-# clip settles within 21 frames of the release, and a release can precede
-# the peak by 8.
-TRACE_BEFORE = 12
-TRACE_AFTER = 36
+# Traced either side of the proposal. Every labelled outcome on the clip
+# settles within 0.85 s of the release, and a release can precede the peak
+# by a third of a second.
+TRACE_BEFORE_S = 0.48
+TRACE_AFTER_S = 1.44
 
 WRISTS = {"L": LEFT_WRIST, "R": RIGHT_WRIST}
 
@@ -69,6 +81,9 @@ class Blob:
     y: float
     diameter_norm: float
     area: int
+    # Seen only by the faint mask: a blurred ball, or something dull enough
+    # to fail the strict one. Continues a chain, never seeds one.
+    faint: bool = False
 
     def distance_norm(self, x: float, y: float, scale: float) -> float:
         return float(np.hypot(self.x - x, self.y - y)) / scale
@@ -90,6 +105,8 @@ class WristFrame:
     # positive is past the shoulder line towards the head, whichever way the
     # body is lying. None where the shoulders or hips were not seen.
     height: float | None = None
+    # Ball-sized blobs the faint mask sees that the strict one does not.
+    faint: tuple[Blob, ...] = ()
 
 
 @dataclass
@@ -99,15 +116,26 @@ class Trace:
     candidate: Candidate
     scale: float
     frames: dict[int, dict[str, WristFrame]] = field(default_factory=dict)
+    # The clip's rate, so every window read off the trace is a duration.
+    fps: float = REFERENCE_FPS
 
     def at(self, offset: int, wrist: str) -> WristFrame | None:
         return self.frames.get(offset, {}).get(wrist)
 
 
-def ball_mask(frame_bgr: np.ndarray) -> np.ndarray:
-    hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, BALL_HSV_LO, BALL_HSV_HI)
+def _mask(hsv: np.ndarray, lo) -> np.ndarray:
+    mask = cv2.inRange(hsv, lo, BALL_HSV_HI)
     return cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+
+
+def ball_mask(frame_bgr: np.ndarray) -> np.ndarray:
+    return _mask(cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV), BALL_HSV_LO)
+
+
+def ball_masks(frame_bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """The strict mask and the faint one, from one colour conversion."""
+    hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
+    return _mask(hsv, BALL_HSV_LO), _mask(hsv, BALL_HSV_FAINT_LO)
 
 
 def blobs_in(mask: np.ndarray) -> tuple[list[tuple[float, float, int, int, int]], np.ndarray]:
@@ -156,13 +184,8 @@ def wrist_height(detection: dict | None, wrist: tuple[float, float] | None) -> f
     return float(np.dot(np.asarray(wrist) - s, up)) / torso
 
 
-def wrist_frame(mask: np.ndarray, components, labels: np.ndarray,
-                wrist: tuple[float, float] | None, seen: bool, scale: float,
-                height: float | None = None) -> WristFrame:
-    if wrist is None:
-        return WristFrame(None, False, 0.0, ())
-    x, y = wrist
-    count = disc_count(ball_sized(components, labels, scale), x, y, DISC_RADIUS_NORM * scale)
+def _near(components, x: float, y: float, scale: float, faint: bool) -> list[Blob]:
+    """Ball-sized components within reach of a wrist, nearest first."""
     near = []
     for cx, cy, w, h, area in components:
         diameter = max(w, h) / scale
@@ -171,20 +194,35 @@ def wrist_frame(mask: np.ndarray, components, labels: np.ndarray,
         distance = float(np.hypot(cx - x, cy - y)) / scale
         if distance > BLOB_REACH_NORM:
             continue
-        near.append((distance, Blob(cx, cy, round(diameter, 4), area)))
+        near.append((distance, Blob(cx, cy, round(diameter, 4), area, faint)))
     near.sort(key=lambda d: d[0])
-    return WristFrame((x, y), seen, count / (scale * scale),
-                      tuple(b for _, b in near[:BLOBS_PER_WRIST]), height)
+    return [b for _, b in near[:BLOBS_PER_WRIST]]
+
+
+def wrist_frame(mask: np.ndarray, components, labels: np.ndarray,
+                wrist: tuple[float, float] | None, seen: bool, scale: float,
+                height: float | None = None, faint_components=()) -> WristFrame:
+    if wrist is None:
+        return WristFrame(None, False, 0.0, ())
+    x, y = wrist
+    count = disc_count(ball_sized(components, labels, scale), x, y, DISC_RADIUS_NORM * scale)
+    blobs = _near(components, x, y, scale, faint=False)
+    # A strict blob grows under the faint mask and keeps its centre; only what
+    # the strict mask had no blob for is new.
+    faint = [f for f in _near(faint_components, x, y, scale, faint=True)
+             if not any(np.hypot(f.x - b.x, f.y - b.y) <= f.diameter_norm * scale for b in blobs)]
+    return WristFrame((x, y), seen, count / (scale * scale), tuple(blobs), height, tuple(faint))
 
 
 def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pose, court,
-                     before: int = TRACE_BEFORE, after: int = TRACE_AFTER,
+                     before_s: float = TRACE_BEFORE_S, after_s: float = TRACE_AFTER_S,
                      progress=None) -> list[Trace]:
     """One sequential read of the clip, tracing every proposal's window.
 
     Sequential rather than seeking, because the windows cover half the clip
     between them and a decoder seek costs more than a decode.
     """
+    before, after = frames(before_s, pose.fps), frames(after_s, pose.fps)
     traces: list[Trace] = []
     wanted: dict[int, list[tuple[int, int]]] = {}
     lookup: list[dict[int, int]] = []
@@ -193,7 +231,7 @@ def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pos
         lookup.append(dict(track.detections))
         peak = pose.frame(cand.frame)[cand.detection_index]
         _, foot_y, _ = foot_point(peak)
-        traces.append(Trace(cand, float(court.scale_at(foot_y))))
+        traces.append(Trace(cand, float(court.scale_at(foot_y)), fps=pose.fps))
         for offset in range(-before, after + 1):
             wanted.setdefault(cand.frame + offset, []).append((ti, offset))
     last_wrist: dict[tuple[int, str], tuple[float, float]] = {}
@@ -208,8 +246,9 @@ def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pos
             index += 1
             if index not in wanted:
                 continue
-            mask = ball_mask(frame)
+            mask, faint = ball_masks(frame)
             components, labels = blobs_in(mask)
+            faint_components, _ = blobs_in(faint)
             for ti, offset in wanted[index]:
                 trace = traces[ti]
                 det_index = lookup[ti].get(index)
@@ -222,7 +261,8 @@ def trace_candidates(video: str | Path, candidates: list[Candidate], roster, pos
                         last_wrist[(ti, name)] = (float(p[0]), float(p[1]))
                     wrist = last_wrist.get((ti, name))
                     row[name] = wrist_frame(mask, components, labels, wrist, seen, trace.scale,
-                                            wrist_height(det, wrist) if seen else None)
+                                            wrist_height(det, wrist) if seen else None,
+                                            faint_components)
                 trace.frames[offset] = row
             if progress and index % 500 == 0:
                 progress(index)

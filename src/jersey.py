@@ -203,6 +203,42 @@ def largest_crops(crops: list[Crop], limit: int = CROPS_PER_TRACK) -> list[Crop]
     return sorted(crops, key=lambda c: c.height, reverse=True)[:limit]
 
 
+class CropKeeper:
+    """The crops `shortlist` would pick, kept as they arrive.
+
+    Holding every crop of every track until the end is a whole half's worth
+    of pixels in memory - the identity pass was killed at 27 GB on 35,000
+    frames. The shortlist only ever wants the `limit` tallest crops and the
+    tallest of every bin, so that is all this keeps: the same crops, in the
+    same order, from a bounded set.
+    """
+
+    def __init__(self, limit: int = CROPS_PER_TRACK, bin_frames: int = READ_BIN_FRAMES):
+        self.limit = limit
+        self.bin_frames = bin_frames
+        self._tallest: list[Crop] = []
+        self._best_in_bin: dict[int, Crop] = {}
+
+    def add(self, crop: Crop) -> None:
+        b = crop.frame // self.bin_frames
+        if b not in self._best_in_bin or crop.height > self._best_in_bin[b].height:
+            self._best_in_bin[b] = crop
+        if len(self._tallest) < self.limit or crop.height > self._tallest[-1].height:
+            self._tallest.append(crop)
+            self._tallest.sort(key=lambda c: c.height, reverse=True)
+            del self._tallest[self.limit:]
+
+    def crops(self) -> list[Crop]:
+        """Every crop kept, for `shortlist` to pick from as it always has."""
+        picked = {c.frame: c for c in self._tallest}
+        for c in self._best_in_bin.values():
+            picked.setdefault(c.frame, c)
+        return list(picked.values())
+
+    def __bool__(self) -> bool:
+        return bool(self._best_in_bin)
+
+
 def shortlist(crops: list[Crop], limit: int = CROPS_PER_TRACK,
               bin_frames: int = READ_BIN_FRAMES) -> list[Crop]:
     """The crops worth reading: the tallest overall, and the tallest of every bin.

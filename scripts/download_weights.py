@@ -17,11 +17,15 @@ Usage::
 
 from __future__ import annotations
 
-import hashlib
 import shutil
 import sys
 import urllib.request
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from src.hashing import clip_sha256  # noqa: E402
 
 WEIGHTS_DIR = Path(__file__).resolve().parent.parent / "weights"
 
@@ -31,20 +35,12 @@ SHA256 = "013c43543b0751b8918486ba96e01ee44a59040683a07f96cc22bcc2cb7785f8"
 SIZE_BYTES = 118481010
 
 
-def sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for block in iter(lambda: fh.read(1 << 20), b""):
-            h.update(block)
-    return h.hexdigest()
-
-
 def main() -> int:
     WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
     target = WEIGHTS_DIR / NAME
 
     if target.exists():
-        if sha256(target) == SHA256:
+        if clip_sha256(target) == SHA256:
             print(f"already present: {target}")
             return 0
         print(f"{target} does not match the pinned checksum; re-downloading",
@@ -58,7 +54,7 @@ def main() -> int:
         shutil.copyfileobj(response, out)
 
     size = tmp.stat().st_size
-    digest = sha256(tmp)
+    digest = clip_sha256(tmp)
     if size != SIZE_BYTES or digest != SHA256:
         tmp.unlink()
         print(f"download does not match the pinned weights "

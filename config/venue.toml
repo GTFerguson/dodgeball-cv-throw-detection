@@ -1,0 +1,25 @@
+# What the pipeline assumes about the venue and the footage. Everything here
+# was measured on the WDBF 2014 final and is the first thing to revisit at a
+# second venue; nothing else in the pipeline knows a colour or a dimension.
+# Read once by src/venue.py; a missing file or key falls back to these values.
+
+[ball]
+# HSV window for the match ball, OpenCV ranges (hue 0-179). The hue floor sits
+# one step above the red kit: red jersey pixels lie at hue 4-10 and ball
+# pixels at 6-14 on the evaluation clip.
+hsv_lo = [9, 120, 90]
+hsv_hi = [22, 255, 255]
+
+[court]
+# A regulation WDBF court is a volleyball court: 18 x 9 m, centre line at 9.
+width_m = 9.0
+length_m = 18.0
+# The band outside the lines still treated as the court, in metres: where
+# the eliminated queue and the officials stand.
+margin_m = 1.5
+
+[teams]
+# Kit colours the roster classifies chests into, and which one the officials
+# wear. The classifier's rules for telling them apart are src/roster.py's.
+kits = ["red", "white", "black"]
+official_kit = "black"

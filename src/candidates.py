@@ -36,6 +36,8 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CANDIDATES_ROOT = REPO_ROOT / "data" / "candidates"
 
+from src.timing import REFERENCE_FPS, frames  # noqa: E402
+
 SCHEMA_VERSION = 1
 
 # COCO keypoint indices.
@@ -44,18 +46,21 @@ LEFT_WRIST, RIGHT_WRIST = 9, 10
 LEFT_HIP, RIGHT_HIP = 11, 12
 KEYPOINT_MIN_CONF = 0.30
 
-# Wrist displacement per frame, relative to the shoulders and divided by the
-# perspective scale at the feet, is a small number; it is reported x1000.
-SPEED_SCALE = 1000.0
+# Wrist speed relative to the shoulders, in perspective scales per second,
+# is a small number; it is reported x40 so that a frame's displacement on
+# the 25 fps clip the scores were tuned on reads x1000. Per second rather
+# than per frame: on a half-rate clip the wrist moves twice as far a frame
+# and every flick cleared MIN_SCORE.
+SPEED_SCALE_PER_S = 40.0
 # On the evaluation clip this admits about one proposal per expected event,
 # roughly half of them throws, and lost no throw among fast non-wound-up peaks.
 MIN_SCORE = 30.0
 # Two peaks closer than this on one track are one motion.
-MIN_SEPARATION_FRAMES = 12
+MIN_SEPARATION_S = 0.48
 # How far back the wrist must have been past the shoulder for a peak to count.
 # The peak frame itself counts: a sidearm throw reaches the shoulder line only
 # at the whip, and losing it costs recall where a spurious flick costs a keypress.
-WINDUP_LOOKBACK_FRAMES = 8
+WINDUP_LOOKBACK_S = 0.32
 
 
 @dataclass(frozen=True)
@@ -108,9 +113,11 @@ def wound_up(detection: dict) -> bool:
     return False
 
 
-def relative_wrist_speed(before: dict, after: dict, scale: float) -> float:
+def relative_wrist_speed(before: dict, after: dict, scale: float,
+                         fps: float = REFERENCE_FPS) -> float:
     """How fast the faster wrist moved between two consecutive frames, with
-    the shoulders' own motion taken out and the perspective scale divided off.
+    the shoulders' own motion taken out and the perspective scale divided off,
+    as a speed per second at the clip's rate.
     """
     s0, s1 = shoulders(before), shoulders(after)
     if s0 is None or s1 is None or scale <= 0:
@@ -121,12 +128,12 @@ def relative_wrist_speed(before: dict, after: dict, scale: float) -> float:
         p0, p1 = _kp(before, w), _kp(after, w)
         if p0 is None or p1 is None:
             continue
-        best = max(best, float(np.linalg.norm((p1 - p0) - body)) / scale * SPEED_SCALE)
+        best = max(best, float(np.linalg.norm((p1 - p0) - body)) / scale * fps * SPEED_SCALE_PER_S)
     return best
 
 
 def peaks(scores: list[float], min_score: float = MIN_SCORE,
-          min_separation: int = MIN_SEPARATION_FRAMES) -> list[int]:
+          min_separation: int = frames(MIN_SEPARATION_S)) -> list[int]:
     """Indices of local maxima at least `min_score` high and `min_separation`
     apart, strongest first."""
     order = sorted(range(len(scores)), key=lambda i: -scores[i])
@@ -148,6 +155,7 @@ def detect(roster, pose, court, timeline, min_score: float = MIN_SCORE) -> list[
     from src.court import foot_point
 
     intervals = timeline.live_play_intervals()
+    lookback = frames(WINDUP_LOOKBACK_S, pose.fps)
 
     def live(frame: int) -> bool:
         return any(iv.contains(frame) for iv in intervals)
@@ -164,9 +172,10 @@ def detect(roster, pose, court, timeline, min_score: float = MIN_SCORE) -> list[
                 scores.append(0.0)
                 continue
             _, foot_y, _ = foot_point(dets[k])
-            scores.append(relative_wrist_speed(dets[k - 1], dets[k], float(court.scale_at(foot_y))))
-        for k in peaks(scores, min_score):
-            if not any(wound_up(d) for d in dets[max(0, k - WINDUP_LOOKBACK_FRAMES):k + 1]):
+            scores.append(relative_wrist_speed(dets[k - 1], dets[k], float(court.scale_at(foot_y)),
+                                               pose.fps))
+        for k in peaks(scores, min_score, frames(MIN_SEPARATION_S, pose.fps)):
+            if not any(wound_up(d) for d in dets[max(0, k - lookback):k + 1]):
                 continue
             frame, index = seq[k]
             out.append(Candidate(

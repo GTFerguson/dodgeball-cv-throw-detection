@@ -22,8 +22,8 @@ sys.path.insert(0, str(REPO_ROOT))
 # setstart imports its siblings bare, the rest of src by package; serve both.
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from src.candidates import (MIN_SCORE, MIN_SEPARATION_FRAMES,  # noqa: E402
-                            WINDUP_LOOKBACK_FRAMES, CandidateSet, detect)
+from src.candidates import (MIN_SCORE, MIN_SEPARATION_S,  # noqa: E402
+                            WINDUP_LOOKBACK_S, CandidateSet, detect)
 from src.court import Court  # noqa: E402
 from src.pose import PoseRun  # noqa: E402
 from src.roster import Roster  # noqa: E402
@@ -50,8 +50,8 @@ def main() -> int:
         video=f"{stem}.mp4", clip_sha256=clip, pose_run=pose.dir.name, fps=pose.fps,
         thresholds={
             "min_score": args.min_score,
-            "min_separation_frames": MIN_SEPARATION_FRAMES,
-            "windup_lookback_frames": WINDUP_LOOKBACK_FRAMES,
+            "min_separation_s": MIN_SEPARATION_S,
+            "windup_lookback_s": WINDUP_LOOKBACK_S,
         },
         candidates=found)
     out = result.write(REPO_ROOT / "data" / "candidates" / f"{stem}.json")

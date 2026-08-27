@@ -53,7 +53,7 @@ is the last one thrown at that side before it.
 
 `count_steps` reads each side's in-play count frame by frame across live
 play (from `Roster.on_court`, which is the elimination curve the roster doc
-already reports) and keeps a change only when the next `HOLD_FRAMES` sit
+already reports) and keeps a change only when the next `HOLD_S` of frames sit
 at the new level, with `HOLD_SLACK_FRAMES` forgiven — a track that drops
 out and back inside two seconds is the tracker, not a player.
 
@@ -84,14 +84,21 @@ flowchart LR
 
 ## What it scores
 
-On the clip, outcome on the 20 matched throws the pipeline called throws:
-**65%** — 13 of 20. Predicted efficiency **near 4/15 against a truth of
-4/15; far 1/12 against 2/14.**
+On the clip, outcome on the 22 matched throws the pipeline called throws:
+**59%** — 13 of 22. Predicted efficiency **near 5/17 against a truth of
+4/15; far 1/13 against 2/14.** (It was 13 of 20 before the release gate's
+faint tier found two more throws; both of those score wrong here, one of
+them the set's last hit, below.)
 
-The seven errors are three families, none a threshold:
+The errors are three families, none a threshold:
 
 - **Two throws at one side inside the window.** 1067 (hit) and 1077 (miss)
   are ten frames apart; the far side's drop at 1125 goes to the later one.
+  The set's last hit is the same shape: [[set-end]] hands the final
+  elimination to the latest unclaimed near throw in its window, and that is
+  a second proposal of the throw before it (near-10 at 4656, the same ball
+  as 4641), five frames after the true one (near-4C at 4647). One motion
+  proposed twice is [[throw-candidates]]' to fold.
   The ball's contact was tried as the tie-break — it names the leaver for
   1067 — and it breaks the other such pair (4018's ball passes through the
   box of the player 4030 then hits). Latest-throw is kept and the case
@@ -130,5 +137,8 @@ saw as two far outs and two near returns — which is what happened.
   where the chain reached a player.
 - The window is the whole of the lag. A second throw at the same side
   inside it is attributed by recency, and the clip has one such pair.
-- Set end could be read from the last resolved elimination and is not
-  yet; the live-play bound still comes from [[set-start]].
+- The final elimination is not a step: the last player is still on the
+  paint while the floor fills, so the count rises rather than drops.
+  [[set-end]] reads the end from that shape and traces the hit back to the
+  latest unclaimed throw at the stand's side inside the hit window;
+  `scripts/detect_events.py` applies it after `resolve`.

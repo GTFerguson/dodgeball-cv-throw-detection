@@ -18,29 +18,22 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from court import Court  # noqa: E402
+from src.hashing import clip_sha256  # noqa: E402
 from pose import PoseRun  # noqa: E402
 from setstart import (  # noqa: E402
     ARMED_MIN_BALLS, ARMED_MIN_SPREAD_M, SCHEMA_VERSION, SETS_ROOT,
     SPRINT_MIN_PLAYERS, WHISTLE_MIN_PROMINENCE_DB, SetTimeline, detect_set_starts,
 )
-
-
-def clip_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def timecode(seconds: float) -> str:

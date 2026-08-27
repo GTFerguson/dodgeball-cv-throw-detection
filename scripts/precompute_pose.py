@@ -37,7 +37,6 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from datetime import datetime, timezone
@@ -51,6 +50,10 @@ SCRIPT_VERSION = 1
 CHUNK_FRAMES = 1000
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from src.hashing import clip_sha256  # noqa: E402
+
 DEFAULT_WEIGHTS = REPO_ROOT / "weights" / "yolo11x-pose.pt"
 POSE_ROOT = REPO_ROOT / "data" / "pose"
 
@@ -90,14 +93,6 @@ def chunk_indices(start_frame: int, end_frame: int) -> list[int]:
 
 
 # ── provenance ──────────────────────────────────────────────────────────────
-
-def file_sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for block in iter(lambda: fh.read(1 << 20), b""):
-            h.update(block)
-    return h.hexdigest()
-
 
 def make_run_id(weights: Path, weights_hash: str, imgsz: int) -> str:
     """Identify a run by the model that produced it, not by when it ran.
@@ -179,7 +174,7 @@ def run(args: argparse.Namespace) -> int:
         print(f"empty frame range [{start}, {end})", file=sys.stderr)
         return 1
 
-    weights_hash = file_sha256(weights)
+    weights_hash = clip_sha256(weights)
     run_id = args.run_id or make_run_id(weights, weights_hash, args.imgsz)
     out_dir = POSE_ROOT / video.stem / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -270,7 +265,7 @@ def run(args: argparse.Namespace) -> int:
         "run_id": run_id,
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "video": video.name,
-        "clip_sha256": file_sha256(video),
+        "clip_sha256": clip_sha256(video),
         "fps": fps,
         "frame_count": frame_count,
         "frame_size": [width, height],

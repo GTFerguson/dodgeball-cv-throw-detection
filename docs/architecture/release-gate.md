@@ -1,7 +1,7 @@
 ---
 title: Release Gate
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [architecture, event-detection, ball, release]
 ---
 
@@ -44,8 +44,8 @@ drops out on exactly the blurred frames that matter.
 
 `src/ball.py` reads the clip once, sequentially — the traced windows cover
 half of it between them, and a decoder seek costs more than a decode — and
-for every proposal and every frame from `TRACE_BEFORE` before its peak to
-`TRACE_AFTER` after, records at each wrist:
+for every proposal and every frame from `TRACE_BEFORE_S` before its peak to
+`TRACE_AFTER_S` after, records at each wrist:
 
 - the ball-sized orange inside a disc of `DISC_RADIUS_NORM` on the wrist
   keypoint, divided by the squared perspective scale so a near and a far
@@ -91,7 +91,7 @@ so proposals in the post-set huddle pass through and the harness counts them
 apart.
 
 **Ball in hand.** The mean disc count at the fuller wrist over
-`BALL_BEFORE_WINDOW`, the frames before the peak, must reach
+`BALL_BEFORE_WINDOW_S`, the frames before the peak, must reach
 `BALL_BEFORE_MIN`. The window stops three frames short of the peak: at the
 whip the ball is a streak the disc may or may not catch, and a release
 before the peak has already emptied the hand. The floor is set low on
@@ -112,7 +112,7 @@ along the torso is recorded on the trace (`WristFrame.height`, in torso
 lengths past the shoulder line, along the body rather than up the image so
 a prone player is measured the same way), and the hand holding the ball
 must have reached `WINDUP_MIN_HEIGHT` — the shoulder line — inside
-`WINDUP_WINDOW` before the peak. That is the plan's definition of a wind-up
+`WINDUP_WINDOW_S` before the peak. That is the plan's definition of a wind-up
 applied to the ball rather than the bare wrist: the candidate stage's
 wrist-only test is what a blocking arm satisfies. No pose feature had
 separated these on its own (AUC 0.4–0.7); the ball's height does because
@@ -137,14 +137,14 @@ ball held in the other hand keeps the disc lit through a real release. Both
 were in the first experiments' misses and both are in the truth set.
 
 So the claim is made on *seeing the ball leave*. From a blob at the hand —
-within `HAND_NORM` of the wrist on any offset in `SEED_WINDOW` — chains of
+within `HAND_NORM` of the wrist on any offset in `SEED_WINDOW_S` — chains of
 blobs are followed frame by frame. The first step may be anything from
-`FIRST_STEP_NORM` short to long, because there is no velocity yet to predict
+`FIRST_STEP_NORM_PER_S` short to long, because there is no velocity yet to predict
 from. Every later step must land within `LINK_SLACK_NORM` plus
 `LINK_VELOCITY_FRACTION` of the last step of where the last velocity
 predicts, and turn less than `MAX_TURN_DEG`. The distance from the origin
 must grow at every step. Search is depth-first over the nearest `BRANCH`
-blobs at each link, to `CHAIN_MAX_LINKS`.
+blobs at each link, to `CHAIN_MAX_S`.
 
 Three constraints make the chain *one ball* rather than any orange:
 
@@ -155,7 +155,7 @@ Three constraints make the chain *one ball* rather than any orange:
   other hand's ball, which happened to line up. With it, one fake in
   twenty-three does. It costs the slowest far-court balls, which move under
   a diameter a frame.
-- **The first step is a throw's, not half the frame.** `FIRST_STEP_NORM`
+- **The first step is a throw's, not half the frame.** `FIRST_STEP_NORM_PER_S`
   tops out at a fifth of the scale, the most a hard throw covers in a frame
   here. The 0.45 it started at was a workaround for the next point, and it
   was what let chains hop to other balls.
@@ -163,6 +163,22 @@ Three constraints make the chain *one ball* rather than any orange:
   streak the mask drops, and the pose wrist lags the hand by a hand's
   length exactly then. A step may bridge `LINK_GAP_FRAMES` frames with no
   blob, with the prediction and the tolerances scaled by the frames covered.
+- **A faint blob may carry the chain, and never start or finish one.** The
+  throw that ended the set was lost to the mask for *two* frames: the
+  streak off the hand read a median saturation of 70–75 against the mask's
+  floor of 120 (0 of 309 pixels passed), while the same ball at rest reads
+  118–157. A second mask with its saturation floor at `BALL_FAINT_SAT_MIN`
+  sees the streak on both frames, on the flight line. Its blobs are recorded
+  apart (`WristFrame.faint`) and may continue a chain, at most `FAINT_MAX_RUN`
+  in a row — but the seed is strict, `links` counts strict sightings only,
+  and the chain is cut back to its last strict blob, so the claim of a
+  release still rests on the ball seen properly on both sides of the blur.
+  Let faint blobs count as sightings and eleven fakes gained a chain through
+  dull floor; held to bridging, one did — a fake with another ball flying
+  past the held one — for two releases found, one of them the set's last.
+  A faint blob on the next frame also does not stop the one-frame bridge
+  being tried: it is a guess at the ball, not a reason to stop looking for
+  it properly a frame later.
 
 Both wrists are tried and the *farthest* chain with at least
 `CHAIN_MIN_LINKS` links wins — not the longest: a chain that follows the
@@ -205,8 +221,8 @@ On the evaluation clip, against the truth set, at the plan's tolerance of
 | Level | Before this stage | With it |
 |---|---|---|
 | Candidate | P 56% R 98% F1 72% | **P 84% R 93% F1 88%** |
-| Release, on matched events | not claimed | **86%** — fakes right 22 of 23, releases right 26 of 33 |
-| Kind, on matched events | not claimed | 84% — see [[destination]] |
+| Release, on matched events | not claimed | **88%** — fakes right 21 of 23, releases right 28 of 33 |
+| Kind, on matched events | not claimed | 86% — see [[destination]] |
 
 The four candidate misses: a throw whose peak landed twelve frames after
 the labelled release (the annotator's own note calls that one late); the
@@ -222,14 +238,16 @@ tolerance splits from the release; one is the wrong-track thrower above;
 the rest are a ball wound up and not thrown at a moment the annotator did
 not call a fake.
 
-The release errors are readable. The one fake called released is a ball
+The release errors are readable. The two fakes called released: a ball
 that splits into two components in the fingers at the whip, one of which
-seeds a chain while the ball stays in the hand. Of the eight releases
-called fakes: two far-court throws the mask never sees at the hand at all,
-and one whose ball moves under a diameter a frame; one a hair under the
-distance floor; a hand-over the annotator was unsure was a pass; a throw
-noted *hard to see*; and the two near throws released together at the
-set's end. None of these is a threshold
+seeds a chain while the ball stays in the hand; and a ball held while
+another flies past the hand, which the faint tier lets the chain step onto
+([[destination]] reads its direction as a pass). Of the five releases
+called fakes: far-court throws the mask never sees at the hand, one whose
+ball moves under a diameter a frame, one a hair under the distance floor,
+a hand-over the annotator was unsure was a pass, and one of the two near
+throws released together at the set's end — the other, the throw that ended
+the set, is found through the faint tier. None of these is a threshold
 away; they are reported as what they are rather than tuned away. Before
 the chain was made to follow one ball the score was 79%, and it had been
 reached partly by chains that hopped to the right answer by luck.
@@ -238,6 +256,10 @@ reached partly by chains that hopped to the right answer by luck.
 
 Every threshold is a named constant at the top of `src/release.py` and
 `src/ball.py`, and the timeline file records the set it was written with.
+Windows are durations (`*_S`), converted to frames at the pose run's rate by
+`src/timing.py`: the stress test's half-rate clip showed frame counts
+silently doubling in length, and the release gate and outcome fold now read
+the same seconds at any rate.
 None is a confidence: the file carries the evidence behind every decision —
 `ball_before`, `depart`, `links`, `seed_offset`, `wrist` — for dropped
 proposals as well as events, so a threshold sweep reads the file rather than

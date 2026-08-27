@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from jersey import (MAX_PRINT_LENGTH, MIN_AGREEMENT_SPAN,  # noqa: E402
-                    MIN_CROP_HEIGHT, READ_BIN_FRAMES, Crop, Reading, as_number,
+                    MIN_CROP_HEIGHT, READ_BIN_FRAMES, Crop, CropKeeper, Reading, as_number,
                     confirm, conflicts, in_time_order, largest_crops,
                     needs_review, shortlist, switch, torso_crop, unobstructed)
 
@@ -36,6 +36,28 @@ def readings(*pairs: tuple[int, int], spread: int = MIN_AGREEMENT_SPAN) -> list[
 
 def crop(frame: int, height: int) -> Crop:
     return Crop(frame=frame, image=np.zeros((height, 20, 3), np.uint8))
+
+
+class Keeping(unittest.TestCase):
+    """The keeper hands `shortlist` the same crops the whole list would."""
+
+    def test_the_keeper_shortlists_like_the_whole_list(self):
+        import random
+        rng = random.Random(7)
+        crops = [crop(frame=f, height=rng.randint(30, 300)) for f in range(0, 5000, 5)]
+        keeper = CropKeeper()
+        for c in crops:
+            keeper.add(c)
+        want = [(c.frame, c.height) for c in shortlist(crops)]
+        got = [(c.frame, c.height) for c in shortlist(keeper.crops())]
+        self.assertEqual(got, want)
+        self.assertLess(len(keeper.crops()), len(crops) // 4)
+
+    def test_an_empty_keeper_is_false(self):
+        self.assertFalse(CropKeeper())
+        k = CropKeeper()
+        k.add(crop(0, 50))
+        self.assertTrue(k)
 
 
 class Confirmation(unittest.TestCase):
