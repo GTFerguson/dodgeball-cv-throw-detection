@@ -4,11 +4,25 @@ import type { PlayerSlot } from './players'
 import { RosterIndex, describe as say, keyFor } from './roster'
 
 const roster: RosterFile = {
-  schema_version: 2, video: 'clip.mp4', clip_sha256: 'abc', pose_run: 'r1',
+  schema_version: 5, video: 'clip.mp4', clip_sha256: 'abc', pose_run: 'r1',
   participants: [
-    { id: 'near-7', role: 'player', team: 'near', number: 7, track_ids: [56] },
-    { id: 'player-t73', role: 'player', team: 'far', number: null, track_ids: [73] },
-    { id: 'official-t8', role: 'official', team: 'near', number: null, track_ids: [8] },
+    { id: 'near-7', role: 'player', team: 'near', number: 7, track_ids: [56],
+      start_frame: 0, end_frame: 10, core_in_play_by_set: [[0, 11], [1, 30]], core_in_play_frames: 41,
+      played_sets: [0, 1], played: true, excess: false },
+    { id: 'player-t73', role: 'player', team: 'far', number: null, track_ids: [73],
+      start_frame: 0, end_frame: 10, core_in_play_by_set: [[0, 9]], core_in_play_frames: 9,
+      played_sets: [0], played: true, excess: false },
+    // A team kit that never stepped on: a player by role, not one who played.
+    { id: 'player-t90', role: 'player', team: 'near', number: null, track_ids: [90],
+      start_frame: 2, end_frame: 8, core_in_play_by_set: [], core_in_play_frames: 0,
+      played_sets: [], played: false, excess: false },
+    // Sat the first set out and played the second.
+    { id: 'player-t49', role: 'player', team: 'near', number: null, track_ids: [49],
+      start_frame: 1, end_frame: 3, core_in_play_by_set: [[1, 3]], core_in_play_frames: 3,
+      played_sets: [1], played: true, excess: false },
+    { id: 'official-t8', role: 'official', team: 'near', number: null, track_ids: [8],
+      start_frame: 0, end_frame: 10, core_in_play_by_set: [], core_in_play_frames: 0,
+      played_sets: [], played: false, excess: false },
   ],
   tracks: [
     { id: 56, participant: 'near-7', role: 'player', team: 'near', number: 7,
@@ -86,6 +100,29 @@ describe('who a box is', () => {
     expect(index.follow(5, placed, frame5, 5, frame5)).toEqual(placed)
     expect(index.follow(5, placed, frame5, 7, [])).toBeNull()
     expect(index.follow(5, placed, null, 6, frame6)).toBeNull()
+  })
+
+  it('lists who played a set, numbered first, and leaves the bench off', () => {
+    expect(index.played().map((p) => p.id)).toEqual(['near-7', 'player-t73', 'player-t49'])
+    expect(index.played('near').map((p) => p.id)).toEqual(['near-7', 'player-t49'])
+    expect(index.played(undefined, 0).map((p) => p.id)).toEqual(['near-7', 'player-t73'])
+    expect(index.played('near', 1).map((p) => p.id)).toEqual(['near-7', 'player-t49'])
+    expect(index.played('far', 1)).toEqual([])
+    expect(index.participant('player-t90')?.played).toBe(false)
+    expect(index.participant('nobody')).toBeNull()
+    expect(new RosterIndex(null, null).played()).toEqual([])
+  })
+
+  it('finds a player on a frame through whichever of their tracks holds it', () => {
+    expect(index.trackOnFrame('near-7', 5)?.id).toBe(56)
+    expect(index.trackOnFrame('near-7', 7)).toBeNull()
+    expect(index.trackOnFrame('nobody', 5)).toBeNull()
+  })
+
+  it('knows where a player first counted as in play', () => {
+    expect(index.firstInPlay('player-t73')).toBe(0)
+    expect(index.firstInPlay('player-t90')).toBeNull()
+    expect(index.firstInPlay('nobody')).toBeNull()
   })
 
   it('works without a roster or names at all', () => {

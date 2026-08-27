@@ -1,4 +1,4 @@
-import type { Box, NamesFile, PoseDetection, RosterFile, RosterTrack, Team } from '../types'
+import type { Box, NamesFile, PoseDetection, RosterFile, RosterParticipant, RosterTrack, Team } from '../types'
 import type { PlayerSlot } from './players'
 
 /**
@@ -38,8 +38,10 @@ export class RosterIndex {
   private byFrame = new Map<number, Map<number, RosterTrack>>()
   private byTrack = new Map<number, Map<number, number>>()
   private tracks = new Map<number, RosterTrack>()
+  private participants = new Map<string, RosterParticipant>()
 
   constructor(private roster: RosterFile | null, private names: NamesFile | null) {
+    for (const p of roster?.participants ?? []) this.participants.set(p.id, p)
     for (const t of roster?.tracks ?? []) {
       this.tracks.set(t.id, t)
       const frames = new Map<number, number>()
@@ -81,6 +83,50 @@ export class RosterIndex {
 
   track(id: number): RosterTrack | null {
     return this.tracks.get(id) ?? null
+  }
+
+  participant(id: string): RosterParticipant | null {
+    return this.participants.get(id) ?? null
+  }
+
+  /** Who was on the court while a set was live - any set, or the one at
+   *  `set` (an index into the timeline's `sets`) - on one side or both: the
+   *  identity pass's decision, mirroring `Roster.played`. Numbered players
+   *  first, then the fragments it could not name, each in frame order. */
+  played(team?: Team, set?: number): RosterParticipant[] {
+    return [...this.participants.values()]
+      .filter((p) => p.played && (team == null || p.team === team)
+        && (set == null || p.played_sets.includes(set)))
+      .sort((a, b) => Number(a.number == null) - Number(b.number == null) || a.start_frame - b.start_frame)
+  }
+
+  /** The pieces the identity pass could not count as anyone: in play while
+   *  their side already had its six on the floor. */
+  excess(): RosterParticipant[] {
+    return [...this.participants.values()].filter((p) => p.excess)
+  }
+
+  /** The track that holds a participant on a frame, or null when none of
+   *  theirs does - they are off screen, or the tracker lost them. */
+  trackOnFrame(participantId: string, frame: number): RosterTrack | null {
+    const p = this.participants.get(participantId)
+    for (const id of p?.track_ids ?? []) {
+      if (this.byTrack.get(id)?.has(frame)) return this.tracks.get(id) ?? null
+    }
+    return null
+  }
+
+  /** The first frame a participant counted as in play, or null if they never
+   *  did - where to take the stage to show someone who is not on screen now. */
+  firstInPlay(participantId: string): number | null {
+    const p = this.participants.get(participantId)
+    let first: number | null = null
+    for (const id of p?.track_ids ?? []) {
+      for (const [a] of this.tracks.get(id)?.in_play ?? []) {
+        if (first == null || a < first) first = a
+      }
+    }
+    return first
   }
 
   /** The track a pose detection belongs to, by its position on its frame. */

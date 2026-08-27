@@ -209,6 +209,22 @@ export interface RosterParticipant {
   team: Team | null
   number: number | null
   track_ids: number[]
+  start_frame: number
+  end_frame: number
+  /** In-play frames inside each set's live core, as [set index, frames],
+   *  summed over their tracks - the evidence for `played_sets`. */
+  core_in_play_by_set: [number, number][]
+  /** The same over every set. */
+  core_in_play_frames: number
+  /** The sets they were on the court for while live, as indices into the set
+   *  timeline's `sets` - one less than the "set N" the timeline marks say. */
+  played_sets: number[]
+  /** On the court while any set was live. Narrower than `role === 'player'`,
+   *  which also holds the bench and the queue in team kit. */
+  played: boolean
+  /** In play when its side already had six on the floor: a second track on
+   *  one player, or a misrole. A player by role, never one who played. */
+  excess: boolean
 }
 
 export interface RosterFile {
@@ -254,6 +270,22 @@ export interface DetectedSet {
     max_spread_m: number
   }
   notes: string[]
+  /** Where the set ended, once scripts/detect_set_end.py has run. */
+  end?: DetectedEnd | null
+}
+
+// A set ends on the hit that puts out the last player of a side. `hit` is
+// that moment; `floor` is the last frame one side was down to a single player
+// before the court filled - a bound the true end lies at or before, and the
+// hit window is where a hit the outcome stage missed has to be.
+export interface DetectedEnd {
+  frame: number
+  end_s: number
+  source: 'hit' | 'floor'
+  side: Team
+  last_stand: [number, number]
+  flood_frame: number
+  hit_frame: number | null
 }
 
 export interface SetTimelineFile {

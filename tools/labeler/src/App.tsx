@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Box, Candidate, CandidateFile, CandidateVerdict, CourtConfig, DetectedSet, LabelFile,
-  NamesFile, PoseManifest, RefSignal, RosterFile, SetTimelineFile, SetVerdict, Team, ThrowEvent,
-  VideoInfo,
+  NamesFile, PoseManifest, RefSignal, RosterFile, RosterParticipant, SetTimelineFile, SetVerdict, Team,
+  ThrowEvent, VideoInfo,
 } from './types'
 import { REF_SIGNALS, TARGETED_OUTCOMES } from './types'
 import { clampFrame, frameToSeekTime } from './lib/frames'
@@ -15,6 +15,7 @@ import {
 } from './lib/review'
 import { judgeCandidate, noteCandidate, reviewFor as proposalReviewFor, proposalsToDraw, toCandidateState } from './lib/candidates'
 import { RosterIndex } from './lib/roster'
+import { tally } from './lib/tally'
 import {
   buildRows, judgeable, nearestRow, nextRow, proximity, visibleRows, type KindFilter,
   type Sources, type StateFilter, type StreamRow,
@@ -34,6 +35,7 @@ import { SIGNAL_VAR as SIGNAL_CSS, signalOf } from './components/ui'
 import { InstrumentBar, SPEEDS } from './components/InstrumentBar'
 import { Timeline } from './components/Timeline'
 import { Stream, type RowWho } from './components/Stream'
+import { nameLine, Roster } from './components/Roster'
 
 const AUTOSAVE_MS = 800
 
@@ -46,6 +48,7 @@ const LAYER_CHIPS: [keyof Layers, string][] = [
 ]
 
 type SaveState = 'clean' | 'dirty' | 'saving' | 'saved' | 'error'
+type Panel = 'events' | 'players'
 
 function newId() {
   return Math.random().toString(36).slice(2, 10)
@@ -64,6 +67,28 @@ export default function App() {
   if (!videoName || (videos && !info)) return <Picker videos={videos} annotator={annotator} />
   if (!info) return <div className="p-6 text-ink-mute">Loading…</div>
   return <Labeler key={info.name + annotator} info={info} annotator={annotator} />
+}
+
+/**
+ * The panel's two views: the events at frames, and the people in them. Chosen
+ * with ink - the open tab carries the rule - so nothing on the strip is coloured.
+ */
+function Tab({ on, count, onClick, children }: {
+  on: boolean; count: number; onClick: () => void; children: React.ReactNode
+}) {
+  return (
+    <button
+      role="tab"
+      aria-selected={on}
+      onClick={onClick}
+      className={`flex-1 px-3 py-2 -mb-px border-b-2 text-[10.5px] font-semibold uppercase tracking-[.09em] ${
+        on ? 'text-ink border-ink' : 'text-ink-faint border-transparent hover:text-ink-mute'
+      }`}
+    >
+      {children}
+      <span className="ml-1.5 font-mono text-[11px] font-normal normal-case tracking-normal text-ink-mute">{count}</span>
+    </button>
+  )
 }
 
 function Picker({ videos, annotator }: { videos: VideoInfo[] | null; annotator: string }) {
@@ -138,6 +163,10 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
   const [kindFilter, setKindFilter] = useState<KindFilter>('all')
   const [stateFilter, setStateFilter] = useState<StateFilter>('all')
   const [layers, setLayers] = useState<Layers>(ALL_LAYERS)
+  const [panel, setPanel] = useState<Panel>('events')
+  // The player the stage is showing at the annotator's request: their box is
+  // drawn wherever the roster has them, until cleared.
+  const [spotlight, setSpotlight] = useState<string | null>(null)
 
   const [runs, setRuns] = useState<PoseManifest[]>([])
   const [runId, setRunId] = useState<string | null>(null)
@@ -406,6 +435,44 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     return { thrower: lookup(e.thrower), target: lookup(e.target) }
   }, [rosterIndex, players, frame, poseVersion])
 
+  // ── players ──────────────────────────────────────────────────────────────
+
+  // What the labels say each player did, resolved through the roster at read
+  // time. A box on a frame whose pose chunk is not loaded yet is left out and
+  // counted once the chunk arrives, which is what the pose version is for.
+  const tallies = useMemo(() => {
+    void poseVersion
+    const cache = cacheRef.current
+    return tally(events, (placed) =>
+      rosterIndex.trackByBox(placed.frame, placed.box, cache?.detections(placed.frame) ?? null)?.participant ?? null)
+  }, [events, rosterIndex, poseVersion])
+
+  const keyOf = useCallback((p: RosterParticipant): string | null => {
+    const track = rosterIndex.trackOnFrame(p.id, frame)
+    if (!track) return null
+    const index = rosterIndex.detectionOf(track.id, frame)
+    return players.find((s) => s.index === index)?.key ?? null
+  }, [rosterIndex, frame, players])
+
+  // Take the stage to a player: on this frame if they are on it, otherwise at
+  // their first frame in play. Asking again for the same player clears it.
+  const spotlightPlayer = useCallback((p: RosterParticipant) => {
+    if (spotlight === p.id) return setSpotlight(null)
+    setSpotlight(p.id)
+    if (rosterIndex.trackOnFrame(p.id, frame)) return
+    const to = rosterIndex.firstInPlay(p.id) ?? p.start_frame
+    seekFrame(to)
+    flash(`${nameLine(p, rosterIndex.nameOf(p.team, p.number))} at ${to}`)
+  }, [spotlight, rosterIndex, frame, seekFrame, flash])
+
+  const selectEvent = useCallback((e: ThrowEvent) => {
+    setSelectedId(e.id)
+    setSelectedRowId(`e-${e.id}`)
+    seekFrame(e.release_frame)
+    // The card is where an event is read and edited, so go to it.
+    setPanel('events')
+  }, [seekFrame])
+
   // ── boxes ────────────────────────────────────────────────────────────────
 
   // Placing a thrower says which half of the court the throw came from, so the
@@ -601,6 +668,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       }
       case 'cancel': {
         if (armed) return setArmed(false)
+        if (spotlight) return setSpotlight(null)
         setSelectedId(null)
         return setSelectedRowId(null)
       }
@@ -609,7 +677,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
     playPause, step, seekFrame, changeSpeed, apply, patchSelected, placeBox,
     editActiveBox, setLive, judge, flash, state, selected, players, focus, frame, manifest,
     court, livePlay, judgeProposal, classifyProposal, walk, selectedRow, nearest, lastDeleted, speed,
-    totalFrames, armed, info.width, info.height,
+    totalFrames, armed, spotlight, info.width, info.height,
   ])
 
   useEffect(() => {
@@ -657,6 +725,20 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       })
     }
 
+    // The spotlit player is drawn where the roster has them now, in ink: it is
+    // the annotator's own request, not a claim by anyone.
+    if (spotlight) {
+      const track = rosterIndex.trackOnFrame(spotlight, frame)
+      const box = track ? rosterIndex.boxOfTrack(track.id, frame, now) : null
+      const p = rosterIndex.participant(spotlight)
+      if (box && p) {
+        out.push({
+          box, label: nameLine(p, rosterIndex.nameOf(p.team, p.number)),
+          color: 'var(--ink)', active: false, loud: true,
+        })
+      }
+    }
+
     if (!selected) return out
     for (const which of ['thrower', 'target'] as PlacementTarget[]) {
       const placed = selected[which]
@@ -673,7 +755,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
       })
     }
     return out
-  }, [selected, selectedRow, focus, frame, candidates, candidateReviews, rosterIndex, poseVersion])
+  }, [selected, selectedRow, focus, frame, candidates, candidateReviews, rosterIndex, poseVersion, spotlight])
 
   const saveLabel: Record<SaveState, string> = {
     clean: '', dirty: 'unsaved', saving: 'saving…', saved: 'saved', error: 'save failed',
@@ -815,6 +897,23 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
         </main>
 
         <aside className="flex flex-col min-h-0 bg-surface border border-rule rounded-md shadow-panel overflow-hidden">
+          <div role="tablist" className="flex-none flex border-b border-rule">
+            <Tab on={panel === 'events'} count={events.length} onClick={() => setPanel('events')}>Events</Tab>
+            <Tab on={panel === 'players'} count={rosterIndex.played().length} onClick={() => setPanel('players')}>Players</Tab>
+          </div>
+          {panel === 'players' ? (
+            <Roster
+              index={rosterIndex}
+              sets={sets}
+              frame={frame}
+              fps={fps}
+              tallies={tallies}
+              keyOf={keyOf}
+              spotlight={spotlight}
+              onSpotlight={spotlightPlayer}
+              onSelectEvent={selectEvent}
+            />
+          ) : (
           <Stream
             rows={visible}
             total={rows.length}
@@ -861,6 +960,7 @@ function Labeler({ info, annotator }: { info: VideoInfo; annotator: string }) {
             }}
             onDelete={(e) => { apply(deleteEvent(state, e.id)); setLastDeleted(e) }}
           />
+          )}
           <div className="flex-none px-3 py-2 border-t border-rule text-[11px] text-ink-faint truncate"
             title={`data/labels/${key}.json`}>
             Saved to data/labels/{key}.json
